@@ -16,7 +16,7 @@ export const Route = createFileRoute('/login')({
       noIndex: true,
     }),
   component: () => (
-    <SurfaceGate surface="app">
+    <SurfaceGate surface={['app', 'ops']}>
       <Login />
     </SurfaceGate>
   ),

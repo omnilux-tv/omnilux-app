@@ -13,7 +13,7 @@ export const Route = createFileRoute('/forgot-password')({
       noIndex: true,
     }),
   component: () => (
-    <SurfaceGate surface="app">
+    <SurfaceGate surface={['app', 'ops']}>
       <ForgotPassword />
     </SurfaceGate>
   ),

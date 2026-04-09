@@ -13,7 +13,7 @@ export const Route = createFileRoute('/auth/callback')({
       noIndex: true,
     }),
   component: () => (
-    <SurfaceGate surface="app">
+    <SurfaceGate surface={['app', 'ops']}>
       <AuthCallback />
     </SurfaceGate>
   ),

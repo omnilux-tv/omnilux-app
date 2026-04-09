@@ -1,19 +1,21 @@
 # omnilux-app
 
-Cloud app frontend for `app.omnilux.tv`.
+Hosted frontend surfaces for `app.omnilux.tv` and `ops.omnilux.tv`.
 
-This repo owns the hosted customer app surface only:
+This repo owns the hosted OmniLux web consoles:
 
 - cloud auth and account flows
 - billing and subscription management
 - self-hosted server claim and invite management
-- managed runtime visibility for `managed-media` and `ops`
+- managed runtime visibility for `managed-media`
 - operator access management and access audit history
+- the dedicated operator console at `ops.omnilux.tv`
 - plugin submission and other authenticated cloud surfaces
 
 Approved boundary:
 
 - `omnilux-app` owns `app.omnilux.tv`
+- `omnilux-app` also owns `ops.omnilux.tv` as a separate operator-only hosted surface
 - `omnilux.tv` owns the public marketing site only
 - `omnilux-cloud` owns auth, billing, entitlements, invites, and relay control-plane state
 - `omnilux-edge` owns ingress and routes `app.omnilux.tv` to this artifact
@@ -47,6 +49,7 @@ Optional browser config:
 
 - `VITE_MARKETING_SITE_URL`
 - `VITE_APP_SITE_URL`
+- `VITE_OPS_SITE_URL`
 - `VITE_SENTRY_DSN`
 - `VITE_WEB_VITALS_ENDPOINT`
 
@@ -70,4 +73,4 @@ The canonical edge-consumed app artifact is the published OCI image `ghcr.io/omn
 - self-hosted servers remain directly reachable by their owners without traversing OmniLux edge
 - cloud-mediated remote access should rely on relay state
 - `managed-media` visibility is entitlement driven
-- `ops` visibility is operator only
+- `ops.omnilux.tv` is an operator-only hosted console, not a registered OmniLux runtime

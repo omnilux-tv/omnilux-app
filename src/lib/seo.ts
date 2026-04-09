@@ -1,10 +1,11 @@
-import { APP_SITE_ORIGIN, MARKETING_SITE_ORIGIN } from '@/lib/site-surface';
+import { APP_SITE_ORIGIN, MARKETING_SITE_ORIGIN, OPS_SITE_ORIGIN, getCurrentSiteSurface } from '@/lib/site-surface';
 
 const MARKETING_ORIGIN = MARKETING_SITE_ORIGIN;
 const APP_ORIGIN = APP_SITE_ORIGIN;
+const OPS_ORIGIN = OPS_SITE_ORIGIN;
 const DEFAULT_OG_IMAGE = `${APP_ORIGIN}/og-image.png`;
 
-type Surface = 'marketing' | 'app';
+type Surface = 'marketing' | 'app' | 'ops';
 
 interface PageHeadOptions {
   title: string;
@@ -16,7 +17,12 @@ interface PageHeadOptions {
 }
 
 const buildAbsoluteUrl = (pathname: string, surface: Surface = 'marketing') => {
-  const base = surface === 'app' ? APP_ORIGIN : MARKETING_ORIGIN;
+  const resolvedSurface =
+    surface === 'app' && typeof window !== 'undefined' && getCurrentSiteSurface(window.location.hostname) === 'ops'
+      ? 'ops'
+      : surface;
+  const base =
+    resolvedSurface === 'app' ? APP_ORIGIN : resolvedSurface === 'ops' ? OPS_ORIGIN : MARKETING_ORIGIN;
   return new URL(pathname, base).toString();
 };
 

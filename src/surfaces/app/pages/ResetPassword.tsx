@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { getCurrentHostedSurface, getDefaultAuthRedirect } from '@/surfaces/app/lib/auth-flow';
 import { supabase } from '@/lib/supabase';
 
 export const ResetPassword = () => {
   const navigate = useNavigate();
+  const currentSurface = getCurrentHostedSurface();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export const ResetPassword = () => {
       return;
     }
 
-    navigate({ to: '/dashboard' });
+    navigate({ to: getDefaultAuthRedirect(currentSurface) });
   };
 
   return (

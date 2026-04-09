@@ -2,7 +2,7 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { LogOut, MonitorPlay, ShieldCheck, UserCircle2 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
-import { buildAppHref, buildMarketingHref } from '@/lib/site-surface';
+import { buildAppHref, buildMarketingHref, buildOpsHref, getCurrentSiteSurface } from '@/lib/site-surface';
 import { cn } from '@/lib/utils';
 
 export const AppHeader = () => {
@@ -10,20 +10,29 @@ export const AppHeader = () => {
   const { data: accessProfile } = useAccessProfile();
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
+  const currentSurface =
+    typeof window === 'undefined' ? 'app' : getCurrentSiteSurface(window.location.hostname);
+  const isOpsSurface = currentSurface === 'ops';
   const displayName = user?.user_metadata?.display_name ?? user?.email ?? 'Account';
   const isAuthenticated = Boolean(user);
-  const appLinks = [
-    { to: '/dashboard', label: 'Overview' },
-    { to: '/dashboard/servers', label: 'Servers' },
-    { to: '/dashboard/devices', label: 'Devices' },
-    { to: '/dashboard/subscription', label: 'Billing' },
-    { to: '/dashboard/account', label: 'Account' },
-    ...(accessProfile?.isOperator ? [{ to: '/dashboard/operators', label: 'Operators' }] : []),
-  ] as const;
+  const appLinks = isOpsSurface
+    ? [
+        { to: '/dashboard', label: 'Overview' },
+        { to: '/dashboard/operators', label: 'Operators' },
+        { to: '/dashboard/account', label: 'Account' },
+      ]
+    : [
+        { to: '/dashboard', label: 'Overview' },
+        { to: '/dashboard/servers', label: 'Servers' },
+        { to: '/dashboard/devices', label: 'Devices' },
+        { to: '/dashboard/subscription', label: 'Billing' },
+        { to: '/dashboard/account', label: 'Account' },
+        ...(accessProfile?.isOperator ? [{ to: '/dashboard/operators', label: 'Operators' }] : []),
+      ] as const;
 
   const handleSignOut = async () => {
     await signOut();
-    window.location.assign(buildAppHref('/login'));
+    window.location.assign(isOpsSurface ? buildOpsHref('/login') : buildAppHref('/login'));
   };
 
   return (
@@ -37,25 +46,27 @@ export const AppHeader = () => {
             <div>
               <div className="flex items-center gap-2">
                 <Link to="/dashboard" className="font-display text-lg font-bold text-foreground">
-                  OmniLux Cloud
+                  {isOpsSurface ? 'OmniLux Ops' : 'OmniLux Cloud'}
                 </Link>
                 <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
-                  app
+                  {isOpsSurface ? 'ops' : 'app'}
                 </span>
               </div>
               <p className="text-sm text-muted">
-                Account, access, billing, and remote services for OmniLux Cloud.
+                {isOpsSurface
+                  ? 'Internal operator console for access policy, support tooling, and managed OmniLux services.'
+                  : 'Account, access, billing, and remote services for OmniLux Cloud.'}
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <a
-              href={buildMarketingHref('/')}
+              href={isOpsSurface ? buildAppHref('/dashboard') : buildMarketingHref('/')}
               className="inline-flex items-center gap-1 text-muted transition-colors hover:text-foreground"
             >
               <MonitorPlay className="h-4 w-4" />
-              Marketing Site
+              {isOpsSurface ? 'Cloud App' : 'Marketing Site'}
             </a>
             {isAuthenticated ? (
               <>
@@ -75,17 +86,19 @@ export const AppHeader = () => {
             ) : (
               <>
                 <a
-                  href={buildAppHref('/login')}
+                  href={isOpsSurface ? buildOpsHref('/login') : buildAppHref('/login')}
                   className="rounded-full border border-border px-3 py-1.5 text-muted transition-colors hover:text-foreground"
                 >
                   Sign in
                 </a>
-                <a
-                  href={buildAppHref('/register')}
-                  className="rounded-full bg-accent px-3 py-1.5 font-medium text-accent-foreground transition-colors hover:bg-accent/90"
-                >
-                  Create account
-                </a>
+                {isOpsSurface ? null : (
+                  <a
+                    href={buildAppHref('/register')}
+                    className="rounded-full bg-accent px-3 py-1.5 font-medium text-accent-foreground transition-colors hover:bg-accent/90"
+                  >
+                    Create account
+                  </a>
+                )}
               </>
             )}
           </div>

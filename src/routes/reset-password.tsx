@@ -13,7 +13,7 @@ export const Route = createFileRoute('/reset-password')({
       noIndex: true,
     }),
   component: () => (
-    <SurfaceGate surface="app">
+    <SurfaceGate surface={['app', 'ops']}>
       <ResetPassword />
     </SurfaceGate>
   ),
