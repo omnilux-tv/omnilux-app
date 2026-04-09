@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#050608"/>
+  <rect x="0" y="0" width="1200" height="630" fill="url(#og-grad)" opacity="0.5"/>
+
+  <defs>
+    <radialGradient id="og-grad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ff7e3d" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#050608" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Prism logo -->
+  <g transform="translate(520, 140) scale(2.5)">
+    <polygon points="30,20 30,100 90,60" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+    <polygon points="10,48 10,52 42,58 42,55" fill="white" opacity="0.7"/>
+    <polygon points="88,58 115,30 113,26" fill="#F59E0B"/>
+    <polygon points="88,59 115,46 113,42" fill="#F43F5E"/>
+    <polygon points="88,60 115,62 113,58" fill="#8B5CF6"/>
+    <polygon points="88,61 115,78 113,74" fill="#3B82F6"/>
+    <polygon points="88,62 115,94 113,90" fill="#06B6D4"/>
+  </g>
+
+  <!-- Text -->
+  <text x="600" y="450" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="64" fill="#f8f3eb" letter-spacing="-2">OmniLux</text>
+  <text x="600" y="510" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="28" fill="#b8ab9b">All Your Media. One Platform.</text>
+
+  <!-- Media type icons as text -->
+  <text x="600" y="575" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="16" fill="#ff7e3d" letter-spacing="4">MOVIES  ·  TV  ·  MUSIC  ·  BOOKS  ·  GAMES  ·  LIVE TV</text>
+</svg>

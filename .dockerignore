@@ -1,0 +1,7 @@
+.git
+.env
+.env.*
+cloud
+deploy/vps
+dist
+node_modules

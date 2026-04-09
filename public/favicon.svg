@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="beam-gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#F59E0B" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="beam-coral" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#F43F5E" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#F43F5E" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="beam-violet" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="beam-blue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="beam-teal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#06B6D4" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="input-beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="1"/>
+    </linearGradient>
+    <linearGradient id="prism-fill" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="beam-glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Input beam (white light) -->
+  <polygon points="80,200 80,210 268,258 268,252" fill="url(#input-beam)" filter="url(#glow)"/>
+
+  <!-- Prism triangle (flat edge on left, vertex pointing right) -->
+  <polygon points="220,160 220,352 360,256" fill="url(#prism-fill)" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Subtle highlight on top edge -->
+  <line x1="220" y1="160" x2="360" y2="256" stroke="#475569" stroke-width="0.5" opacity="0.4"/>
+
+  <!-- Output beams (5 rays from right vertex) -->
+  <g filter="url(#beam-glow)">
+    <!-- Gold — top beam -->
+    <polygon points="358,254 480,148 476,140" fill="url(#beam-gold)"/>
+
+    <!-- Coral -->
+    <polygon points="358,255 480,192 476,184" fill="url(#beam-coral)"/>
+
+    <!-- Violet — center -->
+    <polygon points="358,256 480,248 476,240" fill="url(#beam-violet)"/>
+
+    <!-- Blue -->
+    <polygon points="358,257 480,312 476,304" fill="url(#beam-blue)"/>
+
+    <!-- Teal — bottom beam -->
+    <polygon points="358,258 480,368 476,360" fill="url(#beam-teal)"/>
+  </g>
+
+  <!-- Refraction point glow -->
+  <circle cx="358" cy="256" r="6" fill="white" opacity="0.15"/>
+</svg>
