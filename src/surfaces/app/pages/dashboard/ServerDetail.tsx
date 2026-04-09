@@ -208,9 +208,9 @@ export const ServerDetail = () => {
               </p>
             ) : (
               <p className="mt-2 text-sm text-foreground">
-                This is a first-party OmniLux runtime profile, not a customer self-hosted server. It is
-                tracked in the same cloud registry, but it is expected to be reachable through its
-                OmniLux-managed public origin instead of a user-owned LAN or reverse-proxy path.
+                This is OmniLux-managed media surfaced through the cloud console, not a customer-owned
+                self-hosted server. It is expected to be reachable through its OmniLux-managed public
+                origin instead of a user-owned LAN or reverse-proxy path.
               </p>
             )}
           </div>
@@ -343,9 +343,8 @@ export const ServerDetail = () => {
               <h2 className="text-lg font-bold text-foreground">Access Model</h2>
             </div>
             <p className="text-sm text-muted">
-              {deploymentProfile === 'managed-media'
-                ? 'Managed media access is granted by OmniLux Cloud product entitlement and shared app identity, not by per-server invites or generic ownership rows.'
-                : 'Ops access is operator-managed and should only be visible to accounts flagged for internal operations.'}
+              Managed media access is granted by OmniLux Cloud product entitlement and shared app
+              identity, not by per-server invites or generic ownership rows.
             </p>
           </div>
         )}

@@ -154,7 +154,7 @@ export const Operators = () => {
         <div className="mx-auto max-w-4xl rounded-xl border border-warning/30 bg-warning/10 p-6">
           <h1 className="font-display text-2xl font-bold text-foreground">Operator Access Required</h1>
           <p className="mt-2 text-sm text-foreground">
-            This page manages managed-media entitlement and internal operator visibility. Standard cloud accounts cannot access it.
+            This page manages managed-media entitlement and OmniLux Ops console access. Standard cloud accounts cannot access it.
           </p>
         </div>
       </div>
@@ -170,8 +170,8 @@ export const Operators = () => {
             <h1 className="font-display text-2xl font-bold text-foreground">Operator Access</h1>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted">
-            Manage which cloud accounts can see first-party OmniLux media and which accounts can access the internal
-            `ops` runtime plus access-management tooling.
+            Manage which cloud accounts can see first-party OmniLux media and which accounts can access the
+            hosted `ops.omnilux.tv` console plus access-management tooling.
           </p>
         </div>
 

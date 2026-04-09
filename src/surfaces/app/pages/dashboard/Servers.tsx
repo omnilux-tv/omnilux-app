@@ -6,7 +6,6 @@ import { useAuth } from '@/providers/AuthProvider';
 import { ServerCard } from '@/surfaces/app/components/ServerCard';
 import {
   isManagedMediaDeploymentProfile,
-  isOpsDeploymentProfile,
   isSelfHostedDeploymentProfile,
 } from '@/surfaces/app/lib/server-deployment-profile';
 
@@ -35,7 +34,6 @@ export const Servers = () => {
   });
   const selfHostedServers = (servers ?? []).filter((server) => isSelfHostedDeploymentProfile(server.deployment_profile));
   const managedMediaServers = (servers ?? []).filter((server) => isManagedMediaDeploymentProfile(server.deployment_profile));
-  const opsServers = (servers ?? []).filter((server) => isOpsDeploymentProfile(server.deployment_profile));
 
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
@@ -44,7 +42,7 @@ export const Servers = () => {
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground">Cloud-Linked Servers</h1>
             <p className="mt-1 text-sm text-muted">
-              OmniLux runtimes visible to this account. Self-hosted servers, managed media access, and internal ops visibility now follow separate cloud rules.
+              OmniLux runtimes visible to this account. Self-hosted servers and OmniLux-managed media follow different cloud access rules.
             </p>
           </div>
           <Link
@@ -106,31 +104,6 @@ export const Servers = () => {
                     </p>
                   </div>
                   {managedMediaServers.map((s) => (
-                    <ServerCard
-                      key={s.id}
-                      id={s.id}
-                      name={s.name}
-                      version={s.version ?? 'unknown'}
-                      deploymentProfile={s.deployment_profile}
-                      lastSeenAt={s.last_seen_at}
-                      relayEnabled={s.relay_enabled}
-                      relayStatus={s.relay_status}
-                    />
-                  ))}
-                </section>
-              ) : null}
-
-              {opsServers.length > 0 ? (
-                <section className="space-y-3">
-                  <div>
-                    <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted">
-                      Internal Ops
-                    </h2>
-                    <p className="mt-1 text-sm text-muted">
-                      Operator-only runtimes that are intentionally hidden from normal customer accounts.
-                    </p>
-                  </div>
-                  {opsServers.map((s) => (
                     <ServerCard
                       key={s.id}
                       id={s.id}

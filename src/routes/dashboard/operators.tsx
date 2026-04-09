@@ -6,7 +6,7 @@ export const Route = createFileRoute('/dashboard/operators')({
   head: () =>
     buildPageHead({
       title: 'Operator Access | OmniLux Cloud',
-      description: 'Manage managed-media entitlement and operator access for OmniLux Cloud accounts.',
+      description: 'Manage managed-media entitlement and OmniLux Ops console access for cloud accounts.',
       pathname: '/dashboard/operators',
       surface: 'app',
       noIndex: true,

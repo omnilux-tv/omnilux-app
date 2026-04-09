@@ -16,6 +16,7 @@ Approved boundary:
 
 - `omnilux-app` owns `app.omnilux.tv`
 - `omnilux-app` also owns `ops.omnilux.tv` as a separate operator-only hosted surface
+- `ops.omnilux.tv` stays in this repo for now; only split it into a dedicated `omnilux-ops` repo if the operator console starts diverging materially from the hosted customer app
 - `omnilux.tv` owns the public marketing site only
 - `omnilux-cloud` owns auth, billing, entitlements, invites, and relay control-plane state
 - `omnilux-edge` owns ingress and routes `app.omnilux.tv` to this artifact
@@ -58,7 +59,15 @@ Optional browser config:
 ```bash
 pnpm lint
 pnpm build
+pnpm test:smoke:ops
 ```
+
+`pnpm test:smoke:ops` targets the live `ops.omnilux.tv` surface and expects these env vars:
+
+- `OPS_SMOKE_OPERATOR_EMAIL`
+- `OPS_SMOKE_OPERATOR_PASSWORD`
+- `OPS_SMOKE_CUSTOMER_EMAIL`
+- `OPS_SMOKE_CUSTOMER_PASSWORD`
 
 ## Artifact
 
@@ -74,3 +83,4 @@ The canonical edge-consumed app artifact is the published OCI image `ghcr.io/omn
 - cloud-mediated remote access should rely on relay state
 - `managed-media` visibility is entitlement driven
 - `ops.omnilux.tv` is an operator-only hosted console, not a registered OmniLux runtime
+- server listings in this app should only model `self-hosted` and `managed-media`; operator access belongs to hosted console access controls, not the server registry

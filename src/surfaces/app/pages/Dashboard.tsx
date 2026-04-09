@@ -33,7 +33,7 @@ export const Dashboard = () => {
           to: '/dashboard/operators',
           icon: ShieldCheck,
           label: 'Operator Access',
-          description: 'Manage managed-media entitlements and operator access for cloud accounts.',
+          description: 'Manage managed-media entitlements and OmniLux Ops console access.',
         },
       ]
     : [];
