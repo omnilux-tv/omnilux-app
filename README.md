@@ -8,6 +8,7 @@ This repo owns the hosted customer app surface only:
 - billing and subscription management
 - self-hosted server claim and invite management
 - managed runtime visibility for `managed-media` and `ops`
+- operator access management and access audit history
 - plugin submission and other authenticated cloud surfaces
 
 Approved boundary:
