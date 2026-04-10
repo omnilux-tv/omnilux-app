@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { LogOut, MonitorPlay, UserCircle2 } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { buildAppHref, buildDocsHref, buildMarketingHref, buildOpsHref, getCurrentSiteSurface } from '@/lib/site-surface';
@@ -14,10 +14,18 @@ export const AppHeader = () => {
     typeof window === 'undefined' ? 'app' : getCurrentSiteSurface(window.location.hostname);
   const isOpsSurface = currentSurface === 'ops';
   const displayName = user?.user_metadata?.display_name ?? user?.email ?? 'Account';
+  const displayInitial = displayName.trim().charAt(0).toUpperCase() || 'A';
   const isAuthenticated = Boolean(user);
-  const navItemClassName =
-    'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-semibold tracking-[0.01em] transition-all';
-  const inactiveNavItemClassName = 'text-muted hover:bg-white/6 hover:text-foreground';
+  const sectionItemClassName =
+    'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-semibold tracking-[0.01em] transition-all';
+  const inactiveSectionItemClassName =
+    'border-white/8 bg-white/[0.04] text-foreground/72 hover:bg-white/[0.08] hover:text-foreground';
+  const activeSectionItemClassName =
+    'border-transparent bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(242,228,207,0.14)]';
+  const utilityItemClassName =
+    'inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-white/8 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground/74 transition-all hover:bg-white/[0.08] hover:text-foreground';
+  const iconUtilityItemClassName =
+    'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-foreground/74 transition-all hover:bg-white/[0.08] hover:text-foreground';
   const appLinks = isOpsSurface
     ? [
         { to: '/dashboard', label: 'Overview' },
@@ -44,44 +52,42 @@ export const AppHeader = () => {
       <div className="mx-auto max-w-6xl">
         <div className="surface-panel rounded-[1.75rem] px-3 py-3 sm:px-4">
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <Link
                   to="/dashboard"
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/8 bg-white/5"
+                  className="inline-flex shrink-0 items-center justify-center"
                   aria-label={isOpsSurface ? 'OmniLux Ops home' : 'OmniLux Cloud home'}
                 >
-                  <img src="/favicon.svg" alt="" className="h-8 w-8" />
+                  <img
+                    src="/favicon.svg"
+                    alt=""
+                    className="h-9 w-9 drop-shadow-[0_0_18px_rgba(255,126,61,0.16)]"
+                  />
                 </Link>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link to="/dashboard" className="font-display text-base font-bold text-foreground sm:text-lg">
+                    <Link to="/dashboard" className="font-display text-lg font-bold text-foreground">
                       {isOpsSurface ? 'OmniLux Ops' : 'OmniLux Cloud'}
                     </Link>
                     <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">
                       {isOpsSurface ? 'ops' : 'app'}
                     </span>
                   </div>
-                  <p className="hidden text-sm text-muted lg:block">
-                    {isOpsSurface
-                      ? 'Policy, support tooling, and managed service oversight in the same navigation language as the runtime.'
-                      : 'Account, access, billing, and remote services with the same nav treatment as the self-hosted server.'}
-                  </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2 xl:justify-end">
+              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                 <div className="flex flex-wrap items-center gap-2">
                   <a
                     href={isOpsSurface ? buildAppHref('/dashboard') : buildMarketingHref('/')}
-                    className={cn(navItemClassName, inactiveNavItemClassName)}
+                    className={utilityItemClassName}
                   >
-                    <MonitorPlay className="h-4 w-4" />
                     <span>{isOpsSurface ? 'Cloud App' : 'Marketing Site'}</span>
                   </a>
                   <a
                     href={buildDocsHref('/guide/overview')}
-                    className={cn(navItemClassName, inactiveNavItemClassName)}
+                    className={utilityItemClassName}
                   >
                     Docs
                   </a>
@@ -89,24 +95,27 @@ export const AppHeader = () => {
 
                 {isAuthenticated ? (
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border border-white/8 bg-white/5 px-3.5 py-2 text-sm text-foreground">
-                      <UserCircle2 className="h-4 w-4 shrink-0 text-muted" />
-                      <span className="max-w-[16rem] truncate font-medium">{displayName}</span>
+                    <div className="inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1.5 text-foreground">
+                      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[11px] font-semibold text-foreground/80">
+                        {displayInitial}
+                      </span>
+                      <span className="max-w-[12rem] truncate pr-1 text-sm font-medium">{displayName}</span>
                     </div>
                     <button
                       type="button"
                       onClick={handleSignOut}
-                      className={cn(navItemClassName, inactiveNavItemClassName)}
+                      className={iconUtilityItemClassName}
+                      aria-label="Sign out"
+                      title="Sign out"
                     >
                       <LogOut className="h-4 w-4" />
-                      <span>Sign out</span>
                     </button>
                   </div>
                 ) : (
                   <div className="flex flex-wrap items-center gap-2">
                     <a
                       href={isOpsSurface ? buildOpsHref('/login') : buildAppHref('/login')}
-                      className={cn(navItemClassName, inactiveNavItemClassName)}
+                      className={utilityItemClassName}
                     >
                       Sign in
                     </a>
@@ -114,7 +123,7 @@ export const AppHeader = () => {
                       <a
                         href={buildAppHref('/register')}
                         className={cn(
-                          navItemClassName,
+                          utilityItemClassName,
                           'bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(242,228,207,0.14)] hover:opacity-95',
                         )}
                       >
@@ -137,10 +146,8 @@ export const AppHeader = () => {
                       to={to}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
-                        navItemClassName,
-                        active
-                          ? 'bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(242,228,207,0.14)]'
-                          : inactiveNavItemClassName,
+                        sectionItemClassName,
+                        active ? activeSectionItemClassName : inactiveSectionItemClassName,
                       )}
                     >
                       {label}
