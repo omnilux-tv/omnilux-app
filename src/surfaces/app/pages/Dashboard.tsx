@@ -1,8 +1,18 @@
 import { Link } from '@tanstack/react-router';
-import { Server, User, Smartphone, CreditCard, Puzzle, ShieldCheck } from 'lucide-react';
+import {
+  Activity,
+  CreditCard,
+  Puzzle,
+  Server,
+  ShieldCheck,
+  Smartphone,
+  User,
+  Waves,
+} from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { buildAppHref, getCurrentSiteSurface } from '@/lib/site-surface';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
+import { useOpsOverview } from '@/surfaces/app/lib/ops';
 
 const dashboardLinks = [
   { to: '/dashboard/servers', icon: Server, label: 'Servers', description: 'Claimed OmniLux installs, relay state, and companion access.' },
@@ -37,20 +47,52 @@ export const Dashboard = () => {
         },
       ]
     : [];
+  const {
+    data: opsOverview,
+    isLoading: isOpsOverviewLoading,
+    error: opsOverviewError,
+  } = useOpsOverview(Boolean(isOpsSurface && accessProfile?.isOperator));
 
   if (isOpsSurface) {
     const opsLinks = [
       {
         to: '/dashboard/operators',
         icon: ShieldCheck,
-        label: 'Operator Access',
-        description: 'Manage internal operator accounts, managed media access, and audit history.',
+        label: 'Policy & Access',
+        description: 'Manage internal operator accounts, managed media policy, and access audit history.',
       },
       {
         to: '/dashboard/account',
         icon: User,
         label: 'Admin Account',
         description: 'Review the credentials, password, and profile settings for your operator identity.',
+      },
+    ] as const;
+
+    const opsMetricCards = [
+      {
+        icon: User,
+        label: 'Cloud Profiles',
+        value: opsOverview?.metrics.profilesTotal ?? '—',
+        detail: `${opsOverview?.metrics.operatorsTotal ?? 0} operators`,
+      },
+      {
+        icon: CreditCard,
+        label: 'Active Billing',
+        value: opsOverview?.metrics.activeSubscriptionsTotal ?? '—',
+        detail: `${opsOverview?.metrics.trialingSubscriptionsTotal ?? 0} trialing`,
+      },
+      {
+        icon: Server,
+        label: 'Self-Hosted Servers',
+        value: opsOverview?.metrics.selfHostedServersTotal ?? '—',
+        detail: `${opsOverview?.metrics.relayOnlineServersTotal ?? 0} relay online`,
+      },
+      {
+        icon: Activity,
+        label: 'Needs Attention',
+        value: opsOverview?.metrics.relayAttentionServersTotal ?? '—',
+        detail: 'Self-hosted relay issues',
       },
     ] as const;
 
@@ -63,6 +105,101 @@ export const Dashboard = () => {
             {displayName}, this surface is reserved for OmniLux operators. Use it to administer managed access,
             entitlement policy, and internal cloud controls without mixing those tasks into the customer app.
           </p>
+
+          {isOpsOverviewLoading ? (
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              {[1, 2, 3, 4].map((index) => (
+                <div key={index} className="h-28 animate-pulse rounded-xl bg-surface" />
+              ))}
+            </div>
+          ) : opsOverviewError ? (
+            <div className="mt-8 rounded-xl border border-danger/30 bg-danger/10 p-5 text-sm text-foreground">
+              {opsOverviewError instanceof Error ? opsOverviewError.message : 'Failed to load operator overview.'}
+            </div>
+          ) : (
+            <>
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {opsMetricCards.map(({ icon: Icon, label, value, detail }) => (
+                  <div key={label} className="rounded-xl surface-soft p-5">
+                    <Icon className="h-5 w-5 text-accent" />
+                    <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted">{label}</p>
+                    <p className="mt-2 font-display text-3xl font-bold text-foreground">{value}</p>
+                    <p className="mt-2 text-sm text-muted">{detail}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+                <div className="rounded-xl border border-border bg-background p-5">
+                  <div className="flex items-center gap-2">
+                    <Waves className="h-5 w-5 text-accent" />
+                    <h2 className="font-semibold text-foreground">Managed Media Runtime</h2>
+                  </div>
+                  {opsOverview?.managedMediaRuntime ? (
+                    <>
+                      <p className="mt-3 text-sm text-muted">
+                        {opsOverview.managedMediaRuntime.name} is registered as the first-party runtime behind
+                        `media.omnilux.tv`.
+                      </p>
+                      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                        <div className="rounded-lg bg-surface/60 p-4">
+                          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Origin</dt>
+                          <dd className="mt-2 text-foreground">
+                            {opsOverview.managedMediaRuntime.publicOrigin ?? 'Not set'}
+                          </dd>
+                        </div>
+                        <div className="rounded-lg bg-surface/60 p-4">
+                          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Relay Status</dt>
+                          <dd className="mt-2 capitalize text-foreground">
+                            {opsOverview.managedMediaRuntime.relayStatus ?? 'unknown'}
+                          </dd>
+                        </div>
+                        <div className="rounded-lg bg-surface/60 p-4">
+                          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Last Seen</dt>
+                          <dd className="mt-2 text-foreground">
+                            {opsOverview.managedMediaRuntime.lastSeenAt
+                              ? new Date(opsOverview.managedMediaRuntime.lastSeenAt).toLocaleString()
+                              : 'No heartbeat yet'}
+                          </dd>
+                        </div>
+                        <div className="rounded-lg bg-surface/60 p-4">
+                          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Version</dt>
+                          <dd className="mt-2 text-foreground">
+                            {opsOverview.managedMediaRuntime.version ?? 'Unknown'}
+                          </dd>
+                        </div>
+                      </dl>
+                    </>
+                  ) : (
+                    <p className="mt-3 text-sm text-muted">
+                      No managed media runtime is registered in the cloud control plane yet.
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-xl border border-border bg-background p-5">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-accent" />
+                    <h2 className="font-semibold text-foreground">Current Platform Policy</h2>
+                  </div>
+                  <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                    Managed Media Access
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-foreground">
+                    {opsOverview?.platform.managedMediaPolicyLabel ?? 'Unknown'}
+                  </p>
+                  <p className="mt-2 text-sm text-muted">
+                    {opsOverview?.platform.managedMediaPolicyDescription ??
+                      'Managed media policy is currently unavailable.'}
+                  </p>
+                  <div className="mt-4 rounded-lg bg-surface/60 p-4 text-sm text-muted">
+                    <p>{opsOverview?.metrics.recentAccessChangesTotal ?? 0} access changes in the last 7 days</p>
+                    <p className="mt-2">{opsOverview?.metrics.recentPolicyChangesTotal ?? 0} policy changes in the last 7 days</p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {opsLinks.map(({ to, icon: Icon, label, description }) => (

@@ -7,6 +7,8 @@ export interface AccessProfile {
   email: string | null;
   displayName: string | null;
   managedMediaEntitled: boolean;
+  managedMediaAccessOverride: boolean;
+  managedMediaPolicy: 'all-authenticated-users' | 'explicit-per-profile';
   isOperator: boolean;
   createdAt: string;
   updatedAt: string;

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const opsSiteUrl = process.env.OPS_SITE_URL?.trim() || 'https://ops.omnilux.tv';
+const appSiteUrl = process.env.APP_SITE_URL?.trim() || 'https://app.omnilux.tv';
 const operatorEmail = process.env.OPS_SMOKE_OPERATOR_EMAIL?.trim();
 const operatorPassword = process.env.OPS_SMOKE_OPERATOR_PASSWORD?.trim();
 const customerEmail = process.env.OPS_SMOKE_CUSTOMER_EMAIL?.trim();
@@ -36,5 +37,23 @@ test.describe('ops hosted auth smoke', () => {
       page.getByText('This account does not have operator access. Use an internal operator account for OmniLux Ops.'),
     ).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`${escapeForRegex(opsSiteUrl)}/login(?:\\?.*)?$`));
+  });
+
+  test('customer cloud app shows managed media and hides operator-only surfaces', async ({ page }) => {
+    test.skip(!customerEmail || !customerPassword, 'Missing customer smoke credentials');
+
+    await page.goto(`${appSiteUrl}/login`, { waitUntil: 'networkidle' });
+    await expect(page.getByRole('heading', { name: 'Sign in to OmniLux Cloud' })).toBeVisible();
+
+    await page.getByLabel('Email').fill(customerEmail!);
+    await page.getByLabel('Password').fill(customerPassword!);
+    await page.getByRole('button', { name: 'Sign in' }).click();
+
+    await page.waitForURL(/\/dashboard(?:\?.*)?$/);
+    await page.goto(`${appSiteUrl}/dashboard/servers`, { waitUntil: 'networkidle' });
+
+    await expect(page.getByRole('heading', { name: 'Cloud-Linked Servers' })).toBeVisible();
+    await expect(page.getByText('OmniLux Media')).toBeVisible();
+    await expect(page.getByText('OmniLux Ops')).toHaveCount(0);
   });
 });

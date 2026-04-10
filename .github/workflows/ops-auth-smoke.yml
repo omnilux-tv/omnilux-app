@@ -9,6 +9,7 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     env:
+      APP_SITE_URL: https://app.omnilux.tv
       OPS_SITE_URL: https://ops.omnilux.tv
       OPS_SMOKE_OPERATOR_EMAIL: ${{ secrets.OPS_SMOKE_OPERATOR_EMAIL }}
       OPS_SMOKE_OPERATOR_PASSWORD: ${{ secrets.OPS_SMOKE_OPERATOR_PASSWORD }}

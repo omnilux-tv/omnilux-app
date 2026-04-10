@@ -18,7 +18,7 @@ export const AppHeader = () => {
   const appLinks = isOpsSurface
     ? [
         { to: '/dashboard', label: 'Overview' },
-        { to: '/dashboard/operators', label: 'Operators' },
+        { to: '/dashboard/operators', label: 'Policy & Access' },
         { to: '/dashboard/account', label: 'Account' },
       ]
     : [

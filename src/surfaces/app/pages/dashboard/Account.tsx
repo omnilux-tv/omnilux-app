@@ -140,8 +140,15 @@ export const Account = () => {
                 {accessProfile?.managedMediaEntitled ? 'Enabled' : 'Disabled'}
               </p>
               <p className="mt-1 text-muted">
-                Controls whether this account can access OmniLux-managed media runtimes in the hosted app.
+                {accessProfile?.managedMediaPolicy === 'all-authenticated-users'
+                  ? 'Managed media is currently granted platform-wide to every authenticated cloud account.'
+                  : 'Managed media is currently controlled per profile through operator-managed overrides.'}
               </p>
+              {accessProfile?.managedMediaPolicy === 'explicit-per-profile' ? (
+                <p className="mt-2 text-xs text-muted">
+                  Profile override: {accessProfile.managedMediaAccessOverride ? 'enabled' : 'disabled'}
+                </p>
+              ) : null}
             </div>
             <div className="rounded-lg bg-surface/50 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Operator Access</p>
@@ -149,7 +156,7 @@ export const Account = () => {
                 {accessProfile?.isOperator ? 'Operator account' : 'Standard account'}
               </p>
               <p className="mt-1 text-muted">
-                Operator access exposes the internal `ops` runtime and cloud access-management tools.
+                Operator access exposes the internal `ops.omnilux.tv` console and cloud access-management tools.
               </p>
             </div>
           </div>
