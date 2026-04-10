@@ -55,7 +55,7 @@ jobs:
             VITE_APP_SITE_URL=${{ vars.VITE_APP_SITE_URL || 'https://app.omnilux.tv' }}
             VITE_OPS_SITE_URL=${{ vars.VITE_OPS_SITE_URL || 'https://ops.omnilux.tv' }}
             VITE_SUPABASE_URL=${{ vars.VITE_SUPABASE_URL || 'https://api.omnilux.tv' }}
-            VITE_SUPABASE_PUBLISHABLE_KEY=${{ vars.VITE_SUPABASE_ANON_KEY }}
+            VITE_SUPABASE_BROWSER_VALUE=${{ vars.VITE_SUPABASE_ANON_KEY }}
             VITE_SENTRY_DSN=${{ vars.VITE_SENTRY_DSN }}
             VITE_WEB_VITALS_ENDPOINT=${{ vars.VITE_WEB_VITALS_ENDPOINT }}
           tags: omnilux-app-verify:latest
@@ -80,7 +80,7 @@ jobs:
             VITE_APP_SITE_URL=${{ vars.VITE_APP_SITE_URL || 'https://app.omnilux.tv' }}
             VITE_OPS_SITE_URL=${{ vars.VITE_OPS_SITE_URL || 'https://ops.omnilux.tv' }}
             VITE_SUPABASE_URL=${{ vars.VITE_SUPABASE_URL || 'https://api.omnilux.tv' }}
-            VITE_SUPABASE_PUBLISHABLE_KEY=${{ vars.VITE_SUPABASE_ANON_KEY }}
+            VITE_SUPABASE_BROWSER_VALUE=${{ vars.VITE_SUPABASE_ANON_KEY }}
             VITE_SENTRY_DSN=${{ vars.VITE_SENTRY_DSN }}
             VITE_WEB_VITALS_ENDPOINT=${{ vars.VITE_WEB_VITALS_ENDPOINT }}
           tags: ${{ steps.meta.outputs.tags }}
