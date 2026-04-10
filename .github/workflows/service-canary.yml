@@ -24,13 +24,14 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Run production service canary
         id: canary
         run: node scripts/run-service-canary.mjs
 
       - name: Open or update canary incident issue
-        if: failure()
+        if: steps.canary.outcome == 'failure'
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
