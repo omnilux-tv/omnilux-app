@@ -6,6 +6,11 @@ import { buildDocsHref } from '@/lib/site-surface';
 import { supabase } from '@/lib/supabase';
 import { useAccessProfile, type AccessProfile } from '@/surfaces/app/lib/access-profile';
 import {
+  DEFAULT_OPERATOR_CONSOLE_VIEW,
+  operatorConsoleSections,
+  type OperatorConsoleView,
+} from '@/surfaces/app/lib/ops-console';
+import {
   useOperatorActionAuditLog,
   useOperatorSupportProfile,
   useOpsServiceHealth,
@@ -47,6 +52,7 @@ const renderProfileLabel = (profile: { displayName: string | null; email: string
   profile.displayName || profile.email || profile.userId || 'Unknown account';
 
 const formatTimestamp = (value: string | null) => (value ? new Date(value).toLocaleString() : 'Not available');
+const toTimestamp = (value: string | null | undefined) => (value ? new Date(value).getTime() : 0);
 
 const renderAuditSummary = (row: AccessAuditRow) => {
   const changes: string[] = [];
@@ -77,7 +83,7 @@ const renderPolicySummary = (row: PlatformSettingsAuditRow) =>
 const renderOperatorActionSummary = (row: OperatorActionAuditRow) => {
   switch (row.actionType) {
     case 'profile_lookup':
-      return `Opened support view for ${renderProfileLabel(row.target ?? { userId: null, email: null, displayName: null })}`;
+      return `Opened account workspace for ${renderProfileLabel(row.target ?? { userId: null, email: null, displayName: null })}`;
     case 'update_profile_access':
       return `Updated access controls for ${renderProfileLabel(row.target ?? { userId: null, email: null, displayName: null })}`;
     case 'update_managed_media_policy':
@@ -164,9 +170,10 @@ const renderOperatorActionDetail = (row: OperatorActionAuditRow) => {
 
 interface OperatorsProps {
   initialLookup?: string;
+  initialView?: OperatorConsoleView;
 }
 
-export const Operators = ({ initialLookup }: OperatorsProps) => {
+export const Operators = ({ initialLookup, initialView = DEFAULT_OPERATOR_CONSOLE_VIEW }: OperatorsProps) => {
   const queryClient = useQueryClient();
   const { data: accessProfile, isLoading: isAccessProfileLoading, error: accessProfileError } = useAccessProfile();
   const [message, setMessage] = useState<string | null>(null);
@@ -491,10 +498,68 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
     () => (profiles ?? []).filter((profile) => profile.isOperator).length,
     [profiles],
   );
+  const staffProfiles = useMemo(
+    () =>
+      [...(profiles ?? [])]
+        .filter((profile) => profile.isOperator)
+        .sort((a, b) => toTimestamp(b.lastSignInAt) - toTimestamp(a.lastSignInAt)),
+    [profiles],
+  );
   const explicitlyEntitledCount = useMemo(
     () => (profiles ?? []).filter((profile) => profile.managedMediaEntitled).length,
     [profiles],
   );
+  const staffAal2Count = useMemo(
+    () => staffProfiles.filter((profile) => profile.sessionAssuranceLevel === 'aal2').length,
+    [staffProfiles],
+  );
+  const recentlyActiveStaffCount = useMemo(
+    () =>
+      staffProfiles.filter((profile) => {
+        const lastSignIn = toTimestamp(profile.lastSignInAt);
+        return lastSignIn > Date.now() - 1000 * 60 * 60 * 24 * 7;
+      }).length,
+    [staffProfiles],
+  );
+  const subscribedProfiles = useMemo(
+    () =>
+      [...(profiles ?? [])]
+        .filter((profile) => profile.subscription)
+        .sort(
+          (a, b) =>
+            toTimestamp(b.subscription?.updatedAt ?? b.updatedAt) -
+            toTimestamp(a.subscription?.updatedAt ?? a.updatedAt),
+        ),
+    [profiles],
+  );
+  const activeSubscriptionCount = useMemo(
+    () =>
+      subscribedProfiles.filter((profile) => profile.subscription?.status.toLowerCase() === 'active').length,
+    [subscribedProfiles],
+  );
+  const trialingSubscriptionCount = useMemo(
+    () =>
+      subscribedProfiles.filter((profile) => profile.subscription?.status.toLowerCase() === 'trialing').length,
+    [subscribedProfiles],
+  );
+  const atRiskSubscriptionCount = useMemo(
+    () =>
+      subscribedProfiles.filter((profile) => {
+        const status = profile.subscription?.status.toLowerCase();
+        return Boolean(status && status !== 'active' && status !== 'trialing');
+      }).length,
+    [subscribedProfiles],
+  );
+  const subscriptionStatusSummary = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    for (const profile of subscribedProfiles) {
+      const status = profile.subscription?.status ?? 'unknown';
+      counts.set(status, (counts.get(status) ?? 0) + 1);
+    }
+
+    return [...counts.entries()].sort((left, right) => right[1] - left[1]);
+  }, [subscribedProfiles]);
   const managedMediaPolicy = platformSettings?.managedMediaPolicy ?? 'all-authenticated-users';
   const relayAccessPolicy = platformSettings?.relayAccessPolicy ?? 'paid-subscription';
   const incidentStateDirty =
@@ -550,12 +615,11 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
         <div>
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-6 w-6 text-accent" />
-            <h1 className="font-display text-2xl font-bold text-foreground">Operator Access</h1>
+            <h1 className="font-display text-2xl font-bold text-foreground">Org operations workspace</h1>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted">
-            Manage which cloud accounts can see first-party OmniLux media and which accounts can access the
-            hosted `ops.omnilux.tv` console plus access-management tooling. This is also where OmniLux defines the
-            live policy for self-hosted relay access.
+            Track customer accounts, operator staff, revenue posture, audit history, and service health from one
+            continuous workspace instead of bouncing through disconnected admin panels.
           </p>
         </div>
 
@@ -582,20 +646,64 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
         ) : null}
 
         <div className="rounded-xl surface-soft p-6">
-          <div className="grid gap-4 text-sm text-muted sm:grid-cols-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide">Managed Media</p>
-              <p className="mt-2">Explicit per-profile entitlement for `media.omnilux.tv` and other managed media surfaces.</p>
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Ops lenses</p>
+              <p className="mt-2 text-sm text-muted">
+                Every section below is a real destination in the console, so the nav, search flow, and live data stay aligned.
+              </p>
             </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide">Operator</p>
-              <p className="mt-2">Controls visibility to `ops.omnilux.tv` and access-management endpoints.</p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide">Safety</p>
-              <p className="mt-2">The last remaining operator account cannot be demoted through this interface.</p>
-            </div>
+            <nav className="flex flex-wrap gap-2" aria-label="Ops workspace sections">
+              {operatorConsoleSections.map((section) => {
+                const active = initialView === section.view;
+
+                return (
+                  <Link
+                    key={section.view}
+                    to="/dashboard/operators"
+                    search={{ lookup: undefined, view: section.view } as never}
+                    hash={section.hash}
+                    className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                      active
+                        ? 'bg-accent text-accent-foreground'
+                        : 'border border-border bg-background text-foreground hover:bg-surface'
+                    }`}
+                  >
+                    {section.label}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
+
+          <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-5">
+            {[
+              { label: 'Accounts', value: String(profiles?.length ?? 0), detail: 'Cloud customer profiles' },
+              { label: 'Financials', value: String(activeSubscriptionCount + trialingSubscriptionCount), detail: `${trialingSubscriptionCount} in trial` },
+              { label: 'Staff', value: String(operatorCount), detail: `${staffAal2Count} MFA-ready` },
+              { label: 'Logs', value: String(operatorActionAuditLog?.length ?? 0), detail: 'High-impact actions recorded' },
+              {
+                label: 'Health',
+                value: String(opsServiceHealth?.services.filter((service) => service.status !== 'online').length ?? 0),
+                detail: 'Services needing attention',
+              },
+            ].map((item) => (
+              <div key={item.label} className="rounded-xl border border-border bg-background/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{item.label}</p>
+                <p className="mt-2 font-display text-2xl font-bold text-foreground">{item.value}</p>
+                <p className="mt-2 text-sm text-muted">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <section id="health" className="space-y-6 scroll-mt-32">
+        <div className="rounded-xl border border-border bg-background p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Health</p>
+          <h2 className="mt-2 font-display text-2xl font-semibold text-foreground">Service health & controls</h2>
+          <p className="mt-2 max-w-3xl text-sm text-muted">
+            Keep runbooks, live service status, and runtime control changes together so operator decisions map back to customer impact.
+          </p>
         </div>
 
         <div className="rounded-xl border border-border bg-background p-6">
@@ -637,9 +745,9 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
             <div className="flex items-center gap-3">
               <SlidersHorizontal className="h-5 w-5 text-accent" />
               <div>
-                <h2 className="font-display text-xl font-semibold text-foreground">Managed Media Policy</h2>
+                <h2 className="font-display text-xl font-semibold text-foreground">Runtime policy controls</h2>
                 <p className="mt-1 text-sm text-muted">
-                  Decide whether managed media is granted to every authenticated cloud user or controlled account by account.
+                  Decide whether managed media is granted broadly, how relay access is gated, and when the first-party runtime is in an incident state.
                 </p>
               </div>
             </div>
@@ -777,7 +885,7 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
                   htmlFor="managed-media-incident-message"
                   className="text-xs font-semibold uppercase tracking-[0.16em] text-muted"
                 >
-                  Incident Message
+                  Incident message
                 </label>
                 <textarea
                   id="managed-media-incident-message"
@@ -816,7 +924,7 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
                     }}
                     className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
                   >
-                    Save Incident State
+                    Save incident state
                   </button>
                 </div>
               </div>
@@ -828,7 +936,7 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
           <div className="flex items-center gap-3">
             <LifeBuoy className="h-5 w-5 text-accent" />
             <div>
-              <h2 className="font-display text-xl font-semibold text-foreground">Public Service Health</h2>
+              <h2 className="font-display text-xl font-semibold text-foreground">Public service health</h2>
               <p className="mt-1 text-sm text-muted">
                 Live reachability for the hosted customer app, operator console, relay, managed media runtime, and cloud control plane.
               </p>
@@ -873,6 +981,175 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
             </div>
           )}
         </div>
+        </section>
+
+        <section id="financials" className="space-y-6 scroll-mt-32">
+          <div className="rounded-xl border border-border bg-background p-6">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Financials</p>
+                <h2 className="mt-2 font-display text-2xl font-semibold text-foreground">Revenue posture</h2>
+                <p className="mt-2 max-w-3xl text-sm text-muted">
+                  Keep paid plans, trial exposure, and accounts with billing friction visible without leaving the ops surface.
+                </p>
+              </div>
+              <div className="text-xs uppercase tracking-[0.16em] text-muted">
+                Subscription records {subscribedProfiles.length}
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-xl bg-surface/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Active plans</p>
+                <p className="mt-2 font-display text-2xl font-bold text-foreground">{activeSubscriptionCount}</p>
+              </div>
+              <div className="rounded-xl bg-surface/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Trials</p>
+                <p className="mt-2 font-display text-2xl font-bold text-foreground">{trialingSubscriptionCount}</p>
+              </div>
+              <div className="rounded-xl bg-surface/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Needs follow-up</p>
+                <p className="mt-2 font-display text-2xl font-bold text-foreground">{atRiskSubscriptionCount}</p>
+              </div>
+              <div className="rounded-xl bg-surface/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">No paid plan</p>
+                <p className="mt-2 font-display text-2xl font-bold text-foreground">
+                  {(profiles?.length ?? 0) - subscribedProfiles.length}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="rounded-xl bg-surface/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Recent billing accounts</p>
+                <p className="mt-1 text-sm text-muted">
+                  Latest subscription records by update time so support and finance posture stay in frame.
+                </p>
+                {subscribedProfiles.length === 0 ? (
+                  <div className="mt-4 rounded-lg bg-background p-4 text-sm text-muted">
+                    No subscription records are attached to cloud accounts yet.
+                  </div>
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    {subscribedProfiles.slice(0, 6).map((profile) => (
+                      <div key={profile.id} className="rounded-lg bg-background p-4">
+                        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                          <div>
+                            <p className="font-medium text-foreground">
+                              {profile.displayName || profile.email || profile.id}
+                            </p>
+                            <p className="mt-1 text-sm text-muted">{profile.email || profile.id}</p>
+                          </div>
+                          <div className="text-sm font-medium text-foreground">
+                            {profile.subscription?.tier} · {profile.subscription?.status}
+                          </div>
+                        </div>
+                        <p className="mt-2 text-xs text-muted">
+                          Period ends {formatTimestamp(profile.subscription?.currentPeriodEnd ?? null)} · Updated{' '}
+                          {formatTimestamp(profile.subscription?.updatedAt ?? profile.updatedAt)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-xl bg-surface/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Subscription mix</p>
+                <p className="mt-1 text-sm text-muted">
+                  Status distribution across accounts with a billing record.
+                </p>
+                {subscriptionStatusSummary.length === 0 ? (
+                  <div className="mt-4 rounded-lg bg-background p-4 text-sm text-muted">
+                    No billing status mix is available yet.
+                  </div>
+                ) : (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {subscriptionStatusSummary.map(([status, count]) => (
+                      <span key={status} className="rounded-full bg-background px-3 py-2 text-sm font-medium text-foreground">
+                        {status} · {count}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-5 rounded-lg bg-background p-4 text-sm text-muted">
+                  Relay access policy is currently{' '}
+                  <span className="font-medium text-foreground">{relayAccessPolicyCopy[relayAccessPolicy].label}</span>.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="staff" className="space-y-6 scroll-mt-32">
+          <div className="rounded-xl border border-border bg-background p-6">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Staff</p>
+                <h2 className="mt-2 font-display text-2xl font-semibold text-foreground">Operator roster</h2>
+                <p className="mt-2 max-w-3xl text-sm text-muted">
+                  Keep the live operator bench visible, including MFA readiness and the most recent sign-in activity.
+                </p>
+              </div>
+              <div className="text-xs uppercase tracking-[0.16em] text-muted">
+                Last operator cannot be demoted here
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-xl bg-surface/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Operators</p>
+                <p className="mt-2 font-display text-2xl font-bold text-foreground">{staffProfiles.length}</p>
+              </div>
+              <div className="rounded-xl bg-surface/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">MFA ready</p>
+                <p className="mt-2 font-display text-2xl font-bold text-foreground">{staffAal2Count}</p>
+              </div>
+              <div className="rounded-xl bg-surface/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Seen this week</p>
+                <p className="mt-2 font-display text-2xl font-bold text-foreground">{recentlyActiveStaffCount}</p>
+              </div>
+              <div className="rounded-xl bg-surface/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Explicit media overrides</p>
+                <p className="mt-2 font-display text-2xl font-bold text-foreground">{explicitlyEntitledCount}</p>
+              </div>
+            </div>
+
+            {staffProfiles.length === 0 ? (
+              <div className="mt-5 rounded-lg bg-surface/60 p-4 text-sm text-muted">
+                No operator accounts are registered yet.
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-3 xl:grid-cols-2">
+                {staffProfiles.map((profile) => (
+                  <div key={profile.id} className="rounded-xl bg-surface/60 p-4">
+                    <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {profile.displayName || profile.email || profile.id}
+                        </p>
+                        <p className="mt-1 text-sm text-muted">{profile.email || profile.id}</p>
+                      </div>
+                      <span className="rounded-full bg-background px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
+                        {profile.sessionAssuranceLevel?.toUpperCase() ?? 'No AAL'}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-lg bg-background p-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Last sign-in</p>
+                        <p className="mt-2 text-sm text-foreground">{formatTimestamp(profile.lastSignInAt)}</p>
+                      </div>
+                      <div className="rounded-lg bg-background p-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Session expiry</p>
+                        <p className="mt-2 text-sm text-foreground">{formatTimestamp(profile.sessionExpiresAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
 
         {isLoading ? (
           <div className="space-y-3">
@@ -886,9 +1163,18 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
           </div>
         ) : (
           <div className="space-y-6">
-            <div id="support" className="rounded-xl border border-border bg-background p-5">
+          <section id="accounts" className="space-y-6 scroll-mt-32">
+            <div className="rounded-xl border border-border bg-background p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Accounts</p>
+              <h2 className="mt-2 font-display text-2xl font-semibold text-foreground">Customer account workspace</h2>
+              <p className="mt-2 max-w-3xl text-sm text-muted">
+                Search customer accounts, inspect billing and linked runtime context, and make controlled access changes from one place.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border bg-background p-5">
               <label htmlFor="operator-search" className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
-                Search Accounts
+                Search accounts
               </label>
               <div className="mt-3 flex items-center gap-3 rounded-lg border border-border bg-input px-3 py-2">
                 <Search className="h-4 w-4 text-muted" />
@@ -915,19 +1201,19 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
             <div className="rounded-xl border border-border bg-background p-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-foreground">Support View</h2>
+                  <h2 className="font-display text-xl font-semibold text-foreground">Selected account</h2>
                   <p className="mt-2 text-sm text-muted">
-                    Select a cloud account to inspect its entitlement state, self-hosted servers, relay sessions, and recent access changes.
+                    Open a cloud account to inspect entitlements, self-hosted servers, relay sessions, and account-specific notes.
                   </p>
                 </div>
                 <div className="text-xs uppercase tracking-wide text-muted">
-                  Selecting a profile records a sensitive operator audit event.
+                  Opening an account records a sensitive operator audit event.
                 </div>
               </div>
 
               {!selectedProfileId ? (
                 <div className="mt-4 rounded-xl border border-dashed border-border bg-surface/40 p-4 text-sm text-muted">
-                  Choose a profile from the list below to open the support view.
+                  Choose an account from the list below to open its workspace.
                 </div>
               ) : isSupportProfileLoading ? (
                 <div className="mt-4 grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
@@ -1312,7 +1598,7 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
                               : 'bg-surface/60 text-foreground hover:bg-surface'
                           }`}
                         >
-                          {isSelectedProfile ? 'Viewing support details' : 'Open support view'}
+                          {isSelectedProfile ? 'Viewing account' : 'Open account'}
                         </button>
 
                         <label className="flex items-center justify-between gap-3 rounded-lg bg-surface/60 px-4 py-3 text-sm text-foreground">
@@ -1366,11 +1652,21 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
                 );
               })}
             </div>
+          </section>
 
-            <div id="activity" className="rounded-xl surface-soft p-6">
+            <section id="logs" className="space-y-6 scroll-mt-32">
+            <div className="rounded-xl border border-border bg-background p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Logs</p>
+              <h2 className="mt-2 font-display text-2xl font-semibold text-foreground">Audit timeline</h2>
+              <p className="mt-2 max-w-3xl text-sm text-muted">
+                Keep sensitive operator activity, access changes, and platform policy edits in one running timeline for the org.
+              </p>
+            </div>
+
+            <div className="rounded-xl surface-soft p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-foreground">Sensitive Operator Activity</h2>
+                  <h2 className="font-display text-xl font-semibold text-foreground">Operator activity</h2>
                   <p className="mt-2 text-sm text-muted">
                     Unified audit feed for support lookups and high-impact control-plane changes.
                   </p>
@@ -1417,7 +1713,7 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
             <div className="rounded-xl surface-soft p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-foreground">Recent Access Changes</h2>
+                  <h2 className="font-display text-xl font-semibold text-foreground">Account access log</h2>
                   <p className="mt-2 text-sm text-muted">
                     Latest managed-media and operator access changes from the dashboard or bootstrap tooling.
                   </p>
@@ -1462,9 +1758,9 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
             <div className="rounded-xl surface-soft p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-foreground">Recent Policy Changes</h2>
+                  <h2 className="font-display text-xl font-semibold text-foreground">Policy log</h2>
                   <p className="mt-2 text-sm text-muted">
-                    Managed media policy flips recorded from the operator console or bootstrap tooling.
+                    Managed media and relay policy flips recorded from the operator console or bootstrap tooling.
                   </p>
                 </div>
               </div>
@@ -1490,7 +1786,7 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
                       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                           <p className="text-sm font-medium text-foreground">
-                            {renderProfileLabel(row.actor)} updated managed media policy
+                            {renderProfileLabel(row.actor)} updated platform policy
                           </p>
                           <p className="mt-1 text-sm text-muted">{renderPolicySummary(row)}</p>
                         </div>
@@ -1503,6 +1799,7 @@ export const Operators = ({ initialLookup }: OperatorsProps) => {
                 </div>
               )}
             </div>
+            </section>
           </div>
         )}
       </div>

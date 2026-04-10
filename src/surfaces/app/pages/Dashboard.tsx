@@ -14,6 +14,7 @@ import {
 import { useAuth } from '@/providers/AuthProvider';
 import { buildAppHref, buildDocsHref, getCurrentSiteSurface } from '@/lib/site-surface';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
+import { DEFAULT_OPERATOR_CONSOLE_VIEW } from '@/surfaces/app/lib/ops-console';
 import { useCustomerOverview } from '@/surfaces/app/lib/customer-overview';
 import {
   type OpsOverview,
@@ -51,8 +52,8 @@ export const Dashboard = () => {
         {
           to: '/dashboard/operators',
           icon: ShieldCheck,
-          label: 'Operator Access',
-          description: 'Manage managed-media entitlements and OmniLux Ops console access.',
+          label: 'Ops Workspace',
+          description: 'Track accounts, staff, logs, and service health for OmniLux operations.',
         },
       ]
     : [];
@@ -410,15 +411,19 @@ function OpsDashboardView({
   const quickLinks = [
     {
       to: '/dashboard/operators',
-      label: 'Policy & access',
-      description: 'Review operator permissions, customer access, and support lookups from one surface.',
+      label: 'Accounts',
+      description: 'Open the operator account workspace for customer lookups, billing context, and linked server history.',
       icon: ShieldCheck,
+      search: { lookup: undefined, view: 'accounts' } as const,
+      hash: 'accounts',
     },
     {
-      to: '/dashboard/account',
-      label: 'Account security',
-      description: 'Confirm MFA, session assurance, and the identity behind live operator changes.',
-      icon: User,
+      to: '/dashboard/operators',
+      label: 'Staff & logs',
+      description: 'See operator roster, MFA posture, and the latest high-impact activity across the org.',
+      icon: Activity,
+      search: { lookup: undefined, view: 'logs' } as const,
+      hash: 'logs',
     },
   ] as const;
 
@@ -439,7 +444,8 @@ function OpsDashboardView({
               </div>
               <Link
                 to="/dashboard/operators"
-                search={{ lookup: undefined }}
+                search={{ lookup: undefined, view: 'health' } as never}
+                hash="health"
                 className="inline-flex shrink-0 items-center rounded-full border border-warning/40 bg-warning/12 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-warning/18"
               >
                 Update incident state
@@ -459,7 +465,7 @@ function OpsDashboardView({
                   Run OmniLux from one wide view.
                 </h1>
                 <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-                  {displayName}, keep customer access, managed runtime posture, relay pressure, and support motion in
+                  {displayName}, keep customer access, managed runtime posture, relay pressure, and account motion in
                   frame without bouncing through stacked admin cards.
                 </p>
               </div>
@@ -467,10 +473,11 @@ function OpsDashboardView({
               <div className="flex flex-wrap gap-3">
                 <Link
                   to="/dashboard/operators"
-                  search={{ lookup: undefined }}
+                  search={{ lookup: undefined, view: DEFAULT_OPERATOR_CONSOLE_VIEW } as never}
+                  hash="accounts"
                   className="inline-flex items-center rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_18px_48px_rgba(242,228,207,0.14)] transition-transform hover:-translate-y-0.5"
                 >
-                  Open policy & access
+                  Open accounts
                 </Link>
                 <Link
                   to="/dashboard/account"
@@ -598,11 +605,11 @@ function OpsDashboardView({
               </div>
               <Link
                 to="/dashboard/operators"
-                search={{ lookup: undefined }}
-                hash="activity"
+                search={{ lookup: undefined, view: 'logs' } as never}
+                hash="logs"
                 className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.08]"
               >
-                Open operator activity
+                Open logs
               </Link>
             </div>
 
@@ -708,9 +715,9 @@ function OpsDashboardView({
               </p>
               <ul className="mt-5 space-y-3 text-sm text-muted">
                 {[
-                  'Start in support view so account state, billing, and linked servers line up before you change anything.',
+                  'Start in the account workspace so account state, billing, and linked servers line up before you change anything.',
                   'Only publish a managed media advisory once customer impact is clear and the next update is known.',
-                  'Use activity history to verify that support notes and high-impact changes are landing exactly where the next operator expects them.',
+                  'Use the audit timeline to verify that account notes and high-impact changes are landing exactly where the next operator expects them.',
                   'Step up MFA before touching live access, relay rules, or runtime posture.',
                 ].map((item) => (
                   <li key={item} className="flex gap-3">
@@ -775,10 +782,12 @@ function OpsDashboardView({
           </div>
 
           <div className="space-y-3">
-            {quickLinks.map(({ to, icon: Icon, label, description }) => (
+            {quickLinks.map(({ to, icon: Icon, label, description, search, hash }) => (
               <Link
-                key={to}
+                key={`${to}:${label}`}
                 to={to}
+                search={search as never}
+                hash={hash}
                 className="group flex items-start justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-5 py-5 transition-all hover:-translate-y-0.5 hover:bg-white/[0.06]"
               >
                 <div>

@@ -5,6 +5,7 @@ import { buildPageHead } from '@/lib/seo';
 import { buildAppHref, getCurrentSiteSurface } from '@/lib/site-surface';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
+import { DEFAULT_OPERATOR_CONSOLE_VIEW } from '@/surfaces/app/lib/ops-console';
 
 export const Route = createFileRoute('/dashboard')({
   head: () =>
@@ -56,7 +57,7 @@ function DashboardLayout() {
     if (!isAllowedOpsRoute) {
       navigate({
         to: '/dashboard/operators',
-        search: {} as never,
+        search: { view: DEFAULT_OPERATOR_CONSOLE_VIEW } as never,
         replace: true,
       });
     }
