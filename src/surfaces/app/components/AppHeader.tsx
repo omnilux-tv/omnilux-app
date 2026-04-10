@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
-import { Activity, ArrowUpRight, LogOut, Search } from 'lucide-react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { Activity, ArrowUpRight, ChevronDown, LogOut, Search } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { opsConsolePages } from '@/surfaces/app/lib/ops-console';
@@ -8,6 +8,7 @@ import { buildAppHref, buildDocsHref, buildMarketingHref, buildOpsHref, getCurre
 import { cn } from '@/lib/utils';
 
 const OPS_CONTAINER_CLASS_NAME = 'mx-auto w-full max-w-[2200px]';
+type OpsNavItem = (typeof opsConsolePages)[number];
 
 const formatHeaderTime = (value: Date) =>
   new Intl.DateTimeFormat(undefined, {
@@ -36,6 +37,8 @@ export const AppHeader = () => {
   const isAuthenticated = Boolean(user);
   const [opsSearchDraft, setOpsSearchDraft] = useState('');
   const [headerDate, setHeaderDate] = useState(() => new Date());
+  const [openOpsMenu, setOpenOpsMenu] = useState<'workspace' | 'organization' | 'platform' | null>(null);
+  const opsNavRef = useRef<HTMLDivElement | null>(null);
   const normalizedPathname = pathname === '/dashboard/' ? '/dashboard' : pathname;
   const sectionItemClassName =
     'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-semibold tracking-[0.01em] transition-all';
@@ -57,6 +60,16 @@ export const AppHeader = () => {
     ...(accessProfile?.isOperator ? [{ to: '/dashboard/accounts', label: 'Ops' }] : []),
   ] as const;
   const opsLinks = opsConsolePages;
+  const opsOverviewLink = opsLinks.find((item) => item.to === '/dashboard') ?? opsLinks[0];
+  const opsWorkspaceLinks = opsLinks.filter((item) =>
+    ['/dashboard/accounts', '/dashboard/logs'].includes(item.to),
+  );
+  const opsOrganizationLinks = opsLinks.filter((item) =>
+    ['/dashboard/financials', '/dashboard/staff'].includes(item.to),
+  );
+  const opsPlatformLinks = opsLinks.filter((item) =>
+    ['/dashboard/control-plane', '/dashboard/media-control', '/dashboard/health'].includes(item.to),
+  );
   const opsTime = useMemo(() => formatHeaderTime(headerDate), [headerDate]);
   const opsDate = useMemo(() => formatHeaderDate(headerDate), [headerDate]);
   const isSectionActive = (item: { to: string }) =>
@@ -89,6 +102,36 @@ export const AppHeader = () => {
     setOpsSearchDraft(params.get('lookup') ?? '');
   }, [isOpsSurface, pathname, routerState.location.search]);
 
+  useEffect(() => {
+    setOpenOpsMenu(null);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isOpsSurface || !openOpsMenu) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!opsNavRef.current?.contains(event.target as Node)) {
+        setOpenOpsMenu(null);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpenOpsMenu(null);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpsSurface, openOpsMenu]);
+
   const handleOpsSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -99,12 +142,71 @@ export const AppHeader = () => {
     });
   };
 
+  const renderOpsMenu = ({
+    menuId,
+    label,
+    items,
+  }: {
+    menuId: 'workspace' | 'organization' | 'platform';
+    label: string;
+    items: readonly OpsNavItem[];
+  }) => {
+    const open = openOpsMenu === menuId;
+    const active = items.some((item) => isSectionActive(item));
+
+    return (
+      <div key={menuId} className="relative">
+        <button
+          type="button"
+          onClick={() => setOpenOpsMenu((current) => (current === menuId ? null : menuId))}
+          aria-expanded={open}
+          className={cn(
+            'inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3.5 py-2.5 text-sm font-semibold transition-all 2xl:px-4',
+            active || open
+              ? 'bg-primary text-primary-foreground shadow-[0_18px_48px_rgba(242,228,207,0.14)]'
+              : 'text-foreground/68 hover:bg-white/[0.06] hover:text-foreground',
+          )}
+        >
+          <span>{label}</span>
+          <ChevronDown
+            className={cn('h-4 w-4 transition-transform', open ? 'rotate-180' : 'rotate-0')}
+          />
+        </button>
+
+        {open ? (
+          <div className="absolute left-0 top-[calc(100%+0.75rem)] z-50 w-72 rounded-[1.25rem] border border-white/10 bg-[#121317]/96 p-2 shadow-[0_28px_80px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+            <div className="space-y-1.5">
+              {items.map((item) => {
+                const activeItem = isSectionActive(item);
+
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setOpenOpsMenu(null)}
+                    className={cn(
+                      'block rounded-[1rem] px-4 py-3 transition-colors',
+                      activeItem ? 'bg-primary/16 text-foreground' : 'hover:bg-white/[0.05]',
+                    )}
+                  >
+                    <p className="text-sm font-semibold">{item.label}</p>
+                    <p className="mt-1 text-xs leading-5 text-muted">{item.description}</p>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
   if (isOpsSurface) {
     return (
       <header className="sticky top-0 z-50 px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:px-6 lg:px-8">
         <div className={OPS_CONTAINER_CLASS_NAME}>
           <div className="surface-panel rounded-[1.75rem] px-3 py-3 sm:px-4">
-            <div className="grid items-center gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)_auto]">
+            <div className="grid items-center gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(240px,0.7fr)_auto] xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.8fr)_auto]">
               <div className="flex min-w-0 items-center gap-3 overflow-hidden">
                 <Link
                   to="/dashboard"
@@ -126,26 +228,35 @@ export const AppHeader = () => {
                 {isAuthenticated ? (
                   <nav
                     aria-label="Ops sections"
-                    className="-mx-1 flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-1 whitespace-nowrap"
+                    ref={opsNavRef}
+                    className="-mx-1 flex min-w-0 flex-1 items-center gap-1 px-1"
                   >
-                    {opsLinks.map((item) => {
-                      const active = isSectionActive(item);
-
-                      return (
-                        <Link
-                          key={`${item.to}:${item.label}`}
-                          to={item.to}
-                          aria-current={active ? 'page' : undefined}
-                          className={cn(
-                            'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-3.5 py-2.5 text-sm font-semibold transition-all 2xl:px-4',
-                            active
-                              ? 'bg-primary text-primary-foreground shadow-[0_18px_48px_rgba(242,228,207,0.14)]'
-                              : 'text-foreground/68 hover:bg-white/[0.06] hover:text-foreground',
-                          )}
-                        >
-                          {item.label}
-                        </Link>
-                      );
+                    <Link
+                      to={opsOverviewLink.to}
+                      aria-current={isSectionActive(opsOverviewLink) ? 'page' : undefined}
+                      className={cn(
+                        'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-3.5 py-2.5 text-sm font-semibold transition-all 2xl:px-4',
+                        isSectionActive(opsOverviewLink)
+                          ? 'bg-primary text-primary-foreground shadow-[0_18px_48px_rgba(242,228,207,0.14)]'
+                          : 'text-foreground/68 hover:bg-white/[0.06] hover:text-foreground',
+                      )}
+                    >
+                      {opsOverviewLink.label}
+                    </Link>
+                    {renderOpsMenu({
+                      menuId: 'workspace',
+                      label: 'Workspace',
+                      items: opsWorkspaceLinks,
+                    })}
+                    {renderOpsMenu({
+                      menuId: 'organization',
+                      label: 'Organization',
+                      items: opsOrganizationLinks,
+                    })}
+                    {renderOpsMenu({
+                      menuId: 'platform',
+                      label: 'Platform',
+                      items: opsPlatformLinks,
                     })}
                   </nav>
                 ) : (
@@ -153,8 +264,11 @@ export const AppHeader = () => {
                 )}
               </div>
 
-                {isAuthenticated ? (
-                <form onSubmit={handleOpsSearchSubmit} className="relative flex min-w-0 items-center">
+              {isAuthenticated ? (
+                <form
+                  onSubmit={handleOpsSearchSubmit}
+                  className="relative flex min-w-0 items-center lg:max-w-[300px] xl:max-w-[360px]"
+                >
                   <Search className="pointer-events-none absolute left-3.5 h-4 w-4 text-muted" />
                   <input
                     type="search"
@@ -168,11 +282,11 @@ export const AppHeader = () => {
                 <div className="hidden lg:block" />
               )}
 
-              <div className="flex min-w-0 items-center justify-end gap-2 overflow-x-auto">
+              <div className="flex shrink-0 items-center justify-end gap-2">
                 {isAuthenticated ? (
                   <Link
                     to="/dashboard/logs"
-                    className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border border-white/8 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground/78 transition-all hover:bg-white/[0.08] hover:text-foreground"
+                    className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border border-white/8 bg-white/[0.04] px-3.5 py-2 text-sm font-medium text-foreground/78 transition-all hover:bg-white/[0.08] hover:text-foreground"
                   >
                     <Activity className="h-4 w-4" />
                     <span>Activity</span>
@@ -181,13 +295,13 @@ export const AppHeader = () => {
 
                 <a
                   href={buildAppHref('/dashboard')}
-                  className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border border-white/8 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground/78 transition-all hover:bg-white/[0.08] hover:text-foreground"
+                  className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border border-white/8 bg-white/[0.04] px-3.5 py-2 text-sm font-medium text-foreground/78 transition-all hover:bg-white/[0.08] hover:text-foreground"
                 >
                   <span>Cloud App</span>
                   <ArrowUpRight className="h-3.5 w-3.5" />
                 </a>
 
-                <div className="hidden shrink-0 text-right xl:block">
+                <div className="hidden shrink-0 text-right lg:block">
                   <p className="text-sm font-semibold tabular-nums text-foreground">{opsTime}</p>
                   <p className="text-[10px] uppercase tracking-[0.22em] text-muted">{opsDate}</p>
                 </div>
@@ -196,12 +310,15 @@ export const AppHeader = () => {
                   <div className="flex shrink-0 items-center gap-2">
                     <Link
                       to="/dashboard/account"
-                      className="inline-flex min-h-10 max-w-[14rem] items-center gap-2 rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1.5 text-foreground transition-all hover:bg-white/[0.08]"
+                      className="inline-flex min-h-10 max-w-[12rem] items-center gap-2 rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1.5 text-foreground transition-all hover:bg-white/[0.08]"
                     >
                       <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[11px] font-semibold text-foreground/84">
                         {displayInitial}
                       </span>
-                      <span className="truncate pr-1 text-sm font-medium">{displayName}</span>
+                      <span className="truncate pr-1 text-sm font-medium">
+                        <span className="hidden xl:inline">{displayName}</span>
+                        <span className="xl:hidden">{displayName.split(' ')[0] || displayName}</span>
+                      </span>
                     </Link>
                     <button
                       type="button"
