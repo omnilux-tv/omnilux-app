@@ -4,40 +4,17 @@ import { useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowUpRight,
-  BellRing,
-  BookOpen,
-  Building2,
   ChevronRight,
-  Cpu,
-  LayoutDashboard,
   LogOut,
-  RadioTower,
-  Search,
-  Settings2,
-  ShieldCheck,
-  UserCog,
-  WalletCards,
 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { buildAppHref, buildDocsHref } from '@/lib/site-surface';
 import { cn } from '@/lib/utils';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { type OpsServiceHealthResponse, useOpsServiceHealth } from '@/surfaces/app/lib/ops';
-import { opsConsoleGroups, opsConsolePages, type OpsConsolePath } from '@/surfaces/app/lib/ops-console';
+import { opsConsolePages, type OpsConsolePath } from '@/surfaces/app/lib/ops-console';
 
 const pageByPath = new Map(opsConsolePages.map((page) => [page.to, page]));
-
-const navIconByPath: Partial<Record<OpsConsolePath, typeof LayoutDashboard>> = {
-  '/dashboard': LayoutDashboard,
-  '/dashboard/accounts': Building2,
-  '/dashboard/financials': WalletCards,
-  '/dashboard/staff': ShieldCheck,
-  '/dashboard/logs': BellRing,
-  '/dashboard/control-plane': Settings2,
-  '/dashboard/media-control': RadioTower,
-  '/dashboard/health': Cpu,
-  '/dashboard/account': UserCog,
-};
 
 export const OPS_CONSOLE_CONTENT_CLASS_NAME = 'min-w-0 flex-1 space-y-4';
 
@@ -94,11 +71,9 @@ export const OpsAppShell = ({ children }: { children: ReactNode }) => {
   const { user, signOut } = useAuth();
   const { data: accessProfile } = useAccessProfile();
   const { data: serviceHealth } = useOpsServiceHealth(Boolean(accessProfile?.isOperator));
-  const navigate = useNavigate();
   const pathname = useRouterState({
     select: (state) => (state.location.pathname === '/dashboard/' ? '/dashboard' : state.location.pathname),
   });
-  const [searchDraft, setSearchDraft] = useState('');
   const displayName = user?.user_metadata?.display_name ?? user?.email ?? 'Operator';
   const initials =
     displayName
@@ -109,59 +84,31 @@ export const OpsAppShell = ({ children }: { children: ReactNode }) => {
   const alertCount =
     serviceHealth?.services.filter((service) => service.status !== 'online').length ?? 0;
   const currentPage = pageByPath.get(pathname as OpsConsolePath) ?? null;
-
-  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const lookup = searchDraft.trim();
-    void navigate({
-      to: '/dashboard/accounts',
-      search: { lookup: lookup || undefined } as never,
-    });
-  };
+  const primaryNav = opsConsolePages.filter((page) => page.to !== '/dashboard/account');
 
   return (
     <div className="ops-console-theme min-h-dvh bg-background text-foreground">
-      <div className="mx-auto flex min-h-dvh w-full max-w-[1880px] gap-3 px-2 py-2 lg:px-3">
-        <aside className="ops-panel hidden w-[252px] shrink-0 rounded-lg lg:flex lg:flex-col">
-          <div className="border-b border-border px-4 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-panel-elevated">
-                <img src="/favicon.svg" alt="" className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-display text-base font-semibold text-foreground">OmniLux Ops</p>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-muted">Fleet command</p>
-              </div>
-            </div>
+      <div className="mx-auto min-h-dvh w-full max-w-[1880px] px-2 py-3 lg:px-3">
+        <header className="sticky top-2 z-40">
+          <div className="ops-panel overflow-hidden rounded-[1.65rem]">
+            <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5">
+              <div className="flex min-w-0 items-center gap-4">
+                <Link to="/dashboard" className="flex shrink-0 items-center gap-3" aria-label="OmniLux Ops home">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white/[0.03]">
+                    <img src="/favicon.svg" alt="" className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-display text-[1.15rem] font-semibold text-foreground">OmniLux</span>
+                    <span className="block text-[10px] uppercase tracking-[0.28em] text-muted">
+                      Internal operations
+                    </span>
+                  </span>
+                </Link>
 
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <div className="rounded-md border border-border bg-panel-muted px-3 py-2">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Environment</p>
-                <p className="mt-1 font-mono text-sm font-semibold text-foreground">{environmentLabel()}</p>
-              </div>
-              <div className="rounded-md border border-border bg-panel-muted px-3 py-2">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Alerts</p>
-                <p className="mt-1 font-mono text-sm font-semibold text-foreground">{alertCount}</p>
-              </div>
-            </div>
-          </div>
-
-          <nav aria-label="Operator navigation" className="flex-1 overflow-y-auto px-3 py-4">
-            <div className="space-y-5">
-              {opsConsoleGroups.map((group) => (
-                <section key={group.id} className="space-y-2">
-                  <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">
-                    {group.label}
-                  </p>
-                  <div className="space-y-1">
-                    {group.items.map((itemPath) => {
-                      const item = pageByPath.get(itemPath);
-                      if (!item) {
-                        return null;
-                      }
-
+                <nav aria-label="Operator navigation" className="hidden min-w-0 flex-1 overflow-x-auto lg:block">
+                  <div className="flex min-w-max items-center gap-1">
+                    {primaryNav.map((item) => {
                       const active = isPathActive(pathname, item.to);
-                      const Icon = navIconByPath[item.to] ?? LayoutDashboard;
 
                       return (
                         <Link
@@ -169,126 +116,86 @@ export const OpsAppShell = ({ children }: { children: ReactNode }) => {
                           to={item.to}
                           aria-current={active ? 'page' : undefined}
                           className={cn(
-                            'group flex items-start gap-3 rounded-md border px-3 py-2.5 transition-colors',
+                            'inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors',
                             active
-                              ? 'border-primary/40 bg-primary/10 text-foreground shadow-[inset_3px_0_0_0_rgba(93,157,255,0.9)]'
-                              : 'border-transparent bg-transparent text-muted hover:border-border hover:bg-white/[0.03] hover:text-foreground',
+                              ? 'bg-white/[0.08] text-foreground'
+                              : 'text-foreground/68 hover:bg-white/[0.05] hover:text-foreground',
                           )}
                         >
-                          <span
-                            className={cn(
-                              'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border',
-                              active ? 'border-primary/30 bg-primary/10 text-primary' : 'border-border bg-panel-muted text-muted',
-                            )}
-                          >
-                            <Icon className="h-4 w-4" />
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block text-sm font-medium">{item.label}</span>
-                            <span className="mt-0.5 block text-[11px] leading-5 text-muted">
-                              {item.description}
-                            </span>
-                          </span>
+                          {item.label}
                         </Link>
                       );
                     })}
                   </div>
-                </section>
-              ))}
-            </div>
-          </nav>
+                </nav>
+              </div>
 
-          <div className="border-t border-border px-4 py-4">
-            <div className="rounded-md border border-border bg-panel-muted px-3 py-3">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Org context</p>
-              <p className="mt-1 text-sm font-semibold text-foreground">OmniLux Internal</p>
-              <p className="mt-1 text-xs text-muted">Restricted operator and support surfaces</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="hidden rounded-full border border-border bg-white/[0.03] px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted xl:inline-flex">
+                  env/{environmentLabel()}
+                </span>
+                <a href={buildDocsHref('/guide/operator-runbook')} className={opsButtonClassName({ tone: 'secondary', className: 'rounded-full px-4' })}>
+                  Runbook
+                </a>
+                <Link
+                  to="/dashboard/logs"
+                  className={opsButtonClassName({
+                    tone: alertCount > 0 ? 'danger' : 'secondary',
+                    className: 'rounded-full px-4',
+                  })}
+                >
+                  {alertCount > 0 ? `${alertCount} alerts` : 'Alerts'}
+                </Link>
+                <Link to="/dashboard/account" className={opsButtonClassName({ tone: 'secondary', className: 'rounded-full px-4' })}>
+                  {displayName}
+                </Link>
+                <a href={buildAppHref('/dashboard')} className={opsButtonClassName({ tone: 'primary', className: 'rounded-full px-5' })}>
+                  <span>Open App</span>
+                  <ArrowUpRight className="h-4 w-4" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => void signOut().then(() => window.location.assign('/login'))}
+                  className={opsButtonClassName({ tone: 'ghost', className: 'rounded-full px-3' })}
+                  aria-label="Sign out"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-border/80 px-3 py-2 lg:hidden">
+              <nav aria-label="Operator navigation">
+                <div className="flex gap-2 overflow-x-auto">
+                  {primaryNav.map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      aria-current={isPathActive(pathname, item.to) ? 'page' : undefined}
+                      className={cn(
+                        'whitespace-nowrap rounded-full px-4 py-2 text-sm transition-colors',
+                        isPathActive(pathname, item.to)
+                          ? 'bg-white/[0.08] text-foreground'
+                          : 'text-foreground/68 hover:bg-white/[0.05] hover:text-foreground',
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </nav>
             </div>
           </div>
-        </aside>
+        </header>
 
-        <div className={OPS_CONSOLE_CONTENT_CLASS_NAME}>
-          <header className="ops-panel sticky top-2 z-40 rounded-lg">
-            <div className="flex flex-col gap-3 px-4 py-3 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="rounded-md border border-border bg-panel-muted px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
-                  env/{environmentLabel()}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
-                    {currentPage ? currentPage.label : 'Operator console'}
-                  </p>
-                  <p className="mt-1 text-sm text-foreground/90">
-                    {currentPage?.description ?? 'System operations, policy controls, and audit visibility.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-                <form onSubmit={handleSearchSubmit} className="relative min-w-0 xl:w-[340px]">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-                  <input
-                    type="search"
-                    value={searchDraft}
-                    onChange={(event) => setSearchDraft(event.currentTarget.value)}
-                    placeholder="Jump to account, server, relay token..."
-                    className="h-10 w-full rounded-md border border-border bg-input pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-border-hover"
-                  />
-                </form>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <a
-                    href={buildDocsHref('/guide/operator-runbook')}
-                    className={opsButtonClassName({ tone: 'ghost' })}
-                  >
-                    <BookOpen className="h-4 w-4" />
-                    <span>Runbook</span>
-                  </a>
-                  <a href={buildAppHref('/dashboard')} className={opsButtonClassName({ tone: 'secondary' })}>
-                    <span>Cloud app</span>
-                    <ArrowUpRight className="h-4 w-4" />
-                  </a>
-                  <Link to="/dashboard/logs" className={opsButtonClassName({ tone: alertCount > 0 ? 'danger' : 'secondary' })}>
-                    <AlertTriangle className="h-4 w-4" />
-                    <span>{alertCount > 0 ? `${alertCount} alerts` : 'No alerts'}</span>
-                  </Link>
-                  <Link to="/dashboard/account" className="flex items-center gap-2 rounded-md border border-border bg-panel-muted px-2.5 py-1.5 text-sm text-foreground transition-colors hover:bg-card-hover">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-white/[0.03] font-semibold">
-                      {initials}
-                    </span>
-                    <span className="hidden max-w-[160px] truncate text-left xl:block">
-                      <span className="block text-[10px] uppercase tracking-[0.18em] text-muted">Operator</span>
-                      <span className="block truncate font-medium text-foreground">{displayName}</span>
-                    </span>
-                  </Link>
-                  <button type="button" onClick={() => void signOut().then(() => window.location.assign('/login'))} className={opsButtonClassName({ tone: 'ghost' })}>
-                    <LogOut className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+        <div className={cn(OPS_CONSOLE_CONTENT_CLASS_NAME, 'mt-4')}>
+          {currentPage ? (
+            <div className="flex items-center gap-2 px-1 text-[10px] uppercase tracking-[0.18em] text-muted">
+              <span>{currentPage.label}</span>
+              <span className="text-muted/60">/</span>
+              <span className="truncate">{currentPage.description}</span>
             </div>
-
-            <nav aria-label="Operator navigation" className="overflow-x-auto border-t border-border px-3 py-2 lg:hidden">
-              <div className="flex gap-2">
-                {opsConsolePages.map((item) => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    aria-current={isPathActive(pathname, item.to) ? 'page' : undefined}
-                    className={cn(
-                      'whitespace-nowrap rounded-md border px-3 py-2 text-sm transition-colors',
-                      isPathActive(pathname, item.to)
-                        ? 'border-primary/30 bg-primary/12 text-foreground'
-                        : 'border-border bg-panel-muted text-muted hover:bg-card-hover hover:text-foreground',
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </nav>
-          </header>
-
+          ) : null}
           {children}
         </div>
       </div>
