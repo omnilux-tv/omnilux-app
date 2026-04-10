@@ -222,6 +222,16 @@ export const Dashboard = () => {
                     {opsOverview?.platform.managedMediaPolicyDescription ??
                       'Managed media policy is currently unavailable.'}
                   </p>
+                  <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                    Self-Hosted Relay Access
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-foreground">
+                    {opsOverview?.platform.relayAccessPolicyLabel ?? 'Unknown'}
+                  </p>
+                  <p className="mt-2 text-sm text-muted">
+                    {opsOverview?.platform.relayAccessPolicyDescription ??
+                      'Relay access policy is currently unavailable.'}
+                  </p>
                   <div className="mt-4 rounded-lg bg-surface/60 p-4 text-sm text-muted">
                     <p>{opsOverview?.metrics.recentAccessChangesTotal ?? 0} access changes in the last 7 days</p>
                     <p className="mt-2">{opsOverview?.metrics.recentPolicyChangesTotal ?? 0} policy changes in the last 7 days</p>
@@ -277,6 +287,42 @@ export const Dashboard = () => {
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className="mt-8 rounded-xl border border-border bg-background p-5">
+                <h2 className="font-semibold text-foreground">Shift-Start Drill</h2>
+                <p className="mt-2 text-sm text-muted">
+                  Use this checklist at the start of an operator shift so support and incident actions stay familiar
+                  before you need them under pressure.
+                </p>
+                <ul className="mt-4 space-y-2 text-sm text-muted">
+                  {[
+                    'Open a support profile and verify the account summary, subscription state, and self-hosted servers.',
+                    'Create a support note and confirm it lands in both the support view and sensitive operator activity.',
+                    'Send a password reset or revoke a relay session/token in a controlled test scenario.',
+                    'Set managed media to degraded, verify the incident banner, then return the platform to normal.',
+                    'Confirm your current operator session is elevated before attempting any live changes.',
+                  ].map((item) => (
+                    <li key={item} className="flex gap-2">
+                      <span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Link
+                    to="/dashboard/operators"
+                    className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90"
+                  >
+                    Open Policy & Access
+                  </Link>
+                  <Link
+                    to="/dashboard/account"
+                    className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+                  >
+                    Check MFA Session
+                  </Link>
+                </div>
               </div>
             </>
           )}

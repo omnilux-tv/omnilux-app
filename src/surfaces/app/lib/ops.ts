@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
 export type ManagedMediaPolicy = 'all-authenticated-users' | 'explicit-per-profile';
+export type RelayAccessPolicy = 'all-authenticated-users' | 'paid-subscription';
 export type ManagedMediaOperatingMode = 'normal' | 'degraded' | 'maintenance';
 
 export interface AccessAuditRow {
@@ -137,6 +138,9 @@ export interface PlatformSettings {
   managedMediaPolicy: ManagedMediaPolicy;
   managedMediaPolicyLabel: string;
   managedMediaPolicyDescription: string;
+  relayAccessPolicy: RelayAccessPolicy;
+  relayAccessPolicyLabel: string;
+  relayAccessPolicyDescription: string;
   managedMediaOperatingMode: ManagedMediaOperatingMode;
   managedMediaOperatingModeLabel: string;
   managedMediaIncidentMessage: string;
@@ -156,6 +160,8 @@ export interface PlatformSettingsAuditRow {
   };
   managedMediaPolicyBefore: ManagedMediaPolicy | null;
   managedMediaPolicyAfter: ManagedMediaPolicy | null;
+  relayAccessPolicyBefore: RelayAccessPolicy | null;
+  relayAccessPolicyAfter: RelayAccessPolicy | null;
 }
 
 export interface OpsOverview {
@@ -163,6 +169,9 @@ export interface OpsOverview {
     managedMediaPolicy: ManagedMediaPolicy;
     managedMediaPolicyLabel: string;
     managedMediaPolicyDescription: string;
+    relayAccessPolicy: RelayAccessPolicy;
+    relayAccessPolicyLabel: string;
+    relayAccessPolicyDescription: string;
     managedMediaOperatingMode: ManagedMediaOperatingMode;
     managedMediaOperatingModeLabel: string;
     managedMediaIncidentMessage: string;

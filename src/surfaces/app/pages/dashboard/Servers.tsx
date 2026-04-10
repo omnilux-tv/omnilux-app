@@ -4,6 +4,7 @@ import { Plus, Server } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { ServerCard } from '@/surfaces/app/components/ServerCard';
+import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import {
   isManagedMediaDeploymentProfile,
   isSelfHostedDeploymentProfile,
@@ -22,6 +23,7 @@ interface ServerRow {
 
 export const Servers = () => {
   const { user } = useAuth();
+  const { data: accessProfile } = useAccessProfile();
 
   const { data: servers, error, isLoading } = useQuery({
     queryKey: ['servers', user?.id],
@@ -77,6 +79,16 @@ export const Servers = () => {
                     <p className="mt-1 text-sm text-muted">
                       Customer-owned OmniLux servers attached for relay, invites, and cloud-linked features.
                     </p>
+                    <div className="mt-3 rounded-lg bg-surface/60 p-4 text-sm text-muted">
+                      <p className="font-medium text-foreground">Remote relay policy</p>
+                      <p className="mt-2">
+                        {accessProfile?.relayAccessPolicyDescription ??
+                          'Remote relay access to self-hosted servers requires an active OmniLux Cloud subscription.'}
+                      </p>
+                      <p className="mt-2 text-xs">
+                        Direct LAN, VPN, and user-owned reverse-proxy access stay outside OmniLux cloud billing.
+                      </p>
+                    </div>
                   </div>
                   {selfHostedServers.map((s) => (
                     <ServerCard
@@ -102,6 +114,14 @@ export const Servers = () => {
                     <p className="mt-1 text-sm text-muted">
                       First-party managed runtimes available through OmniLux Cloud entitlement, not customer-owned server sharing.
                     </p>
+                    <div className="mt-3 rounded-lg bg-surface/60 p-4 text-sm text-muted">
+                      <p className="font-medium text-foreground">Managed media entitlement</p>
+                      <p className="mt-2">
+                        {accessProfile?.managedMediaPolicy === 'all-authenticated-users'
+                          ? 'Managed media is currently included for every authenticated OmniLux Cloud account.'
+                          : 'Managed media is currently controlled per profile through operator-managed overrides.'}
+                      </p>
+                    </div>
                   </div>
                   {managedMediaServers.map((s) => (
                     <ServerCard

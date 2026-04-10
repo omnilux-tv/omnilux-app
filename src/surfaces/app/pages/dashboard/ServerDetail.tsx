@@ -7,6 +7,7 @@ import {
   isSelfHostedDeploymentProfile,
   normalizeServerDeploymentProfile,
 } from '@/surfaces/app/lib/server-deployment-profile';
+import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 
@@ -45,6 +46,7 @@ interface InviteRow {
 export const ServerDetail = () => {
   const { serverId } = useParams({ from: '/dashboard/servers_/$serverId' });
   const queryClient = useQueryClient();
+  const { data: accessProfile } = useAccessProfile();
   const [inviteRole, setInviteRole] = useState<'user' | 'guest'>('user');
   const [inviteMaxUses, setInviteMaxUses] = useState(5);
   const [copiedInvite, setCopiedInvite] = useState<string | null>(null);
@@ -204,13 +206,16 @@ export const ServerDetail = () => {
               <p className="mt-2 text-sm text-foreground">
                 OmniLux Cloud treats relay state as the remote access source of truth. Users can still
                 reach their own server directly on their local network or their own reverse proxy, but
-                cloud-mediated remote access should use relay when this server is online.
+                cloud-mediated remote access should use relay when this server is online. {accessProfile?.relayAccessPolicyDescription ??
+                  'Self-hosted relay remote access requires an active OmniLux Cloud subscription for the server owner.'}
               </p>
             ) : (
               <p className="mt-2 text-sm text-foreground">
                 This is OmniLux-managed media surfaced through the cloud console, not a customer-owned
                 self-hosted server. It is expected to be reachable through its OmniLux-managed public
-                origin instead of a user-owned LAN or reverse-proxy path.
+                origin instead of a user-owned LAN or reverse-proxy path. {accessProfile?.managedMediaPolicy === 'all-authenticated-users'
+                  ? 'Managed media is currently included for all authenticated OmniLux Cloud accounts.'
+                  : 'Managed media is currently controlled through operator-managed per-profile overrides.'}
               </p>
             )}
           </div>

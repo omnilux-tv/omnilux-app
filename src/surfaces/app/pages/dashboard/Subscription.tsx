@@ -12,6 +12,7 @@ import {
 import { buildMarketingHref } from '@/lib/site-surface';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
+import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 
 interface SubscriptionData {
   id: string;
@@ -44,6 +45,7 @@ const tierNames: Record<string, string> = {
 
 export const Subscription = () => {
   const { user } = useAuth();
+  const { data: accessProfile } = useAccessProfile();
   const [billingError, setBillingError] = useState<string | null>(null);
   const [checkoutTier, setCheckoutTier] = useState<string | null>(null);
   const [portalAction, setPortalAction] = useState<'manage' | 'cancel' | null>(null);
@@ -177,7 +179,8 @@ export const Subscription = () => {
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Cloud Plan & Billing</h1>
           <p className="mt-1 text-sm text-muted">
-            Local playback and hosting stay free. Billing only applies to cloud-connected features such as relay, remote access, and paid account services.
+            Local playback and hosting stay free. Managed OmniLux media is included with your cloud account, while
+            paid billing applies to self-hosted relay remote access and premium cloud services around it.
           </p>
         </div>
 
@@ -287,6 +290,52 @@ export const Subscription = () => {
             ) : null}
           </div>
         )}
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl surface-soft p-6">
+            <h2 className="text-lg font-bold text-foreground">Included With OmniLux Cloud</h2>
+            <p className="mt-2 text-sm text-muted">
+              Your cloud account covers identity, hosted account services, and first-party OmniLux media access.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {[
+                accessProfile?.managedMediaEntitled
+                  ? 'Managed media is enabled for this account.'
+                  : 'Managed media is currently disabled for this account.',
+                'Local playback and direct self-hosted access stay free.',
+                'Billing, account recovery, and device sign-in run through the hosted cloud account.',
+              ].map((bullet) => (
+                <li key={bullet} className="flex gap-2 text-sm leading-6 text-muted">
+                  <span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent" />
+                  <span>{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-xl surface-soft p-6">
+            <h2 className="text-lg font-bold text-foreground">Paid Cloud Policy</h2>
+            <p className="mt-2 text-sm text-muted">
+              Self-hosted relay remote access follows the current platform rule, while local and user-owned direct
+              access stay outside cloud billing.
+            </p>
+            <div className="mt-4 rounded-lg bg-surface/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Self-Hosted Relay Access</p>
+              <p className="mt-2 text-foreground">
+                {accessProfile?.relayAccessPolicyLabel ?? 'Paid cloud subscription required'}
+              </p>
+              <p className="mt-2 text-sm text-muted">
+                {accessProfile?.relayAccessPolicyDescription ??
+                  'Self-hosted relay access requires an active OmniLux Cloud subscription.'}
+              </p>
+              <p className="mt-3 text-xs text-muted">
+                {accessProfile?.hasPaidCloudPlan
+                  ? 'This account currently has an active or trialing paid cloud plan.'
+                  : 'This account does not currently have an active or trialing paid cloud plan.'}
+              </p>
+            </div>
+          </div>
+        </div>
 
         <div className="rounded-xl surface-soft p-6">
           <div className="flex items-center gap-3">

@@ -9,6 +9,11 @@ export interface AccessProfile {
   managedMediaEntitled: boolean;
   managedMediaAccessOverride: boolean;
   managedMediaPolicy: 'all-authenticated-users' | 'explicit-per-profile';
+  relayAccessPolicy: 'all-authenticated-users' | 'paid-subscription';
+  relayAccessPolicyLabel: string;
+  relayAccessPolicyDescription: string;
+  hasPaidCloudPlan: boolean;
+  relayRemoteAccessEntitled: boolean;
   isOperator: boolean;
   createdAt: string;
   updatedAt: string;

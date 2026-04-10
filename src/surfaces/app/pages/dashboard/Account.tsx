@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
+import { OperatorMfaCard } from '@/surfaces/app/components/OperatorMfaCard';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { supabase } from '@/lib/supabase';
 
@@ -190,6 +191,21 @@ export const Account = () => {
               ) : null}
             </div>
             <div className="rounded-lg bg-surface/50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Self-Hosted Relay Access</p>
+              <p className="mt-2 text-foreground">
+                {accessProfile?.relayRemoteAccessEntitled ? 'Entitled' : 'Paid plan required'}
+              </p>
+              <p className="mt-1 text-muted">
+                {accessProfile?.relayAccessPolicyDescription ??
+                  'Remote relay policy for self-hosted servers is currently unavailable.'}
+              </p>
+              <p className="mt-2 text-xs text-muted">
+                {accessProfile?.hasPaidCloudPlan
+                  ? 'This account currently has an active or trialing OmniLux Cloud subscription.'
+                  : 'This account does not currently have an active or trialing OmniLux Cloud subscription.'}
+              </p>
+            </div>
+            <div className="rounded-lg bg-surface/50 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Operator Access</p>
               <p className="mt-2 text-foreground">
                 {accessProfile?.isOperator ? 'Operator account' : 'Standard account'}
@@ -199,7 +215,7 @@ export const Account = () => {
               </p>
               {accessProfile?.isOperator ? (
                 <p className="mt-2 text-xs text-muted">
-                  MFA is not live yet, so password strength and account separation are the primary operator safeguards today.
+                  Sensitive operator actions now require MFA and an `aal2` session, not just operator role membership.
                 </p>
               ) : null}
             </div>
@@ -225,11 +241,13 @@ export const Account = () => {
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Session Assurance</p>
               <p className="mt-2 text-foreground">{sessionAssuranceLabel}</p>
               <p className="mt-1 text-muted">
-                MFA is not live yet, so most sessions currently authenticate at the base assurance level.
+                Operator changes stay locked until this session is elevated with MFA.
               </p>
             </div>
           </div>
         </div>
+
+        {accessProfile?.isOperator ? <OperatorMfaCard enabled /> : null}
 
         <div className="rounded-xl border border-danger/30 p-6">
           <h2 className="text-lg font-bold text-danger">Danger Zone</h2>

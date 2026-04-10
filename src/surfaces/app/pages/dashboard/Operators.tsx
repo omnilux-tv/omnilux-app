@@ -1,4 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LifeBuoy, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -14,6 +15,7 @@ import {
   type ManagedMediaPolicy,
   type OperatorActionAuditRow,
   type PlatformSettingsAuditRow,
+  type RelayAccessPolicy,
 } from '@/surfaces/app/lib/ops';
 
 interface AccessProfileRow extends AccessProfile {}
@@ -26,6 +28,17 @@ const managedMediaPolicyCopy: Record<ManagedMediaPolicy, { label: string; descri
   'explicit-per-profile': {
     label: 'Explicit per-profile access',
     description: 'Managed media access is controlled account by account through the operator console.',
+  },
+};
+
+const relayAccessPolicyCopy: Record<RelayAccessPolicy, { label: string; description: string }> = {
+  'all-authenticated-users': {
+    label: 'All OmniLux Cloud accounts',
+    description: 'Remote relay access to self-hosted servers is available to any authenticated cloud account with server access.',
+  },
+  'paid-subscription': {
+    label: 'Paid subscription required',
+    description: 'Remote relay access to self-hosted servers requires the server owner to have an active or trialing paid cloud plan.',
   },
 };
 
@@ -49,9 +62,16 @@ const renderAuditSummary = (row: AccessAuditRow) => {
 };
 
 const renderPolicySummary = (row: PlatformSettingsAuditRow) =>
-  row.managedMediaPolicyBefore !== row.managedMediaPolicyAfter
-    ? `${managedMediaPolicyCopy[row.managedMediaPolicyAfter ?? 'all-authenticated-users'].label} enabled`
-    : 'No policy change details recorded';
+  [
+    row.managedMediaPolicyBefore !== row.managedMediaPolicyAfter
+      ? `Managed media: ${managedMediaPolicyCopy[row.managedMediaPolicyAfter ?? 'all-authenticated-users'].label}`
+      : null,
+    row.relayAccessPolicyBefore !== row.relayAccessPolicyAfter
+      ? `Relay: ${relayAccessPolicyCopy[row.relayAccessPolicyAfter ?? 'paid-subscription'].label}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ') || 'No policy change details recorded';
 
 const renderOperatorActionSummary = (row: OperatorActionAuditRow) => {
   switch (row.actionType) {
@@ -63,6 +83,8 @@ const renderOperatorActionSummary = (row: OperatorActionAuditRow) => {
       return 'Updated the managed media platform policy';
     case 'update_managed_media_operations':
       return 'Updated managed media operating state';
+    case 'update_relay_access_policy':
+      return 'Updated the self-hosted relay access policy';
     case 'send_password_reset_email':
       return `Sent a password reset email to ${renderProfileLabel(row.target ?? { userId: null, email: null, displayName: null })}`;
     case 'create_support_note':
@@ -97,6 +119,16 @@ const renderOperatorActionDetail = (row: OperatorActionAuditRow) => {
       ? row.metadata.managedMediaPolicyAfter
       : null;
     return nextPolicy ? managedMediaPolicyCopy[nextPolicy as ManagedMediaPolicy]?.description ?? nextPolicy : 'Platform policy changed';
+  }
+
+  if (row.actionType === 'update_relay_access_policy') {
+    const nextPolicy =
+      typeof row.metadata.relayAccessPolicyAfter === 'string'
+        ? row.metadata.relayAccessPolicyAfter
+        : null;
+    return nextPolicy
+      ? relayAccessPolicyCopy[nextPolicy as RelayAccessPolicy]?.description ?? nextPolicy
+      : 'Relay access policy changed';
   }
 
   if (row.actionType === 'update_managed_media_operations') {
@@ -248,16 +280,19 @@ export const Operators = () => {
   const updatePlatformSettings = useMutation({
     mutationFn: async ({
       managedMediaPolicy,
+      relayAccessPolicy,
       managedMediaOperatingMode,
       managedMediaIncidentMessage,
     }: {
       managedMediaPolicy?: ManagedMediaPolicy;
+      relayAccessPolicy?: RelayAccessPolicy;
       managedMediaOperatingMode?: ManagedMediaOperatingMode;
       managedMediaIncidentMessage?: string;
     }) => {
       const { data, error } = await supabase.functions.invoke('update-platform-settings', {
         body: {
           managedMediaPolicy,
+          relayAccessPolicy,
           managedMediaOperatingMode,
           managedMediaIncidentMessage,
           source: 'operator-dashboard',
@@ -456,6 +491,7 @@ export const Operators = () => {
     [profiles],
   );
   const managedMediaPolicy = platformSettings?.managedMediaPolicy ?? 'all-authenticated-users';
+  const relayAccessPolicy = platformSettings?.relayAccessPolicy ?? 'paid-subscription';
   const incidentStateDirty =
     managedMediaOperatingModeDraft !== (platformSettings?.managedMediaOperatingMode ?? 'normal') ||
     managedMediaIncidentMessageDraft !== (platformSettings?.managedMediaIncidentMessage ?? '');
@@ -464,6 +500,7 @@ export const Operators = () => {
     .map((tag) => tag.trim())
     .filter(Boolean);
   const profileManagedMediaControlsDisabled = managedMediaPolicy === 'all-authenticated-users';
+  const operatorMutationsLocked = accessProfile?.sessionAssuranceLevel !== 'aal2';
 
   if (isAccessProfileLoading) {
     return (
@@ -496,6 +533,8 @@ export const Operators = () => {
     );
   }
 
+  const operatorSessionAssuranceLevel = accessProfile.sessionAssuranceLevel;
+
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -506,9 +545,26 @@ export const Operators = () => {
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted">
             Manage which cloud accounts can see first-party OmniLux media and which accounts can access the
-            hosted `ops.omnilux.tv` console plus access-management tooling.
+            hosted `ops.omnilux.tv` console plus access-management tooling. This is also where OmniLux defines the
+            live policy for self-hosted relay access.
           </p>
         </div>
+
+        {operatorMutationsLocked ? (
+          <div className="rounded-xl border border-warning/30 bg-warning/10 p-5 text-sm text-foreground">
+            <p className="font-semibold text-foreground">Sensitive changes are locked for this session.</p>
+            <p className="mt-2">
+              Current assurance: {operatorSessionAssuranceLevel?.toUpperCase() ?? 'Unknown'}. Open your account settings, verify MFA, and come back before
+              changing operator access, relay policy, support notes, or live platform controls.
+            </p>
+            <Link
+              to="/dashboard/account"
+              className="mt-4 inline-flex rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+            >
+              Open Account Security
+            </Link>
+          </div>
+        ) : null}
 
         {message ? (
           <div className="rounded-xl border border-border bg-surface p-4 text-sm text-foreground">
@@ -560,7 +616,7 @@ export const Operators = () => {
                   <button
                     key={policy}
                     type="button"
-                    disabled={updatePlatformSettings.isPending}
+                    disabled={updatePlatformSettings.isPending || operatorMutationsLocked}
                     onClick={() => {
                       if (policy === managedMediaPolicy) {
                         return;
@@ -583,6 +639,47 @@ export const Operators = () => {
                   </button>
                 );
               })}
+            </div>
+
+            <div className="mt-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Self-Hosted Relay Policy</p>
+              <p className="mt-2 text-sm text-muted">
+                Decide whether OmniLux relay access to self-hosted servers is included for any authenticated cloud
+                account or limited to active and trialing paid subscriptions.
+              </p>
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                {(['all-authenticated-users', 'paid-subscription'] as const).map((policy) => {
+                  const copy = relayAccessPolicyCopy[policy];
+                  const selected = relayAccessPolicy === policy;
+
+                  return (
+                    <button
+                      key={policy}
+                      type="button"
+                      disabled={updatePlatformSettings.isPending || operatorMutationsLocked}
+                      onClick={() => {
+                        if (policy === relayAccessPolicy) {
+                          return;
+                        }
+                        if (!window.confirm(`Switch relay access policy to "${copy.label}"?`)) {
+                          return;
+                        }
+                        setMessage(null);
+                        updatePlatformSettings.mutate({ relayAccessPolicy: policy });
+                      }}
+                      className={`rounded-xl border p-5 text-left transition-colors ${
+                        selected
+                          ? 'border-accent bg-accent/10'
+                          : 'border-border bg-surface/40 hover:bg-surface'
+                      }`}
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Policy</p>
+                      <h3 className="mt-2 font-semibold text-foreground">{copy.label}</h3>
+                      <p className="mt-2 text-sm text-muted">{copy.description}</p>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -624,7 +721,7 @@ export const Operators = () => {
                     <button
                       key={mode.value}
                       type="button"
-                      disabled={updatePlatformSettings.isPending}
+                      disabled={updatePlatformSettings.isPending || operatorMutationsLocked}
                       onClick={() => setManagedMediaOperatingModeDraft(mode.value)}
                       className={`rounded-xl border p-4 text-left transition-colors ${
                         selected ? 'border-accent bg-accent/10' : 'border-border bg-background hover:bg-surface'
@@ -651,6 +748,7 @@ export const Operators = () => {
                   onChange={(event) => setManagedMediaIncidentMessageDraft(event.currentTarget.value)}
                   rows={4}
                   placeholder="Summarize the current customer impact, what is degraded, and the expected next update."
+                  disabled={operatorMutationsLocked}
                   className="mt-3 w-full rounded-xl border border-border bg-input px-3 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-accent"
                 />
                 <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -659,7 +757,7 @@ export const Operators = () => {
                   </p>
                   <button
                     type="button"
-                    disabled={updatePlatformSettings.isPending || !incidentStateDirty}
+                    disabled={updatePlatformSettings.isPending || operatorMutationsLocked || !incidentStateDirty}
                     onClick={() => {
                       const nextMode = managedMediaOperatingModeDraft;
                       const nextMessage = managedMediaIncidentMessageDraft.trim();
@@ -860,7 +958,7 @@ export const Operators = () => {
                       <div className="mt-4 flex flex-wrap gap-3">
                         <button
                           type="button"
-                          disabled={sendPasswordResetEmail.isPending}
+                          disabled={sendPasswordResetEmail.isPending || operatorMutationsLocked}
                           onClick={() => {
                             const label = supportProfile.profile.email || supportProfile.profile.id;
                             if (!window.confirm(`Send a password reset email to ${label}?`)) {
@@ -948,7 +1046,7 @@ export const Operators = () => {
                                 {session.revocable ? (
                                   <button
                                     type="button"
-                                    disabled={revokeRelaySession.isPending}
+                                    disabled={revokeRelaySession.isPending || operatorMutationsLocked}
                                     onClick={() => {
                                       if (!window.confirm(`Revoke the relay session for ${session.serverName}?`)) {
                                         return;
@@ -1007,7 +1105,7 @@ export const Operators = () => {
                                 {token.revocable ? (
                                   <button
                                     type="button"
-                                    disabled={revokeServerRelayToken.isPending}
+                                    disabled={revokeServerRelayToken.isPending || operatorMutationsLocked}
                                     onClick={() => {
                                       if (!window.confirm(`Revoke the active relay token for ${token.serverName}?`)) {
                                         return;
@@ -1041,6 +1139,7 @@ export const Operators = () => {
                           onChange={(event) => setSupportNoteDraft(event.currentTarget.value)}
                           rows={5}
                           placeholder="Summarize the issue, the action taken, and what the next operator should know."
+                          disabled={operatorMutationsLocked}
                           className="w-full rounded-xl border border-border bg-input px-3 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-accent"
                         />
                         <input
@@ -1048,6 +1147,7 @@ export const Operators = () => {
                           value={supportNoteTagsDraft}
                           onChange={(event) => setSupportNoteTagsDraft(event.currentTarget.value)}
                           placeholder="Optional tags, comma separated (billing, relay, auth)"
+                          disabled={operatorMutationsLocked}
                           className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-accent"
                         />
                         <div className="flex items-center justify-between gap-3">
@@ -1056,7 +1156,7 @@ export const Operators = () => {
                           </p>
                           <button
                             type="button"
-                            disabled={createSupportNote.isPending || supportNoteDraft.trim().length === 0}
+                            disabled={operatorMutationsLocked || createSupportNote.isPending || supportNoteDraft.trim().length === 0}
                             onClick={() => {
                               const note = supportNoteDraft.trim();
                               if (!note) {
@@ -1183,7 +1283,7 @@ export const Operators = () => {
                           <input
                             type="checkbox"
                             checked={profile.managedMediaEntitled}
-                            disabled={isUpdatingThisProfile || profileManagedMediaControlsDisabled}
+                            disabled={operatorMutationsLocked || isUpdatingThisProfile || profileManagedMediaControlsDisabled}
                             onChange={(event) => {
                               const nextValue = event.currentTarget.checked;
                               const actionLabel = nextValue ? 'enable' : 'disable';
@@ -1206,7 +1306,7 @@ export const Operators = () => {
                           <input
                             type="checkbox"
                             checked={profile.isOperator}
-                            disabled={isUpdatingThisProfile}
+                            disabled={operatorMutationsLocked || isUpdatingThisProfile}
                             onChange={(event) => {
                               const nextValue = event.currentTarget.checked;
                               const actionLabel = nextValue ? 'grant' : 'remove';
