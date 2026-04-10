@@ -2,7 +2,22 @@ import { buildDocsHref } from '@/lib/site-surface';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { formatTimestamp } from '@/surfaces/app/lib/ops-formatters';
 import { useOpsOverview, useOpsServiceHealth } from '@/surfaces/app/lib/ops';
-import { OpsLoadingState, OpsNotice, OpsPageShell } from '@/surfaces/app/pages/dashboard/OpsPageShell';
+import {
+  OpsCallout,
+  OpsEmptyState,
+  OpsLoadingState,
+  OpsNotice,
+  OpsPageShell,
+  OpsPanel,
+  OpsStatusBadge,
+  OpsTable,
+  OpsTableBody,
+  OpsTableCell,
+  OpsTableHead,
+  OpsTableHeaderCell,
+  OpsTableRow,
+  opsServiceTone,
+} from '@/surfaces/app/pages/dashboard/OpsPageShell';
 
 export const OpsHealth = () => {
   const {
@@ -23,7 +38,7 @@ export const OpsHealth = () => {
   } = useOpsOverview(operatorEnabled);
 
   if (isAccessProfileLoading) {
-    return <OpsLoadingState />;
+    return <OpsLoadingState label="Loading service health" />;
   }
 
   if (accessProfileError) {
@@ -37,12 +52,7 @@ export const OpsHealth = () => {
   }
 
   if (!accessProfile?.isOperator) {
-    return (
-      <OpsNotice
-        title="Operator Access Required"
-        body="This page is reserved for internal OmniLux operator accounts."
-      />
-    );
+    return <OpsNotice title="Operator Access Required" body="This page is reserved for internal OmniLux operator accounts." />;
   }
 
   const services = opsServiceHealth?.services ?? [];
@@ -64,24 +74,27 @@ export const OpsHealth = () => {
 
   return (
     <OpsPageShell
-      eyebrow="Health"
-      title="Watch every public surface from one reliability lane."
-      description="Track service reachability, current incident state, and the docs operators should reach for before they start changing production behavior."
+      eyebrow="Service Health"
+      title="Track every public OmniLux surface from one reliability lane."
+      description="Health checks, incident context, and the runbooks operators should reach for are laid out as a single operational view instead of scattered status cards."
       metrics={[
         {
           label: 'Online',
           value: String(onlineServices),
           detail: 'Services responding normally.',
+          tone: 'success',
         },
         {
           label: 'Degraded',
           value: String(degradedServices),
           detail: 'Surfaces with elevated pressure.',
+          tone: degradedServices > 0 ? 'warning' : 'neutral',
         },
         {
           label: 'Errors',
           value: String(errorServices),
           detail: 'Checks currently failing.',
+          tone: errorServices > 0 ? 'danger' : 'neutral',
         },
         {
           label: 'Mean latency',
@@ -92,95 +105,78 @@ export const OpsHealth = () => {
     >
       {opsOverview?.platform.managedMediaOperatingMode !== 'normal' ||
       (opsOverview?.platform.managedMediaIncidentMessage?.length ?? 0) > 0 ? (
-        <section className="rounded-[1.75rem] border border-warning/30 bg-warning/10 p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-warning">Current advisory</p>
-          <h2 className="mt-2 text-xl font-semibold text-foreground">
-            {opsOverview?.platform.managedMediaOperatingModeLabel ?? 'Managed media advisory'}
-          </h2>
-          <p className="mt-2 max-w-3xl text-sm text-foreground/86">
-            {opsOverview?.platform.managedMediaIncidentMessage || 'An operator advisory is active for the managed runtime.'}
-          </p>
-        </section>
+        <OpsCallout
+          tone="warning"
+          title={opsOverview?.platform.managedMediaOperatingModeLabel ?? 'Managed media advisory'}
+          body={
+            opsOverview?.platform.managedMediaIncidentMessage ||
+            'An operator advisory is active for the managed runtime.'
+          }
+        />
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_360px]">
-        <section className="rounded-[1.75rem] border border-white/10 bg-black/18 p-6">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h2 className="font-display text-2xl font-bold text-foreground">Service matrix</h2>
-              <p className="mt-2 text-sm text-muted">
-                The full set of public surfaces checked by ops, ordered with failures first.
-              </p>
-            </div>
-            <div className="text-xs uppercase tracking-[0.18em] text-muted">
-              Checked {formatTimestamp(opsServiceHealth?.checkedAt ?? null)}
-            </div>
-          </div>
-
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_360px]">
+        <OpsPanel
+          title="Service matrix"
+          description="Public surfaces ordered with failures first, including latency and HTTP status for each probe."
+          meta={opsServiceHealth?.checkedAt ? `Checked ${formatTimestamp(opsServiceHealth.checkedAt)}` : 'Waiting for probe data'}
+        >
           {isOpsServiceHealthLoading ? (
-            <div className="mt-5 space-y-3">
+            <div className="space-y-3">
               {[1, 2, 3, 4, 5].map((index) => (
-                <div key={index} className="h-24 animate-pulse rounded-[1.25rem] bg-white/[0.04]" />
+                <div key={index} className="h-14 animate-pulse rounded-lg bg-white/[0.04]" />
               ))}
             </div>
           ) : opsServiceHealthError ? (
-            <div className="mt-5 rounded-[1.25rem] border border-danger/30 bg-danger/10 p-4 text-sm text-foreground">
-              {opsServiceHealthError instanceof Error ? opsServiceHealthError.message : 'Failed to load service health.'}
-            </div>
+            <OpsNotice
+              title="Service matrix unavailable"
+              body={
+                opsServiceHealthError instanceof Error
+                  ? opsServiceHealthError.message
+                  : 'Failed to load service health.'
+              }
+              tone="danger"
+            />
           ) : orderedServices.length === 0 ? (
-            <div className="mt-5 rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4 text-sm text-muted">
-              No health checks are available right now.
-            </div>
+            <OpsEmptyState title="No health checks available" body="No service probes are reporting yet." />
           ) : (
-            <div className="mt-5 space-y-3">
-              {orderedServices.map((service) => (
-                <div key={service.key} className="rounded-[1.25rem] border border-white/10 bg-white/[0.035] p-4">
-                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_180px_180px] xl:items-center">
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-semibold text-foreground">{service.label}</h3>
-                        <span
-                          className={`rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${
-                            service.status === 'online'
-                              ? 'bg-success/15 text-success'
-                              : service.status === 'degraded'
-                                ? 'bg-warning/15 text-warning'
-                                : 'bg-danger/15 text-danger'
-                          }`}
-                        >
-                          {service.status}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm text-muted">{service.detail}</p>
-                      <p className="mt-3 text-xs uppercase tracking-[0.18em] text-muted">{service.url}</p>
-                    </div>
-                    <div className="rounded-xl bg-black/20 px-4 py-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Latency</p>
-                      <p className="mt-2 text-sm text-foreground">
-                        {service.responseTimeMs !== null ? `${service.responseTimeMs} ms` : 'No latency'}
-                      </p>
-                    </div>
-                    <div className="rounded-xl bg-black/20 px-4 py-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">HTTP</p>
-                      <p className="mt-2 text-sm text-foreground">
-                        {service.httpStatus !== null ? `HTTP ${service.httpStatus}` : 'Unavailable'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <OpsTable>
+              <OpsTableHead>
+                <tr>
+                  <OpsTableHeaderCell>Service</OpsTableHeaderCell>
+                  <OpsTableHeaderCell>Status</OpsTableHeaderCell>
+                  <OpsTableHeaderCell>Endpoint</OpsTableHeaderCell>
+                  <OpsTableHeaderCell align="right">Latency</OpsTableHeaderCell>
+                  <OpsTableHeaderCell align="right">HTTP</OpsTableHeaderCell>
+                </tr>
+              </OpsTableHead>
+              <OpsTableBody>
+                {orderedServices.map((service) => (
+                  <OpsTableRow key={service.key}>
+                    <OpsTableCell>
+                      <p className="font-medium text-foreground">{service.label}</p>
+                      <p className="mt-1 text-sm text-muted">{service.detail}</p>
+                    </OpsTableCell>
+                    <OpsTableCell>
+                      <OpsStatusBadge tone={opsServiceTone(service.status)}>{service.status}</OpsStatusBadge>
+                    </OpsTableCell>
+                    <OpsTableCell className="font-mono text-xs text-muted">{service.url}</OpsTableCell>
+                    <OpsTableCell align="right" className="font-mono text-muted">
+                      {service.responseTimeMs !== null ? `${service.responseTimeMs} ms` : 'n/a'}
+                    </OpsTableCell>
+                    <OpsTableCell align="right" className="font-mono text-muted">
+                      {service.httpStatus !== null ? `HTTP ${service.httpStatus}` : 'n/a'}
+                    </OpsTableCell>
+                  </OpsTableRow>
+                ))}
+              </OpsTableBody>
+            </OpsTable>
           )}
-        </section>
+        </OpsPanel>
 
-        <div className="space-y-6">
-          <section className="rounded-[1.75rem] border border-white/10 bg-black/18 p-6">
-            <h2 className="font-display text-2xl font-bold text-foreground">Runbooks</h2>
-            <p className="mt-2 text-sm text-muted">
-              Operator references that matter when health shifts.
-            </p>
-
-            <div className="mt-5 space-y-3">
+        <div className="space-y-4">
+          <OpsPanel title="Runbooks" description="Operator references that matter when service posture shifts.">
+            <div className="space-y-3">
               {[
                 { href: buildDocsHref('/guide/operator-runbook'), label: 'Operator runbook' },
                 { href: buildDocsHref('/guide/cloud-product-contract'), label: 'Cloud product contract' },
@@ -189,33 +185,37 @@ export const OpsHealth = () => {
                 <a
                   key={item.href}
                   href={item.href}
-                  className="flex items-center justify-between rounded-[1.25rem] border border-white/10 bg-white/[0.035] px-4 py-4 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.06]"
+                  className="flex items-center justify-between rounded-lg border border-border bg-panel-muted px-4 py-3 text-sm transition-colors hover:bg-card-hover"
                 >
-                  <span>{item.label}</span>
+                  <span className="font-medium text-foreground">{item.label}</span>
                   <span className="text-muted">Open</span>
                 </a>
               ))}
             </div>
-          </section>
+          </OpsPanel>
 
-          <section className="rounded-[1.75rem] border border-white/10 bg-black/18 p-6">
-            <h2 className="font-display text-2xl font-bold text-foreground">Platform snapshot</h2>
-            <p className="mt-2 text-sm text-muted">
-              Policy posture and counts that explain what reliability changes mean for the org.
-            </p>
-
+          <OpsPanel
+            title="Platform snapshot"
+            description="Policy posture and counts that explain the operator impact of reliability changes."
+          >
             {isOpsOverviewLoading ? (
-              <div className="mt-5 space-y-3">
+              <div className="space-y-3">
                 {[1, 2, 3].map((index) => (
-                  <div key={index} className="h-20 animate-pulse rounded-[1.25rem] bg-white/[0.04]" />
+                  <div key={index} className="h-18 animate-pulse rounded-lg bg-white/[0.04]" />
                 ))}
               </div>
             ) : opsOverviewError ? (
-              <div className="mt-5 rounded-[1.25rem] border border-danger/30 bg-danger/10 p-4 text-sm text-foreground">
-                {opsOverviewError instanceof Error ? opsOverviewError.message : 'Failed to load operator overview.'}
-              </div>
+              <OpsNotice
+                title="Platform snapshot unavailable"
+                body={
+                  opsOverviewError instanceof Error
+                    ? opsOverviewError.message
+                    : 'Failed to load operator overview.'
+                }
+                tone="danger"
+              />
             ) : (
-              <div className="mt-5 space-y-3">
+              <div className="space-y-3">
                 {[
                   {
                     label: 'Managed media policy',
@@ -234,14 +234,14 @@ export const OpsHealth = () => {
                     value: String(opsOverview?.metrics.activeRelaySessionsTotal ?? 0),
                   },
                 ].map((item) => (
-                  <div key={item.label} className="rounded-[1.25rem] border border-white/10 bg-white/[0.035] p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">{item.label}</p>
-                    <p className="mt-2 text-lg font-semibold text-foreground">{item.value}</p>
+                  <div key={item.label} className="rounded-lg border border-border bg-panel-muted px-4 py-4">
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-muted">{item.label}</p>
+                    <p className="mt-2 text-sm font-semibold text-foreground">{item.value}</p>
                   </div>
                 ))}
               </div>
             )}
-          </section>
+          </OpsPanel>
         </div>
       </div>
     </OpsPageShell>

@@ -6,6 +6,7 @@ import { buildAppHref, getCurrentSiteSurface } from '@/lib/site-surface';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { DEFAULT_OPS_CONSOLE_PATH, isOpsConsolePath } from '@/surfaces/app/lib/ops-console';
+import { OpsAppShell } from '@/surfaces/app/pages/dashboard/OpsPageShell';
 
 export const Route = createFileRoute('/dashboard')({
   head: () =>
@@ -118,6 +119,14 @@ function DashboardLayout() {
         </div>
       );
     }
+  }
+
+  if (isOpsSurface && accessProfile?.isOperator) {
+    return (
+      <OpsAppShell>
+        <Outlet />
+      </OpsAppShell>
+    );
   }
 
   return <Outlet />;

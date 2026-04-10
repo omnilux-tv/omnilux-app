@@ -2,42 +2,56 @@ export const opsConsolePages = [
   {
     to: '/dashboard',
     label: 'Overview',
-    description: 'Enterprise flight deck for OmniLux operations.',
+    description: 'System-wide command view for the operator console.',
+    group: 'overview',
   },
   {
     to: '/dashboard/accounts',
     label: 'Accounts',
     description: 'Customer account operations, access controls, and support handoff.',
+    group: 'operations',
   },
   {
     to: '/dashboard/logs',
-    label: 'Logs',
+    label: 'Audit Trail',
     description: 'Sensitive activity, access changes, and policy audit history.',
+    group: 'operations',
   },
   {
     to: '/dashboard/financials',
     label: 'Financials',
     description: 'Subscription posture, paid plan coverage, and billing follow-up.',
+    group: 'operations',
   },
   {
     to: '/dashboard/staff',
-    label: 'Staff',
+    label: 'Operators',
     description: 'Operator roster, MFA posture, and recent session activity.',
+    group: 'operations',
   },
   {
     to: '/dashboard/control-plane',
     label: 'Control Plane',
     description: 'Platform policy, relay rules, and live incident controls.',
+    group: 'systems',
   },
   {
     to: '/dashboard/media-control',
-    label: 'Media',
+    label: 'Managed Runtime',
     description: 'Managed runtime posture, advisory state, and media operations.',
+    group: 'systems',
   },
   {
     to: '/dashboard/health',
-    label: 'Health',
+    label: 'Service Health',
     description: 'Public surface reachability, runtime health, and runbooks.',
+    group: 'systems',
+  },
+  {
+    to: '/dashboard/account',
+    label: 'Account Settings',
+    description: 'Session assurance, identity settings, and operator profile security.',
+    group: 'settings',
   },
 ] as const;
 
@@ -48,6 +62,29 @@ export const DEFAULT_OPS_CONSOLE_PATH: OpsConsolePath = '/dashboard';
 const opsConsolePathSet = new Set<string>(opsConsolePages.map((page) => page.to));
 
 export const isOpsConsolePath = (value: string) => opsConsolePathSet.has(value);
+
+export const opsConsoleGroups = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    items: ['/dashboard'],
+  },
+  {
+    id: 'operations',
+    label: 'Operations',
+    items: ['/dashboard/accounts', '/dashboard/financials', '/dashboard/staff', '/dashboard/logs'],
+  },
+  {
+    id: 'systems',
+    label: 'Systems',
+    items: ['/dashboard/control-plane', '/dashboard/media-control', '/dashboard/health'],
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    items: ['/dashboard/account'],
+  },
+] as const;
 
 export const operatorConsoleSections = [
   {

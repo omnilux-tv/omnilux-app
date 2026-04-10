@@ -88,6 +88,7 @@ export const AppHeader = () => {
     item.to === '/dashboard'
       ? normalizedPathname === '/dashboard'
       : normalizedPathname === item.to || normalizedPathname.startsWith(`${item.to}/`);
+  const hideForOpsShell = isOpsSurface && isAuthenticated && normalizedPathname.startsWith('/dashboard');
 
   const handleSignOut = async () => {
     await signOut();
@@ -227,6 +228,10 @@ export const AppHeader = () => {
       </div>
     );
   };
+
+  if (hideForOpsShell) {
+    return null;
+  }
 
   if (isOpsSurface) {
     return (
