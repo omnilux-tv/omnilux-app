@@ -1,0 +1,25 @@
+name: Service Canary
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    env:
+      APP_SITE_URL: https://app.omnilux.tv/login
+      OPS_SITE_URL: https://ops.omnilux.tv/login
+      RELAY_SITE_URL: https://relay.omnilux.tv/healthz
+      MEDIA_SITE_URL: https://media.omnilux.tv/api/health
+      CLOUD_AUTH_HEALTH_URL: https://api.omnilux.tv/auth/v1/health
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Run production service canary
+        run: node scripts/run-service-canary.mjs

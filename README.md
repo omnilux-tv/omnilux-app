@@ -8,7 +8,7 @@ This repo owns the hosted OmniLux web consoles:
 - billing and subscription management
 - self-hosted server claim and invite management
 - managed runtime visibility for `managed-media`
-- operator access management and access audit history
+- operator access management, support lookup tooling, service health, and audit history
 - the dedicated operator console at `ops.omnilux.tv`
 - plugin submission and other authenticated cloud surfaces
 
@@ -60,6 +60,7 @@ Optional browser config:
 pnpm lint
 pnpm build
 pnpm test:smoke:ops
+pnpm test:canary
 ```
 
 `pnpm test:smoke:ops` targets the live `ops.omnilux.tv` surface and expects these env vars:
@@ -68,6 +69,8 @@ pnpm test:smoke:ops
 - `OPS_SMOKE_OPERATOR_PASSWORD`
 - `OPS_SMOKE_CUSTOMER_EMAIL`
 - `OPS_SMOKE_CUSTOMER_PASSWORD`
+
+`pnpm test:canary` probes the live hosted app, ops console, relay, managed media runtime, and cloud auth reachability.
 
 ## Artifact
 
@@ -82,5 +85,6 @@ The canonical edge-consumed app artifact is the published OCI image `ghcr.io/omn
 - self-hosted servers remain directly reachable by their owners without traversing OmniLux edge
 - cloud-mediated remote access should rely on relay state
 - `managed-media` visibility is entitlement driven
+- the current official managed-media rule is that every OmniLux Cloud account, including free accounts, can access first-party managed media unless operators intentionally switch the platform policy to explicit access
 - `ops.omnilux.tv` is an operator-only hosted console, not a registered OmniLux runtime
 - server listings in this app should only model `self-hosted` and `managed-media`; operator access belongs to hosted console access controls, not the server registry

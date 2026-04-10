@@ -54,7 +54,7 @@ export const AppHeader = () => {
               </div>
               <p className="text-sm text-muted">
                 {isOpsSurface
-                  ? 'Internal operator console for access policy, support tooling, and managed OmniLux services.'
+                  ? 'Internal operator console for policy, support tooling, service health, and managed OmniLux services.'
                   : 'Account, access, billing, and remote services for OmniLux Cloud.'}
               </p>
             </div>

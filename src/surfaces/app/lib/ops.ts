@@ -3,6 +3,105 @@ import { supabase } from '@/lib/supabase';
 
 export type ManagedMediaPolicy = 'all-authenticated-users' | 'explicit-per-profile';
 
+export interface AccessAuditRow {
+  id: number;
+  source: string;
+  createdAt: string;
+  actor: {
+    userId: string | null;
+    email: string | null;
+    displayName: string | null;
+  };
+  target: {
+    userId: string;
+    email: string | null;
+    displayName: string | null;
+  };
+  managedMediaEntitledBefore: boolean | null;
+  managedMediaEntitledAfter: boolean | null;
+  isOperatorBefore: boolean | null;
+  isOperatorAfter: boolean | null;
+}
+
+export interface OperatorActionAuditRow {
+  id: number;
+  actionType: string;
+  source: string;
+  createdAt: string;
+  actor: {
+    userId: string | null;
+    email: string | null;
+    displayName: string | null;
+  };
+  target: {
+    userId: string | null;
+    email: string | null;
+    displayName: string | null;
+  } | null;
+  server: {
+    id: string;
+    name: string;
+    publicOrigin: string | null;
+  } | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface OperatorSupportProfile {
+  profile: {
+    id: string;
+    email: string | null;
+    displayName: string | null;
+    managedMediaEntitled: boolean;
+    managedMediaAccessOverride: boolean;
+    isOperator: boolean;
+    createdAt: string;
+    updatedAt: string;
+    subscription: {
+      tier: string;
+      status: string;
+      currentPeriodEnd: string | null;
+      updatedAt: string;
+    } | null;
+  };
+  selfHostedServers: Array<{
+    id: string;
+    name: string;
+    ownership: 'owner' | 'shared';
+    accessRole: string;
+    publicOrigin: string | null;
+    relayStatus: string | null;
+    lastSeenAt: string | null;
+    updatedAt: string;
+    version: string | null;
+  }>;
+  recentRelaySessions: Array<{
+    id: string;
+    serverId: string;
+    serverName: string;
+    status: string;
+    sessionType: string;
+    issuedAt: string;
+    expiresAt: string;
+    consumedAt: string | null;
+    endedAt: string | null;
+  }>;
+  recentAccessChanges: AccessAuditRow[];
+}
+
+export interface OpsServiceHealthResponse {
+  checkedAt: string;
+  services: Array<{
+    key: string;
+    label: string;
+    url: string;
+    status: 'online' | 'degraded' | 'error';
+    httpStatus: number | null;
+    responseTimeMs: number | null;
+    checkedAt: string;
+    detail: string;
+  }>;
+}
+
 export interface PlatformSettings {
   managedMediaPolicy: ManagedMediaPolicy;
   managedMediaPolicyLabel: string;
@@ -69,6 +168,20 @@ export const useOpsOverview = (enabled: boolean) =>
     enabled,
   });
 
+export const useOpsServiceHealth = (enabled: boolean) =>
+  useQuery({
+    queryKey: ['ops-service-health'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<OpsServiceHealthResponse>('get-ops-service-health');
+      if (error) {
+        throw error;
+      }
+      return data as OpsServiceHealthResponse;
+    },
+    enabled,
+    refetchInterval: 60_000,
+  });
+
 export const usePlatformSettings = (enabled: boolean) =>
   useQuery({
     queryKey: ['platform-settings'],
@@ -80,6 +193,42 @@ export const usePlatformSettings = (enabled: boolean) =>
       return data as PlatformSettings;
     },
     enabled,
+  });
+
+export const useOperatorActionAuditLog = (enabled: boolean) =>
+  useQuery({
+    queryKey: ['operator-action-audit-log'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<OperatorActionAuditRow[]>(
+        'list-operator-action-audit-log',
+      );
+      if (error) {
+        throw error;
+      }
+      return data ?? [];
+    },
+    enabled,
+  });
+
+export const useOperatorSupportProfile = (enabled: boolean, userId: string | null) =>
+  useQuery({
+    queryKey: ['operator-support-profile', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<OperatorSupportProfile>('get-operator-support-profile', {
+        body: {
+          userId,
+          source: 'operator-dashboard',
+        },
+      });
+      if (error) {
+        throw error;
+      }
+      return data as OperatorSupportProfile;
+    },
+    enabled: Boolean(enabled && userId),
+    staleTime: Number.POSITIVE_INFINITY,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
 export const usePlatformSettingsAuditLog = (enabled: boolean) =>

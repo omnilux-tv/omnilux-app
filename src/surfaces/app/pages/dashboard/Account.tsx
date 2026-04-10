@@ -9,10 +9,15 @@ export const Account = () => {
   const { user } = useAuth();
   const { data: accessProfile } = useAccessProfile();
   const [displayName, setDisplayName] = useState(user?.user_metadata?.display_name ?? '');
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const minimumPasswordLength = accessProfile?.isOperator ? 16 : 12;
+  const passwordMeetsLength = newPassword.length >= minimumPasswordLength;
+  const passwordHasLetter = /[A-Za-z]/.test(newPassword);
+  const passwordHasNumber = /\d/.test(newPassword);
+  const passwordConfirmed = confirmPassword.length > 0 && confirmPassword === newPassword;
 
   const handleProfileSave = async (e: FormEvent) => {
     e.preventDefault();
@@ -29,7 +34,19 @@ export const Account = () => {
 
   const handlePasswordChange = async (e: FormEvent) => {
     e.preventDefault();
-    if (!currentPassword || !newPassword) return;
+    if (!newPassword) return;
+    if (!passwordMeetsLength || !passwordHasLetter || !passwordHasNumber) {
+      setMessage(
+        `Use at least ${minimumPasswordLength} characters and include both letters and numbers before updating your password.`,
+      );
+      return;
+    }
+
+    if (!passwordConfirmed) {
+      setMessage('Password confirmation does not match.');
+      return;
+    }
+
     setSaving(true);
     setMessage(null);
 
@@ -40,8 +57,8 @@ export const Account = () => {
       setMessage(error.message);
     } else {
       setMessage('Password updated.');
-      setCurrentPassword('');
       setNewPassword('');
+      setConfirmPassword('');
     }
   };
 
@@ -96,35 +113,54 @@ export const Account = () => {
         <form onSubmit={handlePasswordChange} className="rounded-xl surface-soft p-6 space-y-4">
           <h2 className="text-lg font-bold text-foreground">Change Password</h2>
           <div>
-            <label htmlFor="currentPw" className="mb-1 block text-sm font-medium text-foreground">
-              Current password
-            </label>
-            <input
-              id="currentPw"
-              type="password"
-              autoComplete="current-password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground focus-ring"
-            />
-          </div>
-          <div>
             <label htmlFor="newPw" className="mb-1 block text-sm font-medium text-foreground">
               New password
             </label>
             <input
               id="newPw"
               type="password"
-              minLength={6}
+              minLength={minimumPasswordLength}
               autoComplete="new-password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground focus-ring"
             />
           </div>
+          <div>
+            <label htmlFor="confirmPw" className="mb-1 block text-sm font-medium text-foreground">
+              Confirm new password
+            </label>
+            <input
+              id="confirmPw"
+              type="password"
+              minLength={minimumPasswordLength}
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground focus-ring"
+            />
+          </div>
+          <div className="rounded-lg bg-surface/50 p-4 text-sm text-muted">
+            <p className="font-medium text-foreground">
+              {accessProfile?.isOperator
+                ? 'Operator accounts require a stronger password.'
+                : 'Use a long password for your hosted cloud account.'}
+            </p>
+            <ul className="mt-3 space-y-2">
+              <li>{passwordMeetsLength ? 'Meets' : 'Needs'} the {minimumPasswordLength}-character minimum</li>
+              <li>{passwordHasLetter ? 'Contains' : 'Needs'} at least one letter</li>
+              <li>{passwordHasNumber ? 'Contains' : 'Needs'} at least one number</li>
+              <li>{passwordConfirmed ? 'Matches' : 'Needs'} confirmation</li>
+            </ul>
+            {accessProfile?.isOperator ? (
+              <p className="mt-3">
+                Keep operator credentials separate from customer accounts, store them in a password manager, and rotate them after any shared operational access.
+              </p>
+            ) : null}
+          </div>
           <button
             type="submit"
-            disabled={saving || !currentPassword || !newPassword}
+            disabled={saving || !newPassword || !passwordConfirmed || !passwordMeetsLength || !passwordHasLetter || !passwordHasNumber}
             className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
           >
             Update Password
@@ -158,6 +194,11 @@ export const Account = () => {
               <p className="mt-1 text-muted">
                 Operator access exposes the internal `ops.omnilux.tv` console and cloud access-management tools.
               </p>
+              {accessProfile?.isOperator ? (
+                <p className="mt-2 text-xs text-muted">
+                  MFA is not live yet, so password strength and account separation are the primary operator safeguards today.
+                </p>
+              ) : null}
             </div>
           </div>
         </div>

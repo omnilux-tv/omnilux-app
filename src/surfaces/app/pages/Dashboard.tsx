@@ -12,7 +12,7 @@ import {
 import { useAuth } from '@/providers/AuthProvider';
 import { buildAppHref, getCurrentSiteSurface } from '@/lib/site-surface';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
-import { useOpsOverview } from '@/surfaces/app/lib/ops';
+import { useOpsOverview, useOpsServiceHealth } from '@/surfaces/app/lib/ops';
 
 const dashboardLinks = [
   { to: '/dashboard/servers', icon: Server, label: 'Servers', description: 'Claimed OmniLux installs, relay state, and companion access.' },
@@ -52,6 +52,11 @@ export const Dashboard = () => {
     isLoading: isOpsOverviewLoading,
     error: opsOverviewError,
   } = useOpsOverview(Boolean(isOpsSurface && accessProfile?.isOperator));
+  const {
+    data: opsServiceHealth,
+    isLoading: isOpsServiceHealthLoading,
+    error: opsServiceHealthError,
+  } = useOpsServiceHealth(Boolean(isOpsSurface && accessProfile?.isOperator));
 
   if (isOpsSurface) {
     const opsLinks = [
@@ -59,7 +64,7 @@ export const Dashboard = () => {
         to: '/dashboard/operators',
         icon: ShieldCheck,
         label: 'Policy & Access',
-        description: 'Manage internal operator accounts, managed media policy, and access audit history.',
+        description: 'Manage internal operator accounts, managed media policy, support lookup, and audit history.',
       },
       {
         to: '/dashboard/account',
@@ -197,6 +202,53 @@ export const Dashboard = () => {
                     <p className="mt-2">{opsOverview?.metrics.recentPolicyChangesTotal ?? 0} policy changes in the last 7 days</p>
                   </div>
                 </div>
+              </div>
+
+              <div className="mt-8 rounded-xl border border-border bg-background p-5">
+                <h2 className="font-semibold text-foreground">Public Service Health</h2>
+                <p className="mt-2 text-sm text-muted">
+                  Live reachability for the hosted app, operator console, relay, managed media runtime, and control plane.
+                </p>
+
+                {isOpsServiceHealthLoading ? (
+                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {[1, 2, 3, 4, 5, 6].map((index) => (
+                      <div key={index} className="h-24 animate-pulse rounded-xl bg-surface" />
+                    ))}
+                  </div>
+                ) : opsServiceHealthError ? (
+                  <div className="mt-4 rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-foreground">
+                    {opsServiceHealthError instanceof Error
+                      ? opsServiceHealthError.message
+                      : 'Failed to load public service health.'}
+                  </div>
+                ) : (
+                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {opsServiceHealth?.services.map((service) => (
+                      <div key={service.key} className="rounded-xl bg-surface/60 p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-semibold text-foreground">{service.label}</p>
+                          <span
+                            className={`rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                              service.status === 'online'
+                                ? 'bg-success/15 text-success'
+                                : service.status === 'degraded'
+                                  ? 'bg-warning/15 text-warning'
+                                  : 'bg-danger/15 text-danger'
+                            }`}
+                          >
+                            {service.status}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm text-muted">{service.detail}</p>
+                        <p className="mt-3 text-xs uppercase tracking-wide text-muted">
+                          {service.responseTimeMs !== null ? `${service.responseTimeMs} ms` : 'Internal check'} ·{' '}
+                          {service.httpStatus !== null ? `HTTP ${service.httpStatus}` : 'No HTTP status'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )}

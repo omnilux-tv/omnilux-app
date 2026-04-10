@@ -1,40 +1,26 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import { LifeBuoy, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAccessProfile, type AccessProfile } from '@/surfaces/app/lib/access-profile';
 import {
+  useOperatorActionAuditLog,
+  useOperatorSupportProfile,
+  useOpsServiceHealth,
   usePlatformSettings,
   usePlatformSettingsAuditLog,
+  type AccessAuditRow,
   type ManagedMediaPolicy,
+  type OperatorActionAuditRow,
   type PlatformSettingsAuditRow,
 } from '@/surfaces/app/lib/ops';
 
 interface AccessProfileRow extends AccessProfile {}
-interface AccessAuditRow {
-  id: number;
-  source: string;
-  createdAt: string;
-  actor: {
-    userId: string | null;
-    email: string | null;
-    displayName: string | null;
-  };
-  target: {
-    userId: string;
-    email: string | null;
-    displayName: string | null;
-  };
-  managedMediaEntitledBefore: boolean | null;
-  managedMediaEntitledAfter: boolean | null;
-  isOperatorBefore: boolean | null;
-  isOperatorAfter: boolean | null;
-}
 
 const managedMediaPolicyCopy: Record<ManagedMediaPolicy, { label: string; description: string }> = {
   'all-authenticated-users': {
-    label: 'All authenticated cloud users',
-    description: 'Every signed-in OmniLux Cloud account can access first-party managed media.',
+    label: 'All OmniLux Cloud accounts',
+    description: 'Every signed-in OmniLux Cloud account, including free accounts, can access first-party managed media.',
   },
   'explicit-per-profile': {
     label: 'Explicit per-profile access',
@@ -64,11 +50,51 @@ const renderPolicySummary = (row: PlatformSettingsAuditRow) =>
     ? `${managedMediaPolicyCopy[row.managedMediaPolicyAfter ?? 'all-authenticated-users'].label} enabled`
     : 'No policy change details recorded';
 
+const renderOperatorActionSummary = (row: OperatorActionAuditRow) => {
+  switch (row.actionType) {
+    case 'profile_lookup':
+      return `Opened support view for ${renderProfileLabel(row.target ?? { userId: null, email: null, displayName: null })}`;
+    case 'update_profile_access':
+      return `Updated access controls for ${renderProfileLabel(row.target ?? { userId: null, email: null, displayName: null })}`;
+    case 'update_managed_media_policy':
+      return 'Updated the managed media platform policy';
+    default:
+      return row.actionType.replaceAll('_', ' ');
+  }
+};
+
+const renderOperatorActionDetail = (row: OperatorActionAuditRow) => {
+  if (row.actionType === 'profile_lookup') {
+    const selfHostedServers = typeof row.metadata.selfHostedServers === 'number' ? row.metadata.selfHostedServers : null;
+    const relaySessions = typeof row.metadata.relaySessions === 'number' ? row.metadata.relaySessions : null;
+    return [selfHostedServers !== null ? `${selfHostedServers} self-hosted servers` : null, relaySessions !== null ? `${relaySessions} recent relay sessions` : null]
+      .filter(Boolean)
+      .join(' · ');
+  }
+
+  if (row.actionType === 'update_profile_access') {
+    const changedFields = Array.isArray(row.metadata.changedFields)
+      ? row.metadata.changedFields.map((value) => String(value).replaceAll('_', ' '))
+      : [];
+    return changedFields.length > 0 ? changedFields.join(' · ') : 'Access controls changed';
+  }
+
+  if (row.actionType === 'update_managed_media_policy') {
+    const nextPolicy = typeof row.metadata.managedMediaPolicyAfter === 'string'
+      ? row.metadata.managedMediaPolicyAfter
+      : null;
+    return nextPolicy ? managedMediaPolicyCopy[nextPolicy as ManagedMediaPolicy]?.description ?? nextPolicy : 'Platform policy changed';
+  }
+
+  return row.server?.name ? `Target server: ${row.server.name}` : 'Sensitive operator action';
+};
+
 export const Operators = () => {
   const queryClient = useQueryClient();
   const { data: accessProfile, isLoading: isAccessProfileLoading, error: accessProfileError } = useAccessProfile();
   const [message, setMessage] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState('');
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const deferredSearchValue = useDeferredValue(searchValue);
 
   const {
@@ -110,6 +136,24 @@ export const Operators = () => {
   } = usePlatformSettings(Boolean(accessProfile?.isOperator));
 
   const {
+    data: operatorActionAuditLog,
+    error: operatorActionAuditError,
+    isLoading: isOperatorActionAuditLoading,
+  } = useOperatorActionAuditLog(Boolean(accessProfile?.isOperator));
+
+  const {
+    data: supportProfile,
+    error: supportProfileError,
+    isLoading: isSupportProfileLoading,
+  } = useOperatorSupportProfile(Boolean(accessProfile?.isOperator), selectedProfileId);
+
+  const {
+    data: opsServiceHealth,
+    error: opsServiceHealthError,
+    isLoading: isOpsServiceHealthLoading,
+  } = useOpsServiceHealth(Boolean(accessProfile?.isOperator));
+
+  const {
     data: policyAuditLog,
     error: policyAuditError,
     isLoading: isPolicyAuditLoading,
@@ -143,7 +187,9 @@ export const Operators = () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['operator-access-profiles'] }),
         queryClient.invalidateQueries({ queryKey: ['operator-access-audit-log'] }),
+        queryClient.invalidateQueries({ queryKey: ['operator-action-audit-log'] }),
         queryClient.invalidateQueries({ queryKey: ['access-profile'] }),
+        queryClient.invalidateQueries({ queryKey: ['operator-support-profile', variables.userId] }),
       ]);
 
       if (variables.userId === accessProfile?.id && variables.isOperator === false) {
@@ -173,6 +219,7 @@ export const Operators = () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['platform-settings'] }),
         queryClient.invalidateQueries({ queryKey: ['platform-settings-audit-log'] }),
+        queryClient.invalidateQueries({ queryKey: ['operator-action-audit-log'] }),
         queryClient.invalidateQueries({ queryKey: ['ops-overview'] }),
         queryClient.invalidateQueries({ queryKey: ['access-profile'] }),
         queryClient.invalidateQueries({ queryKey: ['operator-access-profiles'] }),
@@ -350,6 +397,56 @@ export const Operators = () => {
           </div>
         )}
 
+        <div className="rounded-xl border border-border bg-background p-6">
+          <div className="flex items-center gap-3">
+            <LifeBuoy className="h-5 w-5 text-accent" />
+            <div>
+              <h2 className="font-display text-xl font-semibold text-foreground">Public Service Health</h2>
+              <p className="mt-1 text-sm text-muted">
+                Live reachability for the hosted customer app, operator console, relay, managed media runtime, and cloud control plane.
+              </p>
+            </div>
+          </div>
+
+          {isOpsServiceHealthLoading ? (
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((index) => (
+                <div key={index} className="h-24 animate-pulse rounded-xl bg-surface" />
+              ))}
+            </div>
+          ) : opsServiceHealthError ? (
+            <div className="mt-5 rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-foreground">
+              {opsServiceHealthError instanceof Error ? opsServiceHealthError.message : 'Failed to load service health.'}
+            </div>
+          ) : (
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {opsServiceHealth?.services.map((service) => (
+                <div key={service.key} className="rounded-xl bg-surface/60 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-foreground">{service.label}</p>
+                    <span
+                      className={`rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                        service.status === 'online'
+                          ? 'bg-success/15 text-success'
+                          : service.status === 'degraded'
+                            ? 'bg-warning/15 text-warning'
+                            : 'bg-danger/15 text-danger'
+                      }`}
+                    >
+                      {service.status}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-muted">{service.detail}</p>
+                  <p className="mt-3 text-xs uppercase tracking-wide text-muted">
+                    {service.responseTimeMs !== null ? `${service.responseTimeMs} ms` : 'Internal check'} ·{' '}
+                    {service.httpStatus !== null ? `HTTP ${service.httpStatus}` : 'No HTTP status'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((index) => (
@@ -379,24 +476,205 @@ export const Operators = () => {
               </div>
               {profileManagedMediaControlsDisabled ? (
                 <p className="mt-3 text-sm text-muted">
-                  Managed media is currently granted to all authenticated cloud users, so per-profile managed-media toggles are paused until the policy switches back to explicit access.
+                  Managed media is currently granted to every OmniLux Cloud account, including free accounts, so per-profile managed-media toggles are paused until the policy switches back to explicit access.
                 </p>
               ) : (
                 <p className="mt-3 text-sm text-muted">
-                  Per-profile managed-media toggles are live because the policy is set to explicit access.
+                  Per-profile managed-media toggles are live because the platform policy is set to explicit access.
                 </p>
               )}
+            </div>
+
+            <div className="rounded-xl border border-border bg-background p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="font-display text-xl font-semibold text-foreground">Support View</h2>
+                  <p className="mt-2 text-sm text-muted">
+                    Select a cloud account to inspect its entitlement state, self-hosted servers, relay sessions, and recent access changes.
+                  </p>
+                </div>
+                <div className="text-xs uppercase tracking-wide text-muted">
+                  Selecting a profile records a sensitive operator audit event.
+                </div>
+              </div>
+
+              {!selectedProfileId ? (
+                <div className="mt-4 rounded-xl border border-dashed border-border bg-surface/40 p-4 text-sm text-muted">
+                  Choose a profile from the list below to open the support view.
+                </div>
+              ) : isSupportProfileLoading ? (
+                <div className="mt-4 grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+                  <div className="h-44 animate-pulse rounded-xl bg-surface" />
+                  <div className="h-44 animate-pulse rounded-xl bg-surface" />
+                </div>
+              ) : supportProfileError ? (
+                <div className="mt-4 rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-foreground">
+                  {supportProfileError instanceof Error ? supportProfileError.message : 'Failed to load support profile.'}
+                </div>
+              ) : supportProfile ? (
+                <div className="mt-4 space-y-4">
+                  <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                    <div className="rounded-xl bg-surface/60 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Account</p>
+                      <h3 className="mt-2 font-semibold text-foreground">
+                        {supportProfile.profile.displayName || supportProfile.profile.email || supportProfile.profile.id}
+                      </h3>
+                      <p className="mt-1 text-sm text-muted">{supportProfile.profile.email || supportProfile.profile.id}</p>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-lg bg-background p-4">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Managed Media</p>
+                          <p className="mt-2 text-foreground">
+                            {supportProfile.profile.managedMediaEntitled ? 'Enabled' : 'Disabled'}
+                          </p>
+                          <p className="mt-1 text-xs text-muted">
+                            Override: {supportProfile.profile.managedMediaAccessOverride ? 'enabled' : 'disabled'}
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-background p-4">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Operator</p>
+                          <p className="mt-2 text-foreground">
+                            {supportProfile.profile.isOperator ? 'Operator account' : 'Standard account'}
+                          </p>
+                          <p className="mt-1 text-xs text-muted">
+                            Updated {new Date(supportProfile.profile.updatedAt).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-surface/60 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Billing</p>
+                      {supportProfile.profile.subscription ? (
+                        <>
+                          <p className="mt-2 font-semibold text-foreground">
+                            {supportProfile.profile.subscription.tier} · {supportProfile.profile.subscription.status}
+                          </p>
+                          <p className="mt-2 text-sm text-muted">
+                            Current period ends{' '}
+                            {supportProfile.profile.subscription.currentPeriodEnd
+                              ? new Date(supportProfile.profile.subscription.currentPeriodEnd).toLocaleString()
+                              : 'not scheduled'}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="mt-2 text-sm text-muted">No active subscription record.</p>
+                      )}
+                      <div className="mt-4 rounded-lg bg-background p-4 text-sm text-muted">
+                        Account created {new Date(supportProfile.profile.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                    <div className="rounded-xl bg-surface/60 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Self-Hosted Servers</p>
+                          <p className="mt-1 text-sm text-muted">
+                            Customer-owned runtimes linked to this cloud account.
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-background px-3 py-1 text-xs font-semibold text-foreground">
+                          {supportProfile.selfHostedServers.length}
+                        </span>
+                      </div>
+
+                      {supportProfile.selfHostedServers.length === 0 ? (
+                        <div className="mt-4 rounded-lg bg-background p-4 text-sm text-muted">
+                          No self-hosted servers are linked to this account.
+                        </div>
+                      ) : (
+                        <div className="mt-4 space-y-3">
+                          {supportProfile.selfHostedServers.map((server) => (
+                            <div key={server.id} className="rounded-lg bg-background p-4">
+                              <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                                <div>
+                                  <p className="font-medium text-foreground">{server.name}</p>
+                                  <p className="mt-1 text-sm text-muted">
+                                    {server.ownership === 'owner' ? 'Owner' : `Shared · ${server.accessRole}`}
+                                  </p>
+                                </div>
+                                <div className="text-xs uppercase tracking-wide text-muted">
+                                  {server.relayStatus ?? 'unknown'} relay
+                                </div>
+                              </div>
+                              <p className="mt-3 text-xs text-muted">
+                                {server.publicOrigin ?? 'No public origin'} · Last seen{' '}
+                                {server.lastSeenAt ? new Date(server.lastSeenAt).toLocaleString() : 'never'}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl bg-surface/60 p-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Recent Relay Sessions</p>
+                        <p className="mt-1 text-sm text-muted">
+                          Latest remote-access session grants issued for this account.
+                        </p>
+                      </div>
+                      {supportProfile.recentRelaySessions.length === 0 ? (
+                        <div className="mt-4 rounded-lg bg-background p-4 text-sm text-muted">
+                          No recent relay sessions were issued for this account.
+                        </div>
+                      ) : (
+                        <div className="mt-4 space-y-3">
+                          {supportProfile.recentRelaySessions.map((session) => (
+                            <div key={session.id} className="rounded-lg bg-background p-4">
+                              <p className="font-medium text-foreground">{session.serverName}</p>
+                              <p className="mt-1 text-sm text-muted">
+                                {session.sessionType} · {session.status}
+                              </p>
+                              <p className="mt-2 text-xs text-muted">
+                                Issued {new Date(session.issuedAt).toLocaleString()}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl bg-surface/60 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">Recent Access Changes For This Account</p>
+                    {supportProfile.recentAccessChanges.length === 0 ? (
+                      <div className="mt-4 rounded-lg bg-background p-4 text-sm text-muted">
+                        No access changes have been recorded for this account.
+                      </div>
+                    ) : (
+                      <div className="mt-4 space-y-3">
+                        {supportProfile.recentAccessChanges.map((row) => (
+                          <div key={row.id} className="rounded-lg bg-background p-4">
+                            <p className="text-sm font-medium text-foreground">
+                              {renderProfileLabel(row.actor)} changed {renderProfileLabel(row.target)}
+                            </p>
+                            <p className="mt-1 text-sm text-muted">{renderAuditSummary(row)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="space-y-3">
               {filteredProfiles.map((profile) => {
                 const isUpdatingThisProfile = updateProfileAccess.isPending && updateProfileAccess.variables?.userId === profile.id;
+                const isSelectedProfile = selectedProfileId === profile.id;
                 const subscriptionLabel = profile.subscription
                   ? `${profile.subscription.tier} · ${profile.subscription.status}`
                   : 'No active subscription';
 
                 return (
-                  <div key={profile.id} className="rounded-xl border border-border bg-background p-5">
+                  <div
+                    key={profile.id}
+                    className={`rounded-xl border p-5 ${
+                      isSelectedProfile ? 'border-accent bg-accent/5' : 'border-border bg-background'
+                    }`}
+                  >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                       <div>
                         <h2 className="font-semibold text-foreground">
@@ -407,6 +685,21 @@ export const Operators = () => {
                       </div>
 
                       <div className="grid gap-3 sm:grid-cols-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMessage(null);
+                            setSelectedProfileId(profile.id);
+                          }}
+                          className={`rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+                            isSelectedProfile
+                              ? 'bg-accent text-accent-foreground'
+                              : 'bg-surface/60 text-foreground hover:bg-surface'
+                          }`}
+                        >
+                          {isSelectedProfile ? 'Viewing support details' : 'Open support view'}
+                        </button>
+
                         <label className="flex items-center justify-between gap-3 rounded-lg bg-surface/60 px-4 py-3 text-sm text-foreground">
                           <span>Managed media</span>
                           <input
@@ -445,6 +738,53 @@ export const Operators = () => {
                   </div>
                 );
               })}
+            </div>
+
+            <div className="rounded-xl surface-soft p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="font-display text-xl font-semibold text-foreground">Sensitive Operator Activity</h2>
+                  <p className="mt-2 text-sm text-muted">
+                    Unified audit feed for support lookups and high-impact control-plane changes.
+                  </p>
+                </div>
+              </div>
+
+              {isOperatorActionAuditLoading ? (
+                <div className="mt-4 space-y-3">
+                  {[1, 2, 3].map((index) => (
+                    <div key={index} className="h-16 animate-pulse rounded-xl bg-background/70" />
+                  ))}
+                </div>
+              ) : operatorActionAuditError ? (
+                <div className="mt-4 rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-foreground">
+                  {operatorActionAuditError instanceof Error
+                    ? operatorActionAuditError.message
+                    : 'Failed to load sensitive operator activity.'}
+                </div>
+              ) : (operatorActionAuditLog?.length ?? 0) === 0 ? (
+                <div className="mt-4 rounded-xl border border-border bg-background p-4 text-sm text-muted">
+                  No sensitive operator actions have been recorded yet.
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {operatorActionAuditLog?.map((row) => (
+                    <div key={row.id} className="rounded-xl border border-border bg-background p-4">
+                      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {renderProfileLabel(row.actor)} · {renderOperatorActionSummary(row)}
+                          </p>
+                          <p className="mt-1 text-sm text-muted">{renderOperatorActionDetail(row)}</p>
+                        </div>
+                        <div className="text-xs uppercase tracking-wide text-muted">
+                          {new Date(row.createdAt).toLocaleString()} · {row.source}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl surface-soft p-6">

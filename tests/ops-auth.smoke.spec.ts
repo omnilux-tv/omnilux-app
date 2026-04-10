@@ -21,6 +21,8 @@ test.describe('ops hosted auth smoke', () => {
 
     await page.waitForURL(/\/dashboard\/operators(?:\?.*)?$/);
     await expect(page.getByRole('heading', { name: 'Operator Access' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Public Service Health' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sensitive Operator Activity' })).toBeVisible();
   });
 
   test('non-operator accounts are blocked from the ops surface', async ({ page }) => {

@@ -10,7 +10,8 @@
     "build:artifact": "vite build && tsc --noEmit",
     "preview": "vite preview",
     "lint": "tsc --noEmit --pretty false",
-    "test:smoke:ops": "playwright test tests/ops-auth.smoke.spec.ts"
+    "test:smoke:ops": "playwright test tests/ops-auth.smoke.spec.ts",
+    "test:canary": "node scripts/run-service-canary.mjs"
   },
   "dependencies": {
     "@sentry/browser": "^10.47.0",
