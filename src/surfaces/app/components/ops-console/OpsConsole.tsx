@@ -1,16 +1,24 @@
-import { Link, useRouterState } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
+import { type ComponentType, type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Activity,
   ArrowUpRight,
   ChevronRight,
+  ChevronDown,
+  Compass,
+  Cpu,
+  LayoutDashboard,
   LogOut,
+  Search,
+  ShieldCheck,
+  WalletCards,
 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { buildAppHref, buildDocsHref } from '@/lib/site-surface';
 import { cn } from '@/lib/utils';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { type OpsServiceHealthResponse, useOpsServiceHealth } from '@/surfaces/app/lib/ops';
-import { opsConsolePages, type OpsConsolePath } from '@/surfaces/app/lib/ops-console';
+import { opsConsoleGroups, opsConsolePages, type OpsConsolePath } from '@/surfaces/app/lib/ops-console';
 
 const pageByPath = new Map(opsConsolePages.map((page) => [page.to, page]));
 
@@ -65,21 +73,149 @@ const isPathActive = (pathname: string, itemPath: string) =>
     ? pathname === '/dashboard'
     : pathname === itemPath || pathname.startsWith(`${itemPath}/`);
 
+const formatHeaderTime = (value: Date) =>
+  new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(value);
+
+const formatHeaderDate = (value: Date) =>
+  new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(value);
+
 export const OpsAppShell = ({ children }: { children: ReactNode }) => {
   const { user, signOut } = useAuth();
   const { data: accessProfile } = useAccessProfile();
+  const navigate = useNavigate();
   const pathname = useRouterState({
     select: (state) => (state.location.pathname === '/dashboard/' ? '/dashboard' : state.location.pathname),
   });
   const displayName = user?.user_metadata?.display_name ?? user?.email ?? 'Operator';
+  const displayInitial = displayName.trim().charAt(0).toUpperCase() || 'O';
+  const [headerDate, setHeaderDate] = useState(() => new Date());
+  const [searchDraft, setSearchDraft] = useState('');
+  const [openMenu, setOpenMenu] = useState<'operations' | 'systems' | 'profile' | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
   const currentPage = pageByPath.get(pathname as OpsConsolePath) ?? null;
-  const primaryNav = opsConsolePages.filter((page) => page.to !== '/dashboard/account');
+  const overviewLink = opsConsolePages.find((page) => page.to === '/dashboard') ?? opsConsolePages[0];
+  const operationsLinks = opsConsoleGroups
+    .find((group) => group.id === 'operations')
+    ?.items.map((path) => pageByPath.get(path))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item)) ?? [];
+  const systemsLinks = opsConsoleGroups
+    .find((group) => group.id === 'systems')
+    ?.items.map((path) => pageByPath.get(path))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item)) ?? [];
+  const opsTime = useMemo(() => formatHeaderTime(headerDate), [headerDate]);
+  const opsDate = useMemo(() => formatHeaderDate(headerDate), [headerDate]);
+  const alertCount =
+    useOpsServiceHealth(Boolean(accessProfile?.isOperator)).data?.services.filter((service) => service.status !== 'online')
+      .length ?? 0;
+
+  useEffect(() => {
+    const syncDate = () => setHeaderDate(new Date());
+    syncDate();
+    const intervalId = window.setInterval(syncDate, 30_000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!headerRef.current?.contains(event.target as Node)) {
+        setOpenMenu(null);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpenMenu(null);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('keydown', handleEscape);
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const lookup = searchDraft.trim();
+    void navigate({
+      to: '/dashboard/accounts',
+      search: { lookup: lookup || undefined } as never,
+    });
+  };
+
+  const renderMenu = ({
+    menuId,
+    label,
+    Icon,
+    items,
+  }: {
+    menuId: 'operations' | 'systems';
+    label: string;
+    Icon: ComponentType<{ className?: string; size?: number }>;
+    items: readonly (typeof opsConsolePages)[number][];
+  }) => {
+    const open = openMenu === menuId;
+    const active = items.some((item) => isPathActive(pathname, item.to));
+
+    return (
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpenMenu((current) => (current === menuId ? null : menuId))}
+          aria-expanded={open}
+          className={cn(
+            'group inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-all',
+            active
+              ? 'bg-white/[0.06] text-foreground'
+              : 'text-foreground/72 hover:bg-white/[0.05] hover:text-foreground',
+          )}
+        >
+          <Icon size={15} className={cn(active ? 'text-foreground/90' : 'text-muted group-hover:text-foreground')} />
+          <span>{label}</span>
+          <ChevronDown className={cn('h-4 w-4 transition-transform', open ? 'rotate-180' : 'rotate-0')} />
+        </button>
+
+        {open ? (
+          <div className="absolute left-0 top-[calc(100%+0.5rem)] z-50 min-w-[14rem] overflow-hidden rounded-[1.2rem] border border-white/10 bg-[#151619]/95 p-2 shadow-2xl backdrop-blur-xl">
+            <div className="space-y-1">
+              {items.map((item) => {
+                const activeItem = isPathActive(pathname, item.to);
+
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setOpenMenu(null)}
+                    className={cn(
+                      'block min-h-11 rounded-[0.9rem] px-4 py-3 text-sm transition-colors',
+                      activeItem ? 'bg-white/[0.08] text-white' : 'text-white/72 hover:bg-white/[0.05] hover:text-white',
+                    )}
+                  >
+                    <span className="block font-medium">{item.label}</span>
+                    <span className="mt-1 block text-[11px] leading-5 text-white/45">{item.description}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <div className="ops-console-theme min-h-dvh bg-background text-foreground">
       <div className="mx-auto min-h-dvh w-full max-w-[1880px] px-2 py-3 lg:px-3">
         <header className="sticky top-2 z-40">
-          <div className="surface-panel rounded-[1.75rem] px-3 py-3 sm:px-4">
+          <div ref={headerRef} className="surface-panel rounded-[1.75rem] px-3 py-3 sm:px-4">
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -102,42 +238,118 @@ export const OpsAppShell = ({ children }: { children: ReactNode }) => {
                     </div>
                     <p className="text-[10px] uppercase tracking-[0.22em] text-muted">Internal Operations</p>
                   </div>
-                  <nav aria-label="Operator navigation" className="hidden shrink-0 items-center gap-1 md:flex">
-                    {primaryNav.map((item) => {
-                      const active = isPathActive(pathname, item.to);
-
-                      return (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          aria-current={active ? 'page' : undefined}
-                          className={cn(
-                            'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-semibold tracking-[0.01em] transition-all',
-                            active
-                              ? 'bg-white/[0.08] text-foreground'
-                              : 'text-muted hover:bg-white/6 hover:text-foreground',
-                          )}
-                        >
-                          {item.label}
-                        </Link>
-                      );
-                    })}
+                  <nav aria-label="Operator navigation" className="hidden shrink-0 items-center gap-1 lg:flex">
+                    <Link
+                      to={overviewLink.to}
+                      aria-current={isPathActive(pathname, overviewLink.to) ? 'page' : undefined}
+                      className={cn(
+                        'group inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold tracking-[0.01em] transition-all',
+                        isPathActive(pathname, overviewLink.to)
+                          ? 'bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(242,228,207,0.14)]'
+                          : 'text-muted hover:bg-white/6 hover:text-foreground',
+                      )}
+                    >
+                      <Compass size={15} className={cn(isPathActive(pathname, overviewLink.to) ? 'text-primary-foreground' : 'text-muted group-hover:text-foreground')} />
+                      {overviewLink.label}
+                    </Link>
+                    {renderMenu({ menuId: 'operations', label: 'Operations', Icon: ShieldCheck, items: operationsLinks })}
+                    {renderMenu({ menuId: 'systems', label: 'Systems', Icon: Cpu, items: systemsLinks })}
+                    <Link
+                      to="/dashboard/account"
+                      aria-current={isPathActive(pathname, '/dashboard/account') ? 'page' : undefined}
+                      className={cn(
+                        'group inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-all',
+                        isPathActive(pathname, '/dashboard/account')
+                          ? 'bg-white/[0.06] text-foreground'
+                          : 'text-foreground/72 hover:bg-white/[0.05] hover:text-foreground',
+                      )}
+                    >
+                      <WalletCards size={15} className="text-muted group-hover:text-foreground" />
+                      Account
+                    </Link>
                   </nav>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                  <a
-                    href={buildDocsHref('/guide/operator-runbook')}
-                    className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground/78 transition-all hover:bg-white/10 hover:text-foreground"
+                  <form
+                    onSubmit={handleSearchSubmit}
+                    className="relative order-last flex min-w-0 basis-full items-center lg:order-none lg:basis-auto lg:w-[40rem]"
                   >
-                    Docs
-                  </a>
+                    <Search className="pointer-events-none absolute left-3.5 h-4 w-4 text-muted" />
+                    <input
+                      type="search"
+                      value={searchDraft}
+                      onChange={(event) => setSearchDraft(event.currentTarget.value)}
+                      placeholder="Search accounts, servers, relay tokens..."
+                      className="h-11 w-full rounded-full border border-white/8 bg-white/[0.04] pl-10 pr-4 text-sm text-foreground placeholder:text-muted outline-none transition-all focus:border-white/18"
+                    />
+                  </form>
                   <Link
-                    to="/dashboard/account"
-                    className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground/78 transition-all hover:bg-white/10 hover:text-foreground"
+                    to="/dashboard/logs"
+                    className={cn(
+                      'flex h-11 w-11 items-center justify-center rounded-full transition-all',
+                      alertCount > 0
+                        ? 'bg-primary text-primary-foreground shadow-[0_10px_28px_rgba(242,228,207,0.14)]'
+                        : 'bg-white/[0.04] text-muted hover:bg-white/10 hover:text-foreground',
+                    )}
+                    aria-label="Activity"
+                    title="Activity"
                   >
-                    {displayName}
+                    <Activity className="h-4 w-4" />
                   </Link>
+                  <div className="hidden shrink-0 select-none text-right xl:block">
+                    <p className="text-sm font-semibold tabular-nums text-foreground">{opsTime}</p>
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-muted">{opsDate}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOpenMenu((current) => (current === 'profile' ? null : 'profile'))}
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-sm font-semibold text-foreground transition-colors hover:bg-white/10"
+                    aria-label="User menu"
+                    aria-haspopup="menu"
+                    aria-expanded={openMenu === 'profile'}
+                  >
+                    {displayInitial}
+                  </button>
+                  {openMenu === 'profile' ? (
+                    <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 min-w-[14rem] overflow-hidden rounded-[1.25rem] border border-white/10 bg-black/85 p-2 shadow-2xl backdrop-blur-xl">
+                      <div className="mb-1.5 border-b border-white/8 px-3.5 py-3">
+                        <p className="text-sm font-semibold text-foreground">{displayName}</p>
+                        <p className="mt-0.5 text-[11px] uppercase tracking-[0.22em] text-muted">Operator</p>
+                      </div>
+                      <Link
+                        to="/dashboard/account"
+                        onClick={() => setOpenMenu(null)}
+                        className="flex min-h-11 w-full items-center rounded-[0.9rem] px-4 py-3 text-left text-sm font-medium text-white/65 transition-colors hover:bg-white/6 hover:text-white"
+                      >
+                        Account
+                      </Link>
+                      <a
+                        href={buildDocsHref('/guide/operator-runbook')}
+                        onClick={() => setOpenMenu(null)}
+                        className="flex min-h-11 w-full items-center rounded-[0.9rem] px-4 py-3 text-left text-sm font-medium text-white/65 transition-colors hover:bg-white/6 hover:text-white"
+                      >
+                        Docs
+                      </a>
+                      <a
+                        href={buildAppHref('/dashboard')}
+                        onClick={() => setOpenMenu(null)}
+                        className="flex min-h-11 w-full items-center gap-2.5 rounded-[0.9rem] px-4 py-3 text-left text-sm font-medium text-white/65 transition-colors hover:bg-white/6 hover:text-white"
+                      >
+                        <span>Open App</span>
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                      </a>
+                      <div className="mx-2 my-1.5 border-t border-white/8" />
+                      <button
+                        type="button"
+                        onClick={() => void signOut().then(() => window.location.assign('/login'))}
+                        className="flex min-h-11 w-full items-center gap-2.5 rounded-[0.9rem] px-4 py-3 text-left text-sm font-medium text-red-400/80 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Log out</span>
+                      </button>
+                    </div>
+                  ) : null}
                   <a
                     href={buildAppHref('/dashboard')}
                     className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-primary/55 bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-[0_16px_40px_rgba(242,228,207,0.14)] transition-all hover:opacity-95"
@@ -145,20 +357,12 @@ export const OpsAppShell = ({ children }: { children: ReactNode }) => {
                     <span>Open App</span>
                     <ArrowUpRight className="h-4 w-4" />
                   </a>
-                  <button
-                    type="button"
-                    onClick={() => void signOut().then(() => window.location.assign('/login'))}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-foreground/78 transition-all hover:bg-white/10 hover:text-foreground"
-                    aria-label="Sign out"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </button>
                 </div>
               </div>
 
-              <nav aria-label="Operator navigation" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:hidden">
+              <nav aria-label="Operator navigation" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 lg:hidden">
                 <div className="flex gap-1">
-                  {primaryNav.map((item) => (
+                  {[overviewLink, ...operationsLinks, ...systemsLinks].map((item) => (
                     <Link
                       key={item.to}
                       to={item.to}
@@ -166,7 +370,7 @@ export const OpsAppShell = ({ children }: { children: ReactNode }) => {
                       className={cn(
                         'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-semibold tracking-[0.01em] transition-all',
                         isPathActive(pathname, item.to)
-                          ? 'bg-white/[0.08] text-foreground'
+                          ? 'bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(242,228,207,0.14)]'
                           : 'border-white/8 bg-white/[0.04] text-foreground/72 hover:bg-white/[0.08] hover:text-foreground',
                       )}
                     >
