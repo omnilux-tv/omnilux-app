@@ -7,34 +7,9 @@ const fallbackMediaOrigin = 'https://media.omnilux.tv';
 
 export const ManagedMedia = () => {
   const { data: overview, error, isLoading } = useCustomerOverview();
-
-  if (isLoading) {
-    return (
-      <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl space-y-4">
-          <div className="h-20 animate-pulse rounded-xl bg-surface" />
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="h-56 animate-pulse rounded-xl bg-surface" />
-            <div className="h-56 animate-pulse rounded-xl bg-surface" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !overview) {
-    return (
-      <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl rounded-xl border border-danger/30 bg-danger/10 p-6 text-sm text-foreground">
-          {error instanceof Error ? error.message : 'Managed media status could not be loaded.'}
-        </div>
-      </div>
-    );
-  }
-
-  const managedMediaOrigin = overview.managedMediaRuntime?.publicOrigin ?? fallbackMediaOrigin;
-  const managedMediaAvailable = overview.access.managedMediaEntitled && Boolean(overview.managedMediaRuntime);
-  const operatingMode = overview.platform.managedMediaOperatingMode;
+  const managedMediaOrigin = overview?.managedMediaRuntime?.publicOrigin ?? fallbackMediaOrigin;
+  const managedMediaAvailable = Boolean(overview?.access.managedMediaEntitled && overview?.managedMediaRuntime);
+  const operatingMode = overview?.platform.managedMediaOperatingMode ?? 'normal';
 
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
@@ -48,13 +23,19 @@ export const ManagedMedia = () => {
           </p>
         </div>
 
-        {operatingMode !== 'normal' || overview.platform.managedMediaIncidentMessage ? (
+        {overview && (operatingMode !== 'normal' || overview.platform.managedMediaIncidentMessage) ? (
           <div className="rounded-xl border border-warning/30 bg-warning/10 p-5 text-sm text-foreground">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-warning">Current Operating State</p>
             <p className="mt-2 text-lg font-semibold">{overview.platform.managedMediaOperatingModeLabel}</p>
             <p className="mt-2 text-muted">
               {overview.platform.managedMediaIncidentMessage || 'Operators have published a non-normal operating state for managed media.'}
             </p>
+          </div>
+        ) : null}
+
+        {error ? (
+          <div className="rounded-xl border border-danger/30 bg-danger/10 p-5 text-sm text-foreground">
+            {error instanceof Error ? error.message : 'Managed media status could not be loaded.'}
           </div>
         ) : null}
 
@@ -65,27 +46,38 @@ export const ManagedMedia = () => {
               <div>
                 <h2 className="text-lg font-bold text-foreground">Access for this account</h2>
                 <p className="text-sm text-muted">
-                  {managedMediaAvailable
+                  {isLoading
+                    ? 'Checking managed media status for this account.'
+                    : managedMediaAvailable
                     ? 'This account can open the managed OmniLux media runtime right now.'
                     : 'Managed media is not currently available to this account.'}
                 </p>
               </div>
             </div>
 
-            <ul className="mt-4 space-y-2">
-              {[
-                overview.access.managedMediaEntitled
-                  ? 'Managed media entitlement is active on this cloud account.'
-                  : 'Managed media entitlement is currently disabled for this cloud account.',
-                overview.platform.managedMediaPolicyDescription,
-                'Managed media stays separate from self-hosted ownership, invites, and local admin accounts.',
-              ].map((bullet) => (
-                <li key={bullet} className="flex gap-2 text-sm leading-6 text-muted">
-                  <span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent" />
-                  <span>{bullet}</span>
-                </li>
-              ))}
-            </ul>
+            {isLoading && !overview ? (
+              <div className="mt-4 space-y-3">
+                <div className="h-5 animate-pulse rounded bg-surface" />
+                <div className="h-5 animate-pulse rounded bg-surface" />
+                <div className="h-5 animate-pulse rounded bg-surface" />
+              </div>
+            ) : (
+              <ul className="mt-4 space-y-2">
+                {[
+                  overview?.access.managedMediaEntitled
+                    ? 'Managed media entitlement is active on this cloud account.'
+                    : 'Managed media entitlement is currently disabled for this cloud account.',
+                  overview?.platform.managedMediaPolicyDescription ??
+                    'Managed media follows the current OmniLux Cloud platform policy.',
+                  'Managed media stays separate from self-hosted ownership, invites, and local admin accounts.',
+                ].map((bullet) => (
+                  <li key={bullet} className="flex gap-2 text-sm leading-6 text-muted">
+                    <span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent" />
+                    <span>{bullet}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             <div className="mt-5 flex flex-wrap gap-3">
               <a
@@ -107,7 +99,14 @@ export const ManagedMedia = () => {
 
           <div className="rounded-xl border border-border bg-background p-6">
             <h2 className="font-semibold text-foreground">Runtime Status</h2>
-            {overview.managedMediaRuntime ? (
+            {isLoading && !overview ? (
+              <div className="mt-4 space-y-3">
+                <div className="h-5 animate-pulse rounded bg-surface" />
+                <div className="h-5 animate-pulse rounded bg-surface" />
+                <div className="h-5 animate-pulse rounded bg-surface" />
+                <div className="h-5 animate-pulse rounded bg-surface" />
+              </div>
+            ) : overview?.managedMediaRuntime ? (
               <dl className="mt-4 space-y-4 text-sm">
                 <div>
                   <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Origin</dt>
