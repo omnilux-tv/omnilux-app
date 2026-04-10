@@ -56,6 +56,7 @@ function DashboardLayout() {
     if (!isAllowedOpsRoute) {
       navigate({
         to: '/dashboard/operators',
+        search: {} as never,
         replace: true,
       });
     }

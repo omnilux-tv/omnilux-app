@@ -162,11 +162,15 @@ const renderOperatorActionDetail = (row: OperatorActionAuditRow) => {
   return row.server?.name ? `Target server: ${row.server.name}` : 'Sensitive operator action';
 };
 
-export const Operators = () => {
+interface OperatorsProps {
+  initialLookup?: string;
+}
+
+export const Operators = ({ initialLookup }: OperatorsProps) => {
   const queryClient = useQueryClient();
   const { data: accessProfile, isLoading: isAccessProfileLoading, error: accessProfileError } = useAccessProfile();
   const [message, setMessage] = useState<string | null>(null);
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState(initialLookup ?? '');
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [managedMediaOperatingModeDraft, setManagedMediaOperatingModeDraft] = useState<ManagedMediaOperatingMode>('normal');
   const [managedMediaIncidentMessageDraft, setManagedMediaIncidentMessageDraft] = useState('');
@@ -503,6 +507,10 @@ export const Operators = () => {
   const profileManagedMediaControlsDisabled = managedMediaPolicy === 'all-authenticated-users';
   const operatorMutationsLocked = accessProfile?.sessionAssuranceLevel !== 'aal2';
 
+  useEffect(() => {
+    setSearchValue(initialLookup ?? '');
+  }, [initialLookup]);
+
   if (isAccessProfileLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -514,7 +522,7 @@ export const Operators = () => {
   if (accessProfileError) {
     return (
       <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl rounded-xl border border-danger/30 bg-danger/10 p-6 text-sm text-foreground">
+        <div className="mx-auto w-full max-w-[2200px] rounded-xl border border-danger/30 bg-danger/10 p-6 text-sm text-foreground">
           {accessProfileError instanceof Error ? accessProfileError.message : 'Failed to load access profile.'}
         </div>
       </div>
@@ -524,7 +532,7 @@ export const Operators = () => {
   if (!accessProfile?.isOperator) {
     return (
       <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl rounded-xl border border-warning/30 bg-warning/10 p-6">
+        <div className="mx-auto w-full max-w-[2200px] rounded-xl border border-warning/30 bg-warning/10 p-6">
           <h1 className="font-display text-2xl font-bold text-foreground">Operator Access Required</h1>
           <p className="mt-2 text-sm text-foreground">
             This page manages managed-media entitlement and OmniLux Ops console access. Standard cloud accounts cannot access it.
@@ -538,7 +546,7 @@ export const Operators = () => {
 
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl space-y-6">
+      <div className="mx-auto w-full max-w-[2200px] space-y-6">
         <div>
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-6 w-6 text-accent" />
@@ -878,7 +886,7 @@ export const Operators = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="rounded-xl border border-border bg-background p-5">
+            <div id="support" className="rounded-xl border border-border bg-background p-5">
               <label htmlFor="operator-search" className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
                 Search Accounts
               </label>
@@ -1359,7 +1367,7 @@ export const Operators = () => {
               })}
             </div>
 
-            <div className="rounded-xl surface-soft p-6">
+            <div id="activity" className="rounded-xl surface-soft p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h2 className="font-display text-xl font-semibold text-foreground">Sensitive Operator Activity</h2>

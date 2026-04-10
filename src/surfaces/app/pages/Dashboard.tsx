@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import {
   Activity,
+  ArrowUpRight,
   CreditCard,
   Puzzle,
   RadioTower,
@@ -14,7 +15,12 @@ import { useAuth } from '@/providers/AuthProvider';
 import { buildAppHref, buildDocsHref, getCurrentSiteSurface } from '@/lib/site-surface';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { useCustomerOverview } from '@/surfaces/app/lib/customer-overview';
-import { useOpsOverview, useOpsServiceHealth } from '@/surfaces/app/lib/ops';
+import {
+  type OpsOverview,
+  type OpsServiceHealthResponse,
+  useOpsOverview,
+  useOpsServiceHealth,
+} from '@/surfaces/app/lib/ops';
 
 const dashboardLinks = [
   { to: '/dashboard/media', icon: RadioTower, label: 'Media', description: 'Open OmniLux-managed channels, radio, and first-party cloud experiences.' },
@@ -67,302 +73,16 @@ export const Dashboard = () => {
   } = useCustomerOverview();
 
   if (isOpsSurface) {
-    const opsLinks = [
-      {
-        to: '/dashboard/operators',
-        icon: ShieldCheck,
-        label: 'Policy & Access',
-        description: 'Manage internal operator accounts, managed media policy, support lookup, and audit history.',
-      },
-      {
-        to: '/dashboard/account',
-        icon: User,
-        label: 'Admin Account',
-        description: 'Review the credentials, password, and profile settings for your operator identity.',
-      },
-    ] as const;
-
-    const opsMetricCards = [
-      {
-        icon: User,
-        label: 'Cloud Profiles',
-        value: opsOverview?.metrics.profilesTotal ?? '—',
-        detail: `${opsOverview?.metrics.operatorsTotal ?? 0} operators`,
-      },
-      {
-        icon: CreditCard,
-        label: 'Active Billing',
-        value: opsOverview?.metrics.activeSubscriptionsTotal ?? '—',
-        detail: `${opsOverview?.metrics.trialingSubscriptionsTotal ?? 0} trialing`,
-      },
-      {
-        icon: Server,
-        label: 'Self-Hosted Servers',
-        value: opsOverview?.metrics.selfHostedServersTotal ?? '—',
-        detail: `${opsOverview?.metrics.relayOnlineServersTotal ?? 0} relay online`,
-      },
-      {
-        icon: Activity,
-        label: 'Needs Attention',
-        value: opsOverview?.metrics.relayAttentionServersTotal ?? '—',
-        detail: 'Self-hosted relay issues',
-      },
-      {
-        icon: Activity,
-        label: 'Active Relay Sessions',
-        value: opsOverview?.metrics.activeRelaySessionsTotal ?? '—',
-        detail: 'Currently granted or active remote sessions',
-      },
-      {
-        icon: ShieldCheck,
-        label: 'Support Notes',
-        value: opsOverview?.metrics.supportNotesTotal ?? '—',
-        detail: 'Operator-only notes captured in support workflows',
-      },
-    ] as const;
-
     return (
-      <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted">Operator Console</p>
-          <h1 className="mt-2 font-display text-3xl font-bold text-foreground">OmniLux Ops</h1>
-          <p className="mt-2 max-w-2xl text-muted">
-            {displayName}, this surface is reserved for OmniLux operators. Use it to administer managed access,
-            entitlement policy, and internal cloud controls without mixing those tasks into the customer app.
-          </p>
-
-          {isOpsOverviewLoading ? (
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              {[1, 2, 3, 4].map((index) => (
-                <div key={index} className="h-28 animate-pulse rounded-xl bg-surface" />
-              ))}
-            </div>
-          ) : opsOverviewError ? (
-            <div className="mt-8 rounded-xl border border-danger/30 bg-danger/10 p-5 text-sm text-foreground">
-              {opsOverviewError instanceof Error ? opsOverviewError.message : 'Failed to load operator overview.'}
-            </div>
-          ) : (
-            <>
-              {opsOverview?.platform.managedMediaOperatingMode !== 'normal' ||
-              (opsOverview?.platform.managedMediaIncidentMessage?.length ?? 0) > 0 ? (
-                <div className="mt-8 rounded-xl border border-warning/30 bg-warning/10 p-5 text-sm text-foreground">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-warning">Managed Media Incident State</p>
-                  <p className="mt-2 text-lg font-semibold text-foreground">
-                    {opsOverview?.platform.managedMediaOperatingModeLabel ?? 'Operating state updated'}
-                  </p>
-                  <p className="mt-2 text-muted">
-                    {opsOverview?.platform.managedMediaIncidentMessage || 'No incident summary has been published yet.'}
-                  </p>
-                </div>
-              ) : null}
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {opsMetricCards.map(({ icon: Icon, label, value, detail }) => (
-                  <div key={label} className="rounded-xl surface-soft p-5">
-                    <Icon className="h-5 w-5 text-accent" />
-                    <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted">{label}</p>
-                    <p className="mt-2 font-display text-3xl font-bold text-foreground">{value}</p>
-                    <p className="mt-2 text-sm text-muted">{detail}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-                <div className="rounded-xl border border-border bg-background p-5">
-                  <div className="flex items-center gap-2">
-                    <Waves className="h-5 w-5 text-accent" />
-                    <h2 className="font-semibold text-foreground">Managed Media Runtime</h2>
-                  </div>
-                  {opsOverview?.managedMediaRuntime ? (
-                    <>
-                      <p className="mt-3 text-sm text-muted">
-                        {opsOverview.managedMediaRuntime.name} is registered as the first-party runtime behind
-                        `media.omnilux.tv`.
-                      </p>
-                      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                        <div className="rounded-lg bg-surface/60 p-4">
-                          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Origin</dt>
-                          <dd className="mt-2 text-foreground">
-                            {opsOverview.managedMediaRuntime.publicOrigin ?? 'Not set'}
-                          </dd>
-                        </div>
-                        <div className="rounded-lg bg-surface/60 p-4">
-                          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Relay Status</dt>
-                          <dd className="mt-2 capitalize text-foreground">
-                            {opsOverview.managedMediaRuntime.relayStatus ?? 'unknown'}
-                          </dd>
-                        </div>
-                        <div className="rounded-lg bg-surface/60 p-4">
-                          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Last Seen</dt>
-                          <dd className="mt-2 text-foreground">
-                            {opsOverview.managedMediaRuntime.lastSeenAt
-                              ? new Date(opsOverview.managedMediaRuntime.lastSeenAt).toLocaleString()
-                              : 'No heartbeat yet'}
-                          </dd>
-                        </div>
-                        <div className="rounded-lg bg-surface/60 p-4">
-                          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Version</dt>
-                          <dd className="mt-2 text-foreground">
-                            {opsOverview.managedMediaRuntime.version ?? 'Unknown'}
-                          </dd>
-                        </div>
-                      </dl>
-                    </>
-                  ) : (
-                    <p className="mt-3 text-sm text-muted">
-                      No managed media runtime is registered in the cloud control plane yet.
-                    </p>
-                  )}
-                </div>
-
-                <div className="rounded-xl border border-border bg-background p-5">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-accent" />
-                    <h2 className="font-semibold text-foreground">Current Platform Policy</h2>
-                  </div>
-                  <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
-                    Managed Media Access
-                  </p>
-                  <p className="mt-2 text-xl font-semibold text-foreground">
-                    {opsOverview?.platform.managedMediaPolicyLabel ?? 'Unknown'}
-                  </p>
-                  <p className="mt-2 text-sm text-muted">
-                    {opsOverview?.platform.managedMediaPolicyDescription ??
-                      'Managed media policy is currently unavailable.'}
-                  </p>
-                  <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
-                    Self-Hosted Relay Access
-                  </p>
-                  <p className="mt-2 text-xl font-semibold text-foreground">
-                    {opsOverview?.platform.relayAccessPolicyLabel ?? 'Unknown'}
-                  </p>
-                  <p className="mt-2 text-sm text-muted">
-                    {opsOverview?.platform.relayAccessPolicyDescription ??
-                      'Relay access policy is currently unavailable.'}
-                  </p>
-                  <div className="mt-4 rounded-lg bg-surface/60 p-4 text-sm text-muted">
-                    <p>{opsOverview?.metrics.recentAccessChangesTotal ?? 0} access changes in the last 7 days</p>
-                    <p className="mt-2">{opsOverview?.metrics.recentPolicyChangesTotal ?? 0} policy changes in the last 7 days</p>
-                    <p className="mt-2">
-                      Service canary failures now auto-open or update a GitHub issue for incident follow-up.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 rounded-xl border border-border bg-background p-5">
-                <h2 className="font-semibold text-foreground">Public Service Health</h2>
-                <p className="mt-2 text-sm text-muted">
-                  Live reachability for the hosted app, operator console, relay, managed media runtime, and control plane.
-                </p>
-
-                {isOpsServiceHealthLoading ? (
-                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {[1, 2, 3, 4, 5, 6].map((index) => (
-                      <div key={index} className="h-24 animate-pulse rounded-xl bg-surface" />
-                    ))}
-                  </div>
-                ) : opsServiceHealthError ? (
-                  <div className="mt-4 rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-foreground">
-                    {opsServiceHealthError instanceof Error
-                      ? opsServiceHealthError.message
-                      : 'Failed to load public service health.'}
-                  </div>
-                ) : (
-                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {opsServiceHealth?.services.map((service) => (
-                      <div key={service.key} className="rounded-xl bg-surface/60 p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm font-semibold text-foreground">{service.label}</p>
-                          <span
-                            className={`rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
-                              service.status === 'online'
-                                ? 'bg-success/15 text-success'
-                                : service.status === 'degraded'
-                                  ? 'bg-warning/15 text-warning'
-                                  : 'bg-danger/15 text-danger'
-                            }`}
-                          >
-                            {service.status}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-sm text-muted">{service.detail}</p>
-                        <p className="mt-3 text-xs uppercase tracking-wide text-muted">
-                          {service.responseTimeMs !== null ? `${service.responseTimeMs} ms` : 'Internal check'} ·{' '}
-                          {service.httpStatus !== null ? `HTTP ${service.httpStatus}` : 'No HTTP status'}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-8 rounded-xl border border-border bg-background p-5">
-                <h2 className="font-semibold text-foreground">Shift-Start Drill</h2>
-                <p className="mt-2 text-sm text-muted">
-                  Use this checklist at the start of an operator shift so support and incident actions stay familiar
-                  before you need them under pressure.
-                </p>
-                <ul className="mt-4 space-y-2 text-sm text-muted">
-                  {[
-                    'Open a support profile and verify the account summary, subscription state, and self-hosted servers.',
-                    'Create a support note and confirm it lands in both the support view and sensitive operator activity.',
-                    'Send a password reset or revoke a relay session/token in a controlled test scenario.',
-                    'Set managed media to degraded, verify the incident banner, then return the platform to normal.',
-                    'Confirm your current operator session is elevated before attempting any live changes.',
-                  ].map((item) => (
-                    <li key={item} className="flex gap-2">
-                      <span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <Link
-                    to="/dashboard/operators"
-                    className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90"
-                  >
-                    Open Policy & Access
-                  </Link>
-                  <Link
-                    to="/dashboard/account"
-                    className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
-                  >
-                    Check MFA Session
-                  </Link>
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="mt-10 grid gap-4 sm:grid-cols-2">
-            {opsLinks.map(({ to, icon: Icon, label, description }) => (
-              <Link
-                key={to}
-                to={to}
-                className="group rounded-xl surface-soft p-5 transition-colors hover:bg-surface"
-              >
-                <Icon className="mb-3 h-6 w-6 text-accent" />
-                <h2 className="font-semibold text-foreground">{label}</h2>
-                <p className="mt-1 text-sm text-muted">{description}</p>
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-8 rounded-xl border border-border bg-background p-5">
-            <h2 className="font-semibold text-foreground">Need the customer-facing cloud app?</h2>
-            <p className="mt-2 text-sm text-muted">
-              Use the standard hosted app for billing, self-hosted servers, and customer account workflows.
-            </p>
-            <a
-              href={buildAppHref('/dashboard')}
-              className="mt-4 inline-flex rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
-            >
-              Open OmniLux Cloud
-            </a>
-          </div>
-        </div>
-      </div>
+      <OpsDashboardView
+        displayName={displayName}
+        opsOverview={opsOverview}
+        isOpsOverviewLoading={isOpsOverviewLoading}
+        opsOverviewError={opsOverviewError}
+        opsServiceHealth={opsServiceHealth}
+        isOpsServiceHealthLoading={isOpsServiceHealthLoading}
+        opsServiceHealthError={opsServiceHealthError}
+      />
     );
   }
 
@@ -616,3 +336,480 @@ export const Dashboard = () => {
     </div>
   );
 };
+
+interface OpsDashboardViewProps {
+  displayName: string;
+  opsOverview: OpsOverview | undefined;
+  isOpsOverviewLoading: boolean;
+  opsOverviewError: unknown;
+  opsServiceHealth: OpsServiceHealthResponse | undefined;
+  isOpsServiceHealthLoading: boolean;
+  opsServiceHealthError: unknown;
+}
+
+const formatOpsMetric = (value: number | null | undefined) =>
+  typeof value === 'number' ? value.toLocaleString() : '—';
+
+const formatOpsTimestamp = (value: string | null | undefined, fallback: string) =>
+  value ? new Date(value).toLocaleString() : fallback;
+
+const serviceStatusClassName = (status: OpsServiceHealthResponse['services'][number]['status']) =>
+  status === 'online'
+    ? 'bg-success/15 text-success'
+    : status === 'degraded'
+      ? 'bg-warning/15 text-warning'
+      : 'bg-danger/15 text-danger';
+
+function OpsDashboardView({
+  displayName,
+  opsOverview,
+  isOpsOverviewLoading,
+  opsOverviewError,
+  opsServiceHealth,
+  isOpsServiceHealthLoading,
+  opsServiceHealthError,
+}: OpsDashboardViewProps) {
+  const services = opsServiceHealth?.services ?? [];
+  const servicesOnline = services.filter((service) => service.status === 'online').length;
+  const servicesNeedingAttention = services.filter((service) => service.status !== 'online').length;
+  const incidentActive =
+    opsOverview?.platform.managedMediaOperatingMode !== 'normal' ||
+    (opsOverview?.platform.managedMediaIncidentMessage?.length ?? 0) > 0;
+  const opsMetrics = [
+    {
+      label: 'Cloud accounts',
+      value: formatOpsMetric(opsOverview?.metrics.profilesTotal),
+      detail: `${opsOverview?.metrics.operatorsTotal ?? 0} operators`,
+    },
+    {
+      label: 'Paid plans',
+      value: formatOpsMetric(opsOverview?.metrics.activeSubscriptionsTotal),
+      detail: `${opsOverview?.metrics.trialingSubscriptionsTotal ?? 0} trialing`,
+    },
+    {
+      label: 'Self-hosted servers',
+      value: formatOpsMetric(opsOverview?.metrics.selfHostedServersTotal),
+      detail: `${opsOverview?.metrics.relayOnlineServersTotal ?? 0} relay online`,
+    },
+    {
+      label: 'Needs attention',
+      value: formatOpsMetric(opsOverview?.metrics.relayAttentionServersTotal),
+      detail: 'Relay or reachability follow-up',
+    },
+    {
+      label: 'Relay sessions',
+      value: formatOpsMetric(opsOverview?.metrics.activeRelaySessionsTotal),
+      detail: 'Currently live or granted',
+    },
+    {
+      label: 'Support notes',
+      value: formatOpsMetric(opsOverview?.metrics.supportNotesTotal),
+      detail: 'Operator handoff context saved',
+    },
+  ] as const;
+  const quickLinks = [
+    {
+      to: '/dashboard/operators',
+      label: 'Policy & access',
+      description: 'Review operator permissions, customer access, and support lookups from one surface.',
+      icon: ShieldCheck,
+    },
+    {
+      to: '/dashboard/account',
+      label: 'Account security',
+      description: 'Confirm MFA, session assurance, and the identity behind live operator changes.',
+      icon: User,
+    },
+  ] as const;
+
+  return (
+    <div className="animate-fade-in px-4 pb-12 pt-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[2200px] space-y-6">
+        {incidentActive ? (
+          <section className="rounded-[1.75rem] border border-warning/30 bg-warning/10 px-6 py-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-warning">Managed media advisory</p>
+                <h2 className="mt-2 text-xl font-semibold text-foreground">
+                  {opsOverview?.platform.managedMediaOperatingModeLabel ?? 'Operator advisory active'}
+                </h2>
+                <p className="mt-2 max-w-3xl text-sm text-foreground/86">
+                  {opsOverview?.platform.managedMediaIncidentMessage || 'An operator advisory is active for the managed runtime.'}
+                </p>
+              </div>
+              <Link
+                to="/dashboard/operators"
+                search={{ lookup: undefined }}
+                className="inline-flex shrink-0 items-center rounded-full border border-warning/40 bg-warning/12 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-warning/18"
+              >
+                Update incident state
+              </Link>
+            </div>
+          </section>
+        ) : null}
+
+        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02)_38%,rgba(255,126,61,0.08)_100%)] px-6 py-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] lg:px-8">
+          <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[42%] bg-[radial-gradient(circle_at_top,rgba(255,126,61,0.22),transparent_56%)] xl:block" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+          <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_380px]">
+            <div className="space-y-6">
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted">Operator flight deck</p>
+                <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+                  Run OmniLux from one wide view.
+                </h1>
+                <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
+                  {displayName}, keep customer access, managed runtime posture, relay pressure, and support motion in
+                  frame without bouncing through stacked admin cards.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  to="/dashboard/operators"
+                  search={{ lookup: undefined }}
+                  className="inline-flex items-center rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_18px_48px_rgba(242,228,207,0.14)] transition-transform hover:-translate-y-0.5"
+                >
+                  Open policy & access
+                </Link>
+                <Link
+                  to="/dashboard/account"
+                  className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.08]"
+                >
+                  Review account security
+                </Link>
+                <a
+                  href={buildAppHref('/dashboard')}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.08]"
+                >
+                  <span>Open cloud app</span>
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </a>
+              </div>
+
+              {isOpsOverviewLoading ? (
+                <div className="grid gap-px overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/10 sm:grid-cols-2 xl:grid-cols-6">
+                  {[1, 2, 3, 4, 5, 6].map((index) => (
+                    <div key={index} className="h-28 animate-pulse bg-black/20" />
+                  ))}
+                </div>
+              ) : opsOverviewError ? (
+                <div className="rounded-[1.5rem] border border-danger/30 bg-danger/10 px-5 py-4 text-sm text-foreground">
+                  {opsOverviewError instanceof Error ? opsOverviewError.message : 'Failed to load the operator overview.'}
+                </div>
+              ) : (
+                <div className="grid gap-px overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/10 sm:grid-cols-2 xl:grid-cols-6">
+                  {opsMetrics.map(({ label, value, detail }) => (
+                    <div key={label} className="bg-black/18 px-4 py-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">{label}</p>
+                      <p className="mt-3 font-display text-3xl font-bold text-foreground">{value}</p>
+                      <p className="mt-2 text-sm text-muted">{detail}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <aside className="rounded-[1.75rem] border border-white/10 bg-black/22 p-5 backdrop-blur-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Live pulse</p>
+                  <p className="mt-2 text-sm text-muted">
+                    Updated{' '}
+                    {formatOpsTimestamp(
+                      opsServiceHealth?.checkedAt ?? opsOverview?.platform.updatedAt,
+                      'just now',
+                    )}
+                  </p>
+                </div>
+                <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/84">
+                  {services.length > 0 ? `${servicesOnline}/${services.length} healthy` : 'Live monitoring'}
+                </span>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Managed runtime</p>
+                  <p className="mt-2 text-lg font-semibold text-foreground">
+                    {opsOverview?.platform.managedMediaOperatingModeLabel ?? 'Normal operation'}
+                  </p>
+                  <p className="mt-2 text-sm text-muted">
+                    {opsOverview?.managedMediaRuntime?.name ?? 'Waiting for a managed runtime registration.'}
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Managed media access</p>
+                    <p className="mt-2 text-base font-semibold text-foreground">
+                      {opsOverview?.platform.managedMediaPolicyLabel ?? 'Not available'}
+                    </p>
+                    <p className="mt-2 text-sm text-muted">
+                      {opsOverview?.platform.managedMediaPolicyDescription ?? 'Managed media rules are not available yet.'}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Relay posture</p>
+                    <p className="mt-2 text-base font-semibold text-foreground">
+                      {opsOverview?.platform.relayAccessPolicyLabel ?? 'Not available'}
+                    </p>
+                    <p className="mt-2 text-sm text-muted">
+                      {opsOverview?.platform.relayAccessPolicyDescription ?? 'Relay access rules are not available yet.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Recent movement</p>
+                  <div className="mt-3 space-y-2 text-sm text-muted">
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Services needing follow-up</span>
+                      <span className="font-semibold text-foreground">{servicesNeedingAttention}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Access changes this week</span>
+                      <span className="font-semibold text-foreground">
+                        {formatOpsMetric(opsOverview?.metrics.recentAccessChangesTotal)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Policy changes this week</span>
+                      <span className="font-semibold text-foreground">
+                        {formatOpsMetric(opsOverview?.metrics.recentPolicyChangesTotal)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.8fr)]">
+          <div className="rounded-[1.75rem] border border-white/10 bg-black/18 p-6">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Public surfaces</p>
+                <h2 className="mt-2 font-display text-2xl font-bold text-foreground">Service health</h2>
+                <p className="mt-2 max-w-2xl text-sm text-muted">
+                  Watch the hosted app, ops console, relay, managed runtime, and cloud services in one continuous sweep.
+                </p>
+              </div>
+              <Link
+                to="/dashboard/operators"
+                search={{ lookup: undefined }}
+                hash="activity"
+                className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.08]"
+              >
+                Open operator activity
+              </Link>
+            </div>
+
+            {isOpsServiceHealthLoading ? (
+              <div className="mt-5 space-y-3">
+                {[1, 2, 3, 4, 5, 6].map((index) => (
+                  <div key={index} className="h-24 animate-pulse rounded-[1.25rem] bg-white/[0.04]" />
+                ))}
+              </div>
+            ) : opsServiceHealthError ? (
+              <div className="mt-5 rounded-[1.25rem] border border-danger/30 bg-danger/10 px-5 py-4 text-sm text-foreground">
+                {opsServiceHealthError instanceof Error
+                  ? opsServiceHealthError.message
+                  : 'Failed to load public service health.'}
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {services.map((service) => (
+                  <div
+                    key={service.key}
+                    className="grid gap-3 rounded-[1.25rem] border border-white/10 bg-white/[0.035] px-4 py-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)_auto] lg:items-center"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{service.label}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted">
+                        Checked {formatOpsTimestamp(service.checkedAt, 'just now')}
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted">{service.detail}</p>
+                    <div className="flex flex-wrap items-center justify-start gap-3 lg:justify-end">
+                      <span className="text-xs uppercase tracking-[0.18em] text-muted">
+                        {service.responseTimeMs !== null ? `${service.responseTimeMs} ms` : 'Internal check'}
+                      </span>
+                      <span className="text-xs uppercase tracking-[0.18em] text-muted">
+                        {service.httpStatus !== null ? `HTTP ${service.httpStatus}` : 'No HTTP code'}
+                      </span>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${serviceStatusClassName(service.status)}`}
+                      >
+                        {service.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-[1.75rem] border border-white/10 bg-black/18 p-6">
+              <div className="flex items-center gap-2">
+                <Waves className="h-5 w-5 text-accent" />
+                <h2 className="font-display text-2xl font-bold text-foreground">Managed runtime focus</h2>
+              </div>
+              {isOpsOverviewLoading ? (
+                <div className="mt-5 h-44 animate-pulse rounded-[1.25rem] bg-white/[0.04]" />
+              ) : opsOverview?.managedMediaRuntime ? (
+                <>
+                  <p className="mt-3 text-sm text-muted">
+                    {opsOverview.managedMediaRuntime.name} is the first-party runtime serving OmniLux-managed media.
+                  </p>
+                  <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4">
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Public origin</dt>
+                      <dd className="mt-2 text-sm font-medium text-foreground">
+                        {opsOverview.managedMediaRuntime.publicOrigin ?? 'Not set'}
+                      </dd>
+                    </div>
+                    <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4">
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Relay status</dt>
+                      <dd className="mt-2 text-sm font-medium capitalize text-foreground">
+                        {opsOverview.managedMediaRuntime.relayStatus ?? 'unknown'}
+                      </dd>
+                    </div>
+                    <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4">
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Last seen</dt>
+                      <dd className="mt-2 text-sm font-medium text-foreground">
+                        {formatOpsTimestamp(opsOverview.managedMediaRuntime.lastSeenAt, 'No heartbeat yet')}
+                      </dd>
+                    </div>
+                    <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4">
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Version</dt>
+                      <dd className="mt-2 text-sm font-medium text-foreground">
+                        {opsOverview.managedMediaRuntime.version ?? 'Unknown'}
+                      </dd>
+                    </div>
+                  </dl>
+                </>
+              ) : (
+                <div className="mt-5 rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-5 text-sm text-muted">
+                  No managed runtime is registered yet. Once it checks in, its origin, relay status, and heartbeat will show up here.
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[1.75rem] border border-white/10 bg-black/18 p-6">
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-accent" />
+                <h2 className="font-display text-2xl font-bold text-foreground">Operator cadence</h2>
+              </div>
+              <p className="mt-3 text-sm text-muted">
+                Keep the shift grounded in customer impact, not internal mechanics.
+              </p>
+              <ul className="mt-5 space-y-3 text-sm text-muted">
+                {[
+                  'Start in support view so account state, billing, and linked servers line up before you change anything.',
+                  'Only publish a managed media advisory once customer impact is clear and the next update is known.',
+                  'Use activity history to verify that support notes and high-impact changes are landing exactly where the next operator expects them.',
+                  'Step up MFA before touching live access, relay rules, or runtime posture.',
+                ].map((item) => (
+                  <li key={item} className="flex gap-3">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
+          <div className="rounded-[1.75rem] border border-white/10 bg-black/18 p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Platform posture</p>
+            <h2 className="mt-2 font-display text-2xl font-bold text-foreground">Access rules in plain view</h2>
+            <p className="mt-2 max-w-2xl text-sm text-muted">
+              The ops surface should make it obvious who gets managed media, how remote relay is gated, and how quickly that policy is moving.
+            </p>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Managed media access</p>
+                <h3 className="mt-3 text-xl font-semibold text-foreground">
+                  {opsOverview?.platform.managedMediaPolicyLabel ?? 'Not available'}
+                </h3>
+                <p className="mt-3 text-sm text-muted">
+                  {opsOverview?.platform.managedMediaPolicyDescription ?? 'Managed media policy details are not available yet.'}
+                </p>
+              </div>
+              <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Self-hosted relay</p>
+                <h3 className="mt-3 text-xl font-semibold text-foreground">
+                  {opsOverview?.platform.relayAccessPolicyLabel ?? 'Not available'}
+                </h3>
+                <p className="mt-3 text-sm text-muted">
+                  {opsOverview?.platform.relayAccessPolicyDescription ?? 'Relay policy details are not available yet.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Operators</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">
+                  {formatOpsMetric(opsOverview?.metrics.operatorsTotal)}
+                </p>
+              </div>
+              <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Entitled accounts</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">
+                  {formatOpsMetric(opsOverview?.metrics.explicitlyEntitledProfilesTotal)}
+                </p>
+              </div>
+              <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">Last policy update</p>
+                <p className="mt-2 text-sm font-medium text-foreground">
+                  {formatOpsTimestamp(opsOverview?.platform.updatedAt, 'Waiting for first update')}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {quickLinks.map(({ to, icon: Icon, label, description }) => (
+              <Link
+                key={to}
+                to={to}
+                className="group flex items-start justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-5 py-5 transition-all hover:-translate-y-0.5 hover:bg-white/[0.06]"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-5 w-5 text-accent" />
+                    <h2 className="text-lg font-semibold text-foreground">{label}</h2>
+                  </div>
+                  <p className="mt-2 max-w-lg text-sm text-muted">{description}</p>
+                </div>
+                <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-foreground/68 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground" />
+              </Link>
+            ))}
+
+            <a
+              href={buildAppHref('/dashboard')}
+              className="group flex items-start justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-5 py-5 transition-all hover:-translate-y-0.5 hover:bg-white/[0.06]"
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <RadioTower className="h-5 w-5 text-accent" />
+                  <h2 className="text-lg font-semibold text-foreground">Customer cloud app</h2>
+                </div>
+                <p className="mt-2 max-w-lg text-sm text-muted">
+                  Jump to the customer-facing account surface for billing, linked servers, and the regular cloud journey.
+                </p>
+              </div>
+              <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-foreground/68 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground" />
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
