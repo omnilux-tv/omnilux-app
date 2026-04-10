@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { LogOut, MonitorPlay, ShieldCheck, UserCircle2 } from 'lucide-react';
+import { LogOut, MonitorPlay, UserCircle2 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { buildAppHref, buildDocsHref, buildMarketingHref, buildOpsHref, getCurrentSiteSurface } from '@/lib/site-surface';
@@ -15,6 +15,9 @@ export const AppHeader = () => {
   const isOpsSurface = currentSurface === 'ops';
   const displayName = user?.user_metadata?.display_name ?? user?.email ?? 'Account';
   const isAuthenticated = Boolean(user);
+  const navItemClassName =
+    'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-semibold tracking-[0.01em] transition-all';
+  const inactiveNavItemClassName = 'text-muted hover:bg-white/6 hover:text-foreground';
   const appLinks = isOpsSurface
     ? [
         { to: '/dashboard', label: 'Overview' },
@@ -37,100 +40,117 @@ export const AppHeader = () => {
   };
 
   return (
-    <header className="border-b border-border bg-background/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <Link to="/dashboard" className="font-display text-lg font-bold text-foreground">
-                  {isOpsSurface ? 'OmniLux Ops' : 'OmniLux Cloud'}
+    <header className="sticky top-0 z-50 px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="surface-panel rounded-[1.75rem] px-3 py-3 sm:px-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <Link
+                  to="/dashboard"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/8 bg-white/5"
+                  aria-label={isOpsSurface ? 'OmniLux Ops home' : 'OmniLux Cloud home'}
+                >
+                  <img src="/favicon.svg" alt="" className="h-8 w-8" />
                 </Link>
-                <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
-                  {isOpsSurface ? 'ops' : 'app'}
-                </span>
-              </div>
-              <p className="text-sm text-muted">
-                {isOpsSurface
-                  ? 'Internal operator console for policy, support tooling, service health, and managed OmniLux services.'
-                  : 'Account, access, billing, and remote services for OmniLux Cloud.'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <a
-              href={isOpsSurface ? buildAppHref('/dashboard') : buildMarketingHref('/')}
-              className="inline-flex items-center gap-1 text-muted transition-colors hover:text-foreground"
-            >
-              <MonitorPlay className="h-4 w-4" />
-              {isOpsSurface ? 'Cloud App' : 'Marketing Site'}
-            </a>
-            <a
-              href={buildDocsHref('/guide/overview')}
-              className="inline-flex items-center gap-1 text-muted transition-colors hover:text-foreground"
-            >
-              Docs
-            </a>
-            {isAuthenticated ? (
-              <>
-                <div className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-foreground">
-                  <UserCircle2 className="h-4 w-4 text-muted" />
-                  <span className="max-w-[18rem] truncate">{displayName}</span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link to="/dashboard" className="font-display text-base font-bold text-foreground sm:text-lg">
+                      {isOpsSurface ? 'OmniLux Ops' : 'OmniLux Cloud'}
+                    </Link>
+                    <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">
+                      {isOpsSurface ? 'ops' : 'app'}
+                    </span>
+                  </div>
+                  <p className="hidden text-sm text-muted lg:block">
+                    {isOpsSurface
+                      ? 'Policy, support tooling, and managed service oversight in the same navigation language as the runtime.'
+                      : 'Account, access, billing, and remote services with the same nav treatment as the self-hosted server.'}
+                  </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-muted transition-colors hover:text-foreground"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </button>
-              </>
-            ) : (
-              <>
-                <a
-                  href={isOpsSurface ? buildOpsHref('/login') : buildAppHref('/login')}
-                  className="rounded-full border border-border px-3 py-1.5 text-muted transition-colors hover:text-foreground"
-                >
-                  Sign in
-                </a>
-                {isOpsSurface ? null : (
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 xl:justify-end">
+                <div className="flex flex-wrap items-center gap-2">
                   <a
-                    href={buildAppHref('/register')}
-                    className="rounded-full bg-accent px-3 py-1.5 font-medium text-accent-foreground transition-colors hover:bg-accent/90"
+                    href={isOpsSurface ? buildAppHref('/dashboard') : buildMarketingHref('/')}
+                    className={cn(navItemClassName, inactiveNavItemClassName)}
                   >
-                    Create account
+                    <MonitorPlay className="h-4 w-4" />
+                    <span>{isOpsSurface ? 'Cloud App' : 'Marketing Site'}</span>
                   </a>
+                  <a
+                    href={buildDocsHref('/guide/overview')}
+                    className={cn(navItemClassName, inactiveNavItemClassName)}
+                  >
+                    Docs
+                  </a>
+                </div>
+
+                {isAuthenticated ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border border-white/8 bg-white/5 px-3.5 py-2 text-sm text-foreground">
+                      <UserCircle2 className="h-4 w-4 shrink-0 text-muted" />
+                      <span className="max-w-[16rem] truncate font-medium">{displayName}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className={cn(navItemClassName, inactiveNavItemClassName)}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Sign out</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <a
+                      href={isOpsSurface ? buildOpsHref('/login') : buildAppHref('/login')}
+                      className={cn(navItemClassName, inactiveNavItemClassName)}
+                    >
+                      Sign in
+                    </a>
+                    {isOpsSurface ? null : (
+                      <a
+                        href={buildAppHref('/register')}
+                        className={cn(
+                          navItemClassName,
+                          'bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(242,228,207,0.14)] hover:opacity-95',
+                        )}
+                      >
+                        Create account
+                      </a>
+                    )}
+                  </div>
                 )}
-              </>
-            )}
+              </div>
+            </div>
+
+            {isAuthenticated ? (
+              <nav aria-label="App sections" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
+                {appLinks.map(({ to, label }) => {
+                  const active = pathname === to || pathname.startsWith(`${to}/`);
+
+                  return (
+                    <Link
+                      key={to}
+                      to={to}
+                      aria-current={active ? 'page' : undefined}
+                      className={cn(
+                        navItemClassName,
+                        active
+                          ? 'bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(242,228,207,0.14)]'
+                          : inactiveNavItemClassName,
+                      )}
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            ) : null}
           </div>
         </div>
-
-        {isAuthenticated ? (
-          <nav aria-label="App sections" className="flex flex-wrap gap-2">
-            {appLinks.map(({ to, label }) => {
-              const active = pathname === to || pathname.startsWith(`${to}/`);
-
-              return (
-                <Link
-                  key={to}
-                  to={to}
-                  className={cn(
-                    'rounded-full px-4 py-2 text-sm font-medium transition-colors',
-                    active ? 'bg-accent text-accent-foreground' : 'bg-surface text-muted hover:text-foreground',
-                  )}
-                >
-                  {label}
-                </Link>
-              );
-            })}
-          </nav>
-        ) : null}
       </div>
     </header>
   );
