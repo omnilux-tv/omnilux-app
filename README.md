@@ -51,6 +51,7 @@ Optional browser config:
 - `VITE_MARKETING_SITE_URL`
 - `VITE_APP_SITE_URL`
 - `VITE_OPS_SITE_URL`
+- `VITE_DOCS_SITE_URL`
 - `VITE_SENTRY_DSN`
 - `VITE_WEB_VITALS_ENDPOINT`
 
@@ -70,7 +71,7 @@ pnpm test:canary
 - `OPS_SMOKE_CUSTOMER_EMAIL`
 - `OPS_SMOKE_CUSTOMER_PASSWORD`
 
-`pnpm test:canary` probes the live hosted app, ops console, relay, managed media runtime, and cloud auth reachability.
+`pnpm test:canary` probes the live hosted app, ops console, relay, managed media runtime, docs, and cloud auth reachability.
 
 ## Artifact
 
@@ -85,6 +86,7 @@ The canonical edge-consumed app artifact is the published OCI image `ghcr.io/omn
 - self-hosted servers remain directly reachable by their owners without traversing OmniLux edge
 - cloud-mediated remote access should rely on relay state
 - `managed-media` visibility is entitlement driven
+- `get-customer-overview` is the hosted-app contract for customer onboarding state, managed media runtime status, and relay policy
 - the current official managed-media rule is that every OmniLux Cloud account, including free accounts, can access first-party managed media unless operators intentionally switch the platform policy to explicit access
 - `ops.omnilux.tv` is an operator-only hosted console, not a registered OmniLux runtime
 - server listings in this app should only model `self-hosted` and `managed-media`; operator access belongs to hosted console access controls, not the server registry

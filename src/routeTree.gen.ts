@@ -21,6 +21,7 @@ import { Route as DashboardSubscriptionRouteImport } from './routes/dashboard/su
 import { Route as DashboardSubmitPluginRouteImport } from './routes/dashboard/submit-plugin'
 import { Route as DashboardServersRouteImport } from './routes/dashboard/servers'
 import { Route as DashboardOperatorsRouteImport } from './routes/dashboard/operators'
+import { Route as DashboardMediaRouteImport } from './routes/dashboard/media'
 import { Route as DashboardDevicesRouteImport } from './routes/dashboard/devices'
 import { Route as DashboardClaimRouteImport } from './routes/dashboard/claim'
 import { Route as DashboardAccountRouteImport } from './routes/dashboard/account'
@@ -87,6 +88,11 @@ const DashboardOperatorsRoute = DashboardOperatorsRouteImport.update({
   path: '/operators',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardMediaRoute = DashboardMediaRouteImport.update({
+  id: '/media',
+  path: '/media',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardDevicesRoute = DashboardDevicesRouteImport.update({
   id: '/devices',
   path: '/devices',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/account': typeof DashboardAccountRoute
   '/dashboard/claim': typeof DashboardClaimRoute
   '/dashboard/devices': typeof DashboardDevicesRoute
+  '/dashboard/media': typeof DashboardMediaRoute
   '/dashboard/operators': typeof DashboardOperatorsRoute
   '/dashboard/servers': typeof DashboardServersRoute
   '/dashboard/submit-plugin': typeof DashboardSubmitPluginRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/dashboard/account': typeof DashboardAccountRoute
   '/dashboard/claim': typeof DashboardClaimRoute
   '/dashboard/devices': typeof DashboardDevicesRoute
+  '/dashboard/media': typeof DashboardMediaRoute
   '/dashboard/operators': typeof DashboardOperatorsRoute
   '/dashboard/servers': typeof DashboardServersRoute
   '/dashboard/submit-plugin': typeof DashboardSubmitPluginRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/dashboard/account': typeof DashboardAccountRoute
   '/dashboard/claim': typeof DashboardClaimRoute
   '/dashboard/devices': typeof DashboardDevicesRoute
+  '/dashboard/media': typeof DashboardMediaRoute
   '/dashboard/operators': typeof DashboardOperatorsRoute
   '/dashboard/servers': typeof DashboardServersRoute
   '/dashboard/submit-plugin': typeof DashboardSubmitPluginRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/dashboard/account'
     | '/dashboard/claim'
     | '/dashboard/devices'
+    | '/dashboard/media'
     | '/dashboard/operators'
     | '/dashboard/servers'
     | '/dashboard/submit-plugin'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/dashboard/account'
     | '/dashboard/claim'
     | '/dashboard/devices'
+    | '/dashboard/media'
     | '/dashboard/operators'
     | '/dashboard/servers'
     | '/dashboard/submit-plugin'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/dashboard/account'
     | '/dashboard/claim'
     | '/dashboard/devices'
+    | '/dashboard/media'
     | '/dashboard/operators'
     | '/dashboard/servers'
     | '/dashboard/submit-plugin'
@@ -327,6 +339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardOperatorsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/media': {
+      id: '/dashboard/media'
+      path: '/media'
+      fullPath: '/dashboard/media'
+      preLoaderRoute: typeof DashboardMediaRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/devices': {
       id: '/dashboard/devices'
       path: '/devices'
@@ -369,6 +388,7 @@ interface DashboardRouteChildren {
   DashboardAccountRoute: typeof DashboardAccountRoute
   DashboardClaimRoute: typeof DashboardClaimRoute
   DashboardDevicesRoute: typeof DashboardDevicesRoute
+  DashboardMediaRoute: typeof DashboardMediaRoute
   DashboardOperatorsRoute: typeof DashboardOperatorsRoute
   DashboardServersRoute: typeof DashboardServersRoute
   DashboardSubmitPluginRoute: typeof DashboardSubmitPluginRoute
@@ -381,6 +401,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAccountRoute: DashboardAccountRoute,
   DashboardClaimRoute: DashboardClaimRoute,
   DashboardDevicesRoute: DashboardDevicesRoute,
+  DashboardMediaRoute: DashboardMediaRoute,
   DashboardOperatorsRoute: DashboardOperatorsRoute,
   DashboardServersRoute: DashboardServersRoute,
   DashboardSubmitPluginRoute: DashboardSubmitPluginRoute,

@@ -121,6 +121,14 @@ export const Servers = () => {
                           ? 'Managed media is currently included for every authenticated OmniLux Cloud account.'
                           : 'Managed media is currently controlled per profile through operator-managed overrides.'}
                       </p>
+                      <div className="mt-3">
+                        <Link
+                          to="/dashboard/media"
+                          className="inline-flex rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+                        >
+                          Open managed media details
+                        </Link>
+                      </div>
                     </div>
                   </div>
                   {managedMediaServers.map((s) => (

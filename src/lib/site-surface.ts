@@ -7,6 +7,7 @@ const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1']);
 const DEFAULT_MARKETING_SITE_URL = 'https://omnilux.tv';
 const DEFAULT_APP_SITE_URL = 'https://app.omnilux.tv';
 const DEFAULT_OPS_SITE_URL = 'https://ops.omnilux.tv';
+const DEFAULT_DOCS_SITE_URL = 'https://docs.omnilux.tv';
 const HOSTED_SURFACE_SUBDOMAINS: Record<HostedSiteSurface, string> = {
   app: APP_SUBDOMAIN,
   ops: OPS_SUBDOMAIN,
@@ -28,6 +29,7 @@ export const MARKETING_SITE_ORIGIN = normalizeOrigin(
 );
 export const APP_SITE_ORIGIN = normalizeOrigin(import.meta.env.VITE_APP_SITE_URL, DEFAULT_APP_SITE_URL);
 export const OPS_SITE_ORIGIN = normalizeOrigin(import.meta.env.VITE_OPS_SITE_URL, DEFAULT_OPS_SITE_URL);
+export const DOCS_SITE_ORIGIN = normalizeOrigin(import.meta.env.VITE_DOCS_SITE_URL, DEFAULT_DOCS_SITE_URL);
 
 const stripHashAndSearch = (path: string) => path.split('#', 1)[0]?.split('?', 1)[0] ?? path;
 const splitRelativeUrl = (path: string) => {
@@ -172,6 +174,11 @@ export const buildMarketingHref = (
   path: string,
   locationLike?: Pick<Location, 'hostname' | 'origin' | 'protocol' | 'port'>,
 ) => buildSurfaceHref('marketing', path, locationLike);
+
+export const buildDocsHref = (path: string) => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return new URL(normalizedPath, DOCS_SITE_ORIGIN).toString();
+};
 
 export const buildSurfaceHrefForPath = (
   path: string,

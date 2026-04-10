@@ -2,7 +2,7 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { LogOut, MonitorPlay, ShieldCheck, UserCircle2 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
-import { buildAppHref, buildMarketingHref, buildOpsHref, getCurrentSiteSurface } from '@/lib/site-surface';
+import { buildAppHref, buildDocsHref, buildMarketingHref, buildOpsHref, getCurrentSiteSurface } from '@/lib/site-surface';
 import { cn } from '@/lib/utils';
 
 export const AppHeader = () => {
@@ -23,6 +23,7 @@ export const AppHeader = () => {
       ]
     : [
         { to: '/dashboard', label: 'Overview' },
+        { to: '/dashboard/media', label: 'Media' },
         { to: '/dashboard/servers', label: 'Servers' },
         { to: '/dashboard/devices', label: 'Devices' },
         { to: '/dashboard/subscription', label: 'Billing' },
@@ -67,6 +68,12 @@ export const AppHeader = () => {
             >
               <MonitorPlay className="h-4 w-4" />
               {isOpsSurface ? 'Cloud App' : 'Marketing Site'}
+            </a>
+            <a
+              href={buildDocsHref('/guide/overview')}
+              className="inline-flex items-center gap-1 text-muted transition-colors hover:text-foreground"
+            >
+              Docs
             </a>
             {isAuthenticated ? (
               <>

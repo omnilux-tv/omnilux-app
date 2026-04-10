@@ -57,5 +57,9 @@ test.describe('ops hosted auth smoke', () => {
     await expect(page.getByRole('heading', { name: 'Cloud-Linked Servers' })).toBeVisible();
     await expect(page.getByRole('link', { name: /OmniLux Media/i })).toBeVisible();
     await expect(page.getByText('OmniLux Ops')).toHaveCount(0);
+
+    await page.goto(`${appSiteUrl}/dashboard/media`, { waitUntil: 'networkidle' });
+    await expect(page.getByRole('heading', { name: 'OmniLux Media' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Open OmniLux Media' })).toBeVisible();
   });
 });

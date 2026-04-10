@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LifeBuoy, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import { buildDocsHref } from '@/lib/site-surface';
 import { supabase } from '@/lib/supabase';
 import { useAccessProfile, type AccessProfile } from '@/surfaces/app/lib/access-profile';
 import {
@@ -586,6 +587,34 @@ export const Operators = () => {
               <p className="text-xs font-semibold uppercase tracking-wide">Safety</p>
               <p className="mt-2">The last remaining operator account cannot be demoted through this interface.</p>
             </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-background p-6">
+          <h2 className="font-display text-xl font-semibold text-foreground">Runbooks & contracts</h2>
+          <p className="mt-2 max-w-3xl text-sm text-muted">
+            Keep the hosted product promise, operator drill, and client handoff documented in one place so policy
+            changes do not drift away from the customer and support experience.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <a
+              href={buildDocsHref('/guide/operator-runbook')}
+              className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90"
+            >
+              Operator runbook
+            </a>
+            <a
+              href={buildDocsHref('/guide/cloud-product-contract')}
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+            >
+              Product contract
+            </a>
+            <a
+              href={buildDocsHref('/guide/client-readiness')}
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+            >
+              Client readiness
+            </a>
           </div>
         </div>
 

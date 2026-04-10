@@ -6,7 +6,7 @@ export const Route = createFileRoute('/dashboard/')({
   head: () =>
     buildPageHead({
       title: 'Overview | OmniLux Cloud',
-      description: 'Review your OmniLux Cloud overview, account status, and next actions.',
+      description: 'Review your OmniLux Cloud overview, managed media access, self-hosted state, and next actions.',
       pathname: '/dashboard',
       surface: 'app',
       noIndex: true,

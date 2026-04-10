@@ -26,6 +26,12 @@ const defaultChecks = [
     verifyJson: (payload) => payload && payload.status === 'ok',
   },
   {
+    name: 'Docs',
+    url: process.env.DOCS_SITE_URL?.trim() || 'https://docs.omnilux.tv/guide/overview',
+    expectStatus: (status) => status === 200,
+    verifyBody: (body) => body.includes('OmniLux Overview'),
+  },
+  {
     name: 'Cloud Auth Reachability',
     url: process.env.CLOUD_AUTH_HEALTH_URL?.trim() || 'https://api.omnilux.tv/auth/v1/health',
     expectStatus: (status) => status === 200 || status === 401,

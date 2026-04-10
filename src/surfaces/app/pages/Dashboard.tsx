@@ -3,6 +3,7 @@ import {
   Activity,
   CreditCard,
   Puzzle,
+  RadioTower,
   Server,
   ShieldCheck,
   Smartphone,
@@ -10,11 +11,13 @@ import {
   Waves,
 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
-import { buildAppHref, getCurrentSiteSurface } from '@/lib/site-surface';
+import { buildAppHref, buildDocsHref, getCurrentSiteSurface } from '@/lib/site-surface';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
+import { useCustomerOverview } from '@/surfaces/app/lib/customer-overview';
 import { useOpsOverview, useOpsServiceHealth } from '@/surfaces/app/lib/ops';
 
 const dashboardLinks = [
+  { to: '/dashboard/media', icon: RadioTower, label: 'Media', description: 'Open OmniLux-managed channels, radio, and first-party cloud experiences.' },
   { to: '/dashboard/servers', icon: Server, label: 'Servers', description: 'Claimed OmniLux installs, relay state, and companion access.' },
   { to: '/dashboard/devices', icon: Smartphone, label: 'Devices', description: 'Sessions signed into your OmniLux Cloud account.' },
   { to: '/dashboard/subscription', icon: CreditCard, label: 'Billing', description: 'Plan status for relay, remote access, and paid cloud features.' },
@@ -57,6 +60,11 @@ export const Dashboard = () => {
     isLoading: isOpsServiceHealthLoading,
     error: opsServiceHealthError,
   } = useOpsServiceHealth(Boolean(isOpsSurface && accessProfile?.isOperator));
+  const {
+    data: customerOverview,
+    isLoading: isCustomerOverviewLoading,
+    error: customerOverviewError,
+  } = useCustomerOverview();
 
   if (isOpsSurface) {
     const opsLinks = [
@@ -367,6 +375,20 @@ export const Dashboard = () => {
           {displayName}, this is the cloud side of OmniLux. Your libraries and playback stay on your self-hosted server; this console manages identity, billing, and remote services around it.
         </p>
 
+        {customerOverview?.platform.managedMediaOperatingMode !== 'normal' ||
+        customerOverview?.platform.managedMediaIncidentMessage ? (
+          <div className="mt-8 rounded-xl border border-warning/30 bg-warning/10 p-5 text-sm text-foreground">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-warning">Managed Media Status</p>
+            <p className="mt-2 text-lg font-semibold">
+              {customerOverview?.platform.managedMediaOperatingModeLabel ?? 'Managed media status updated'}
+            </p>
+            <p className="mt-2 text-muted">
+              {customerOverview?.platform.managedMediaIncidentMessage ||
+                'Operators have published a non-normal operating state for the first-party media runtime.'}
+            </p>
+          </div>
+        ) : null}
+
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {dashboardLinks.map(({ to, icon: Icon, label, description }) => (
             <Link
@@ -380,6 +402,182 @@ export const Dashboard = () => {
             </Link>
           ))}
         </div>
+
+        <section className="mt-12">
+          <div className="max-w-2xl">
+            <h2 className="font-display text-xl font-bold text-foreground">Core Journey</h2>
+            <p className="mt-2 text-sm text-muted">
+              The hosted app has one job: make the cloud side of OmniLux obvious. Use this checklist to move from
+              account creation to first-party media, then into self-hosted and relay workflows only when you need them.
+            </p>
+          </div>
+
+          {isCustomerOverviewLoading ? (
+            <div className="mt-5 grid gap-4 lg:grid-cols-4">
+              {[1, 2, 3, 4].map((index) => (
+                <div key={index} className="h-36 animate-pulse rounded-xl bg-surface" />
+              ))}
+            </div>
+          ) : customerOverviewError ? (
+            <div className="mt-5 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-foreground">
+              {customerOverviewError instanceof Error
+                ? customerOverviewError.message
+                : 'Customer overview could not be loaded.'}
+            </div>
+          ) : (
+            <>
+              <div className="mt-5 grid gap-4 lg:grid-cols-4">
+                {[
+                  {
+                    title: 'Cloud account',
+                    value: 'Ready',
+                    detail: 'Identity, billing, and device sign-in are active through OmniLux Cloud.',
+                  },
+                  {
+                    title: 'Managed media',
+                    value: customerOverview?.access.managedMediaEntitled ? 'Included' : 'Restricted',
+                    detail: customerOverview?.platform.managedMediaPolicyDescription ??
+                      'First-party managed media follows the current platform policy.',
+                  },
+                  {
+                    title: 'Self-hosted servers',
+                    value: String(customerOverview?.metrics.selfHostedServersTotal ?? 0),
+                    detail:
+                      (customerOverview?.metrics.selfHostedServersTotal ?? 0) > 0
+                        ? 'Your cloud account is already linked to one or more self-hosted runtimes.'
+                        : 'Claim a server when you want private libraries, invites, or relay-backed remote access.',
+                  },
+                  {
+                    title: 'Remote relay',
+                    value: customerOverview?.access.relayRemoteAccessEntitled ? 'Ready' : 'Policy-gated',
+                    detail: customerOverview?.platform.relayAccessPolicyDescription ??
+                      'Relay access to self-hosted servers follows the current platform policy.',
+                  },
+                ].map(({ title, value, detail }) => (
+                  <div key={title} className="rounded-xl border border-border bg-background p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{title}</p>
+                    <p className="mt-3 font-display text-3xl font-bold text-foreground">{value}</p>
+                    <p className="mt-3 text-sm text-muted">{detail}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 grid gap-4 lg:grid-cols-[1.25fr_1fr]">
+                <div className="rounded-xl surface-soft p-6">
+                  <h3 className="font-semibold text-foreground">Recommended next actions</h3>
+                  <ul className="mt-4 space-y-3">
+                    {[
+                      {
+                        complete: true,
+                        label: 'Use managed media from your cloud account',
+                        body:
+                          customerOverview?.access.managedMediaEntitled
+                            ? 'You can open OmniLux Media immediately from the hosted app.'
+                            : 'This account is not currently entitled to managed media.',
+                        actionHref: '/dashboard/media',
+                        actionLabel: 'Open media',
+                      },
+                      {
+                        complete: (customerOverview?.metrics.selfHostedServersTotal ?? 0) > 0,
+                        label: 'Claim a self-hosted server when you want your own libraries',
+                        body:
+                          (customerOverview?.metrics.selfHostedServersTotal ?? 0) > 0
+                            ? 'At least one self-hosted runtime is already linked to this cloud account.'
+                            : 'Claiming a server adds your private libraries, household sharing, and relay-backed remote services.',
+                        actionHref: '/dashboard/claim',
+                        actionLabel:
+                          (customerOverview?.metrics.selfHostedServersTotal ?? 0) > 0 ? 'Review servers' : 'Claim a server',
+                      },
+                      {
+                        complete: customerOverview?.access.relayRemoteAccessEntitled ?? false,
+                        label: 'Upgrade only if your self-hosted relay path needs it',
+                        body:
+                          customerOverview?.access.relayRemoteAccessEntitled
+                            ? 'This account already satisfies the current relay access rule.'
+                            : customerOverview?.platform.relayAccessPolicyDescription ??
+                              'Relay access to self-hosted servers is currently policy-gated.',
+                        actionHref: '/dashboard/subscription',
+                        actionLabel: 'Review billing',
+                      },
+                      {
+                        complete: false,
+                        label: 'Bring devices and native clients in after the web flow feels solid',
+                        body:
+                          'Use the client-readiness contract before pushing Android, iOS, TV, or other companion surfaces forward.',
+                        actionHref: buildDocsHref('/guide/client-readiness'),
+                        actionLabel: 'Read client readiness',
+                        external: true,
+                      },
+                    ].map(({ complete, label, body, actionHref, actionLabel, external }) => (
+                      <li key={label} className="rounded-xl bg-surface/60 p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="max-w-2xl">
+                            <p className="text-sm font-semibold text-foreground">
+                              {label}{' '}
+                              <span className="ml-2 text-xs uppercase tracking-[0.16em] text-muted">
+                                {complete ? 'complete' : 'next'}
+                              </span>
+                            </p>
+                            <p className="mt-2 text-sm text-muted">{body}</p>
+                          </div>
+                          {external ? (
+                            <a
+                              href={actionHref}
+                              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+                            >
+                              {actionLabel}
+                            </a>
+                          ) : (
+                            <Link
+                              to={actionHref as '/dashboard/media' | '/dashboard/claim' | '/dashboard/subscription'}
+                              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+                            >
+                              {actionLabel}
+                            </Link>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="rounded-xl border border-border bg-background p-6">
+                  <h3 className="font-semibold text-foreground">Product contract</h3>
+                  <p className="mt-2 text-sm text-muted">
+                    OmniLux now has an explicit hosted product model. Keep the customer-facing promise consistent
+                    across billing, media, self-hosting, and future native clients.
+                  </p>
+                  <ul className="mt-4 space-y-2 text-sm text-muted">
+                    {[
+                      'Cloud accounts get first-party managed media according to the current platform policy.',
+                      'Self-hosted servers remain directly reachable by their owners outside OmniLux edge.',
+                      'Relay billing only applies to cloud-mediated remote access for self-hosted servers.',
+                    ].map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <a
+                      href={buildDocsHref('/guide/cloud-product-contract')}
+                      className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90"
+                    >
+                      Review contract
+                    </a>
+                    <a
+                      href={buildDocsHref('/guide/managed-media')}
+                      className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+                    >
+                      Managed media guide
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </section>
 
         <section className="mt-12">
           <div className="max-w-2xl">

@@ -9,7 +9,7 @@ import {
   type CloudBillingInterval,
   type PaidCloudTier,
 } from '@/lib/cloud-plans';
-import { buildMarketingHref } from '@/lib/site-surface';
+import { buildDocsHref, buildMarketingHref } from '@/lib/site-surface';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
@@ -182,6 +182,20 @@ export const Subscription = () => {
             Local playback and hosting stay free. Managed OmniLux media is included with your cloud account, while
             paid billing applies to self-hosted relay remote access and premium cloud services around it.
           </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <a
+              href={buildDocsHref('/guide/cloud-product-contract')}
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+            >
+              Product contract
+            </a>
+            <a
+              href={buildDocsHref('/guide/managed-media')}
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+            >
+              Managed media guide
+            </a>
+          </div>
         </div>
 
         {checkoutState === 'success' ? (
@@ -311,6 +325,10 @@ export const Subscription = () => {
                 </li>
               ))}
             </ul>
+            <p className="mt-4 text-xs text-muted">
+              The customer-facing promise is documented in the hosted product contract so billing, app copy, and future
+              native clients stay aligned.
+            </p>
           </div>
 
           <div className="rounded-xl surface-soft p-6">
@@ -334,6 +352,34 @@ export const Subscription = () => {
                   : 'This account does not currently have an active or trialing paid cloud plan.'}
               </p>
             </div>
+            <p className="mt-4 text-xs text-muted">
+              Direct LAN, VPN, and user-owned reverse-proxy access are intentionally outside OmniLux cloud billing.
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-background p-6">
+          <h2 className="text-lg font-bold text-foreground">Billing follows the product model</h2>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {[
+              {
+                title: 'Always free',
+                body: 'Direct access to your own self-hosted server, local playback, and user-owned network paths.',
+              },
+              {
+                title: 'Included in cloud',
+                body: 'Hosted identity, account recovery, device sign-in, and managed OmniLux media according to policy.',
+              },
+              {
+                title: 'Paid when needed',
+                body: 'Self-hosted relay remote access and higher-tier cloud services around your private runtime.',
+              },
+            ].map(({ title, body }) => (
+              <div key={title} className="rounded-xl bg-surface/60 p-4">
+                <p className="text-sm font-semibold text-foreground">{title}</p>
+                <p className="mt-2 text-sm text-muted">{body}</p>
+              </div>
+            ))}
           </div>
         </div>
 
