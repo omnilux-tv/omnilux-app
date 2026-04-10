@@ -3,11 +3,7 @@ import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { Activity, ArrowUpRight, LogOut, Search } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
-import {
-  DEFAULT_OPERATOR_CONSOLE_VIEW,
-  isOperatorConsoleView,
-  operatorConsoleSections,
-} from '@/surfaces/app/lib/ops-console';
+import { opsConsolePages } from '@/surfaces/app/lib/ops-console';
 import { buildAppHref, buildDocsHref, buildMarketingHref, buildOpsHref, getCurrentSiteSurface } from '@/lib/site-surface';
 import { cn } from '@/lib/utils';
 
@@ -40,12 +36,7 @@ export const AppHeader = () => {
   const isAuthenticated = Boolean(user);
   const [opsSearchDraft, setOpsSearchDraft] = useState('');
   const [headerDate, setHeaderDate] = useState(() => new Date());
-  const routerSearchKey = JSON.stringify(routerState.location.search ?? {});
-  const routerSearch = routerState.location.search as Record<string, unknown> | undefined;
-  const currentOpsView =
-    pathname.startsWith('/dashboard/operators') && isOperatorConsoleView(routerSearch?.view)
-      ? routerSearch.view
-      : DEFAULT_OPERATOR_CONSOLE_VIEW;
+  const normalizedPathname = pathname === '/dashboard/' ? '/dashboard' : pathname;
   const sectionItemClassName =
     'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-semibold tracking-[0.01em] transition-all';
   const inactiveSectionItemClassName =
@@ -63,25 +54,15 @@ export const AppHeader = () => {
     { to: '/dashboard/devices', label: 'Devices' },
     { to: '/dashboard/subscription', label: 'Billing' },
     { to: '/dashboard/account', label: 'Account' },
-    ...(accessProfile?.isOperator ? [{ to: '/dashboard/operators', label: 'Operators' }] : []),
+    ...(accessProfile?.isOperator ? [{ to: '/dashboard/accounts', label: 'Ops' }] : []),
   ] as const;
-  const opsLinks = [
-    { to: '/dashboard', label: 'Overview' },
-    ...operatorConsoleSections.map((section) => ({
-      to: '/dashboard/operators' as const,
-      label: section.label,
-      hash: section.hash,
-      view: section.view,
-    })),
-  ] as const;
+  const opsLinks = opsConsolePages;
   const opsTime = useMemo(() => formatHeaderTime(headerDate), [headerDate]);
   const opsDate = useMemo(() => formatHeaderDate(headerDate), [headerDate]);
-  const isSectionActive = (item: { to: string; view?: string }) =>
+  const isSectionActive = (item: { to: string }) =>
     item.to === '/dashboard'
-      ? pathname === '/dashboard' || pathname === '/dashboard/'
-      : item.to === '/dashboard/operators' && item.view
-        ? pathname.startsWith('/dashboard/operators') && currentOpsView === item.view
-        : pathname === item.to || pathname.startsWith(`${item.to}/`);
+      ? normalizedPathname === '/dashboard'
+      : normalizedPathname === item.to || normalizedPathname.startsWith(`${item.to}/`);
 
   const handleSignOut = async () => {
     await signOut();
@@ -106,16 +87,15 @@ export const AppHeader = () => {
 
     const params = new URLSearchParams(window.location.search);
     setOpsSearchDraft(params.get('lookup') ?? '');
-  }, [isOpsSurface, pathname, routerSearchKey]);
+  }, [isOpsSurface, pathname, routerState.location.search]);
 
   const handleOpsSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const lookup = opsSearchDraft.trim();
     void navigate({
-      to: '/dashboard/operators',
-      search: { lookup: lookup || undefined, view: 'accounts' } as never,
-      hash: 'accounts',
+      to: '/dashboard/accounts',
+      search: { lookup: lookup || undefined } as never,
     });
   };
 
@@ -124,7 +104,7 @@ export const AppHeader = () => {
       <header className="sticky top-0 z-50 px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:px-6 lg:px-8">
         <div className={OPS_CONTAINER_CLASS_NAME}>
           <div className="surface-panel rounded-[1.75rem] px-3 py-3 sm:px-4">
-            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+            <div className="grid items-center gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)_auto]">
               <div className="flex min-w-0 items-center gap-3 overflow-hidden">
                 <Link
                   to="/dashboard"
@@ -138,7 +118,7 @@ export const AppHeader = () => {
                   />
                 </Link>
 
-                <div className="hidden min-w-0 shrink-0 2xl:block">
+                <div className="hidden min-w-0 shrink-0 xl:block">
                   <p className="font-display text-lg font-bold text-foreground">OmniLux Ops</p>
                   <p className="text-[11px] uppercase tracking-[0.22em] text-muted">Operator console</p>
                 </div>
@@ -146,7 +126,7 @@ export const AppHeader = () => {
                 {isAuthenticated ? (
                   <nav
                     aria-label="Ops sections"
-                    className="-mx-1 flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-1"
+                    className="-mx-1 flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-1 whitespace-nowrap"
                   >
                     {opsLinks.map((item) => {
                       const active = isSectionActive(item);
@@ -155,12 +135,6 @@ export const AppHeader = () => {
                         <Link
                           key={`${item.to}:${item.label}`}
                           to={item.to}
-                          {...(item.to === '/dashboard/operators' && item.view
-                            ? {
-                                search: { lookup: undefined, view: item.view } as never,
-                                hash: item.hash,
-                              }
-                            : {})}
                           aria-current={active ? 'page' : undefined}
                           className={cn(
                             'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-3.5 py-2.5 text-sm font-semibold transition-all 2xl:px-4',
@@ -179,14 +153,14 @@ export const AppHeader = () => {
                 )}
               </div>
 
-              {isAuthenticated ? (
+                {isAuthenticated ? (
                 <form onSubmit={handleOpsSearchSubmit} className="relative flex min-w-0 items-center">
                   <Search className="pointer-events-none absolute left-3.5 h-4 w-4 text-muted" />
                   <input
                     type="search"
                     value={opsSearchDraft}
                     onChange={(event) => setOpsSearchDraft(event.currentTarget.value)}
-                    placeholder="Search accounts, billing, servers..."
+                    placeholder="Search accounts, relay, billing, staff..."
                     className="h-11 w-full rounded-full border border-white/8 bg-white/[0.05] pl-10 pr-4 text-sm text-foreground placeholder:text-muted outline-none transition-all focus:border-white/18"
                   />
                 </form>
@@ -197,9 +171,7 @@ export const AppHeader = () => {
               <div className="flex min-w-0 items-center justify-end gap-2 overflow-x-auto">
                 {isAuthenticated ? (
                   <Link
-                    to="/dashboard/operators"
-                    search={{ lookup: undefined, view: 'logs' } as never}
-                    hash="logs"
+                    to="/dashboard/logs"
                     className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border border-white/8 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground/78 transition-all hover:bg-white/[0.08] hover:text-foreground"
                   >
                     <Activity className="h-4 w-4" />

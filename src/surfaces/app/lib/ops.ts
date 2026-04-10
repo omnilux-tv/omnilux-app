@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import type { AccessProfile } from '@/surfaces/app/lib/access-profile';
 
 export type ManagedMediaPolicy = 'all-authenticated-users' | 'explicit-per-profile';
 export type RelayAccessPolicy = 'all-authenticated-users' | 'paid-subscription';
@@ -203,6 +204,19 @@ export interface OpsOverview {
   } | null;
 }
 
+export const useOperatorAccessProfiles = (enabled: boolean) =>
+  useQuery({
+    queryKey: ['operator-access-profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<AccessProfile[]>('list-access-profiles');
+      if (error) {
+        throw error;
+      }
+      return data ?? [];
+    },
+    enabled,
+  });
+
 export const useOpsOverview = (enabled: boolean) =>
   useQuery({
     queryKey: ['ops-overview'],
@@ -239,6 +253,19 @@ export const usePlatformSettings = (enabled: boolean) =>
         throw error;
       }
       return data as PlatformSettings;
+    },
+    enabled,
+  });
+
+export const useAccessAuditLog = (enabled: boolean) =>
+  useQuery({
+    queryKey: ['operator-access-audit-log'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<AccessAuditRow[]>('list-access-audit-log');
+      if (error) {
+        throw error;
+      }
+      return data ?? [];
     },
     enabled,
   });

@@ -14,7 +14,6 @@ import {
 import { useAuth } from '@/providers/AuthProvider';
 import { buildAppHref, buildDocsHref, getCurrentSiteSurface } from '@/lib/site-surface';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
-import { DEFAULT_OPERATOR_CONSOLE_VIEW } from '@/surfaces/app/lib/ops-console';
 import { useCustomerOverview } from '@/surfaces/app/lib/customer-overview';
 import {
   type OpsOverview,
@@ -50,10 +49,10 @@ export const Dashboard = () => {
   const operatorLinks = accessProfile?.isOperator
     ? [
         {
-          to: '/dashboard/operators',
+          to: '/dashboard/accounts',
           icon: ShieldCheck,
-          label: 'Ops Workspace',
-          description: 'Track accounts, staff, logs, and service health for OmniLux operations.',
+          label: 'Ops Console',
+          description: 'Open the dedicated operator workspace for accounts, control plane, logs, and service health.',
         },
       ]
     : [];
@@ -410,20 +409,46 @@ function OpsDashboardView({
   ] as const;
   const quickLinks = [
     {
-      to: '/dashboard/operators',
+      to: '/dashboard/accounts',
       label: 'Accounts',
       description: 'Open the operator account workspace for customer lookups, billing context, and linked server history.',
-      icon: ShieldCheck,
-      search: { lookup: undefined, view: 'accounts' } as const,
-      hash: 'accounts',
+      icon: User,
     },
     {
-      to: '/dashboard/operators',
-      label: 'Staff & logs',
-      description: 'See operator roster, MFA posture, and the latest high-impact activity across the org.',
+      to: '/dashboard/logs',
+      label: 'Logs',
+      description: 'Audit sensitive operator actions, access changes, and control-plane motion in one timeline.',
       icon: Activity,
-      search: { lookup: undefined, view: 'logs' } as const,
-      hash: 'logs',
+    },
+    {
+      to: '/dashboard/financials',
+      label: 'Financials',
+      description: 'Track plan coverage, trial exposure, and billing follow-up across the cloud account base.',
+      icon: CreditCard,
+    },
+    {
+      to: '/dashboard/staff',
+      label: 'Staff',
+      description: 'Keep the operator bench, MFA readiness, and recent session activity visible.',
+      icon: ShieldCheck,
+    },
+    {
+      to: '/dashboard/control-plane',
+      label: 'Control Plane',
+      description: 'Change managed media policy, relay access rules, and runtime advisory state.',
+      icon: Server,
+    },
+    {
+      to: '/dashboard/media-control',
+      label: 'Media',
+      description: 'Operate the managed runtime, its relay posture, and its current operator advisory.',
+      icon: RadioTower,
+    },
+    {
+      to: '/dashboard/health',
+      label: 'Health',
+      description: 'Watch every public OmniLux surface, with failures and runbooks in one lane.',
+      icon: Waves,
     },
   ] as const;
 
@@ -443,12 +468,10 @@ function OpsDashboardView({
                 </p>
               </div>
               <Link
-                to="/dashboard/operators"
-                search={{ lookup: undefined, view: 'health' } as never}
-                hash="health"
+                to="/dashboard/control-plane"
                 className="inline-flex shrink-0 items-center rounded-full border border-warning/40 bg-warning/12 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-warning/18"
               >
-                Update incident state
+                Open control plane
               </Link>
             </div>
           </section>
@@ -472,18 +495,17 @@ function OpsDashboardView({
 
               <div className="flex flex-wrap gap-3">
                 <Link
-                  to="/dashboard/operators"
-                  search={{ lookup: undefined, view: DEFAULT_OPERATOR_CONSOLE_VIEW } as never}
-                  hash="accounts"
+                  to="/dashboard/accounts"
+                  search={{ lookup: undefined } as never}
                   className="inline-flex items-center rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_18px_48px_rgba(242,228,207,0.14)] transition-transform hover:-translate-y-0.5"
                 >
                   Open accounts
                 </Link>
                 <Link
-                  to="/dashboard/account"
+                  to="/dashboard/control-plane"
                   className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.08]"
                 >
-                  Review account security
+                  Open control plane
                 </Link>
                 <a
                   href={buildAppHref('/dashboard')}
@@ -604,9 +626,7 @@ function OpsDashboardView({
                 </p>
               </div>
               <Link
-                to="/dashboard/operators"
-                search={{ lookup: undefined, view: 'logs' } as never}
-                hash="logs"
+                to="/dashboard/logs"
                 className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.08]"
               >
                 Open logs
@@ -782,12 +802,10 @@ function OpsDashboardView({
           </div>
 
           <div className="space-y-3">
-            {quickLinks.map(({ to, icon: Icon, label, description, search, hash }) => (
+            {quickLinks.map(({ to, icon: Icon, label, description }) => (
               <Link
                 key={`${to}:${label}`}
                 to={to}
-                search={search as never}
-                hash={hash}
                 className="group flex items-start justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-5 py-5 transition-all hover:-translate-y-0.5 hover:bg-white/[0.06]"
               >
                 <div>

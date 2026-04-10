@@ -52,8 +52,7 @@ export const Login = () => {
         return;
       }
 
-      const destination = redirectPath === '/dashboard' ? '/dashboard/operators' : redirectPath;
-      window.location.assign(buildOpsHref(destination));
+      window.location.assign(buildOpsHref(redirectPath));
       return;
     }
 

@@ -19,11 +19,18 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as InviteCodeRouteImport } from './routes/invite_.$code'
 import { Route as DashboardSubscriptionRouteImport } from './routes/dashboard/subscription'
 import { Route as DashboardSubmitPluginRouteImport } from './routes/dashboard/submit-plugin'
+import { Route as DashboardStaffRouteImport } from './routes/dashboard/staff'
 import { Route as DashboardServersRouteImport } from './routes/dashboard/servers'
 import { Route as DashboardOperatorsRouteImport } from './routes/dashboard/operators'
+import { Route as DashboardMediaControlRouteImport } from './routes/dashboard/media-control'
 import { Route as DashboardMediaRouteImport } from './routes/dashboard/media'
+import { Route as DashboardLogsRouteImport } from './routes/dashboard/logs'
+import { Route as DashboardHealthRouteImport } from './routes/dashboard/health'
+import { Route as DashboardFinancialsRouteImport } from './routes/dashboard/financials'
 import { Route as DashboardDevicesRouteImport } from './routes/dashboard/devices'
+import { Route as DashboardControlPlaneRouteImport } from './routes/dashboard/control-plane'
 import { Route as DashboardClaimRouteImport } from './routes/dashboard/claim'
+import { Route as DashboardAccountsRouteImport } from './routes/dashboard/accounts'
 import { Route as DashboardAccountRouteImport } from './routes/dashboard/account'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as DashboardServersServerIdRouteImport } from './routes/dashboard/servers_.$serverId'
@@ -78,6 +85,11 @@ const DashboardSubmitPluginRoute = DashboardSubmitPluginRouteImport.update({
   path: '/submit-plugin',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardStaffRoute = DashboardStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardServersRoute = DashboardServersRouteImport.update({
   id: '/servers',
   path: '/servers',
@@ -88,9 +100,29 @@ const DashboardOperatorsRoute = DashboardOperatorsRouteImport.update({
   path: '/operators',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardMediaControlRoute = DashboardMediaControlRouteImport.update({
+  id: '/media-control',
+  path: '/media-control',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardMediaRoute = DashboardMediaRouteImport.update({
   id: '/media',
   path: '/media',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardLogsRoute = DashboardLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardHealthRoute = DashboardHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardFinancialsRoute = DashboardFinancialsRouteImport.update({
+  id: '/financials',
+  path: '/financials',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardDevicesRoute = DashboardDevicesRouteImport.update({
@@ -98,9 +130,19 @@ const DashboardDevicesRoute = DashboardDevicesRouteImport.update({
   path: '/devices',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardControlPlaneRoute = DashboardControlPlaneRouteImport.update({
+  id: '/control-plane',
+  path: '/control-plane',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardClaimRoute = DashboardClaimRouteImport.update({
   id: '/claim',
   path: '/claim',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardAccountsRoute = DashboardAccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardAccountRoute = DashboardAccountRouteImport.update({
@@ -129,11 +171,18 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/account': typeof DashboardAccountRoute
+  '/dashboard/accounts': typeof DashboardAccountsRoute
   '/dashboard/claim': typeof DashboardClaimRoute
+  '/dashboard/control-plane': typeof DashboardControlPlaneRoute
   '/dashboard/devices': typeof DashboardDevicesRoute
+  '/dashboard/financials': typeof DashboardFinancialsRoute
+  '/dashboard/health': typeof DashboardHealthRoute
+  '/dashboard/logs': typeof DashboardLogsRoute
   '/dashboard/media': typeof DashboardMediaRoute
+  '/dashboard/media-control': typeof DashboardMediaControlRoute
   '/dashboard/operators': typeof DashboardOperatorsRoute
   '/dashboard/servers': typeof DashboardServersRoute
+  '/dashboard/staff': typeof DashboardStaffRoute
   '/dashboard/submit-plugin': typeof DashboardSubmitPluginRoute
   '/dashboard/subscription': typeof DashboardSubscriptionRoute
   '/invite/$code': typeof InviteCodeRoute
@@ -148,11 +197,18 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/account': typeof DashboardAccountRoute
+  '/dashboard/accounts': typeof DashboardAccountsRoute
   '/dashboard/claim': typeof DashboardClaimRoute
+  '/dashboard/control-plane': typeof DashboardControlPlaneRoute
   '/dashboard/devices': typeof DashboardDevicesRoute
+  '/dashboard/financials': typeof DashboardFinancialsRoute
+  '/dashboard/health': typeof DashboardHealthRoute
+  '/dashboard/logs': typeof DashboardLogsRoute
   '/dashboard/media': typeof DashboardMediaRoute
+  '/dashboard/media-control': typeof DashboardMediaControlRoute
   '/dashboard/operators': typeof DashboardOperatorsRoute
   '/dashboard/servers': typeof DashboardServersRoute
+  '/dashboard/staff': typeof DashboardStaffRoute
   '/dashboard/submit-plugin': typeof DashboardSubmitPluginRoute
   '/dashboard/subscription': typeof DashboardSubscriptionRoute
   '/invite/$code': typeof InviteCodeRoute
@@ -169,11 +225,18 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/account': typeof DashboardAccountRoute
+  '/dashboard/accounts': typeof DashboardAccountsRoute
   '/dashboard/claim': typeof DashboardClaimRoute
+  '/dashboard/control-plane': typeof DashboardControlPlaneRoute
   '/dashboard/devices': typeof DashboardDevicesRoute
+  '/dashboard/financials': typeof DashboardFinancialsRoute
+  '/dashboard/health': typeof DashboardHealthRoute
+  '/dashboard/logs': typeof DashboardLogsRoute
   '/dashboard/media': typeof DashboardMediaRoute
+  '/dashboard/media-control': typeof DashboardMediaControlRoute
   '/dashboard/operators': typeof DashboardOperatorsRoute
   '/dashboard/servers': typeof DashboardServersRoute
+  '/dashboard/staff': typeof DashboardStaffRoute
   '/dashboard/submit-plugin': typeof DashboardSubmitPluginRoute
   '/dashboard/subscription': typeof DashboardSubscriptionRoute
   '/invite_/$code': typeof InviteCodeRoute
@@ -191,11 +254,18 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/auth/callback'
     | '/dashboard/account'
+    | '/dashboard/accounts'
     | '/dashboard/claim'
+    | '/dashboard/control-plane'
     | '/dashboard/devices'
+    | '/dashboard/financials'
+    | '/dashboard/health'
+    | '/dashboard/logs'
     | '/dashboard/media'
+    | '/dashboard/media-control'
     | '/dashboard/operators'
     | '/dashboard/servers'
+    | '/dashboard/staff'
     | '/dashboard/submit-plugin'
     | '/dashboard/subscription'
     | '/invite/$code'
@@ -210,11 +280,18 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/auth/callback'
     | '/dashboard/account'
+    | '/dashboard/accounts'
     | '/dashboard/claim'
+    | '/dashboard/control-plane'
     | '/dashboard/devices'
+    | '/dashboard/financials'
+    | '/dashboard/health'
+    | '/dashboard/logs'
     | '/dashboard/media'
+    | '/dashboard/media-control'
     | '/dashboard/operators'
     | '/dashboard/servers'
+    | '/dashboard/staff'
     | '/dashboard/submit-plugin'
     | '/dashboard/subscription'
     | '/invite/$code'
@@ -230,11 +307,18 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/auth/callback'
     | '/dashboard/account'
+    | '/dashboard/accounts'
     | '/dashboard/claim'
+    | '/dashboard/control-plane'
     | '/dashboard/devices'
+    | '/dashboard/financials'
+    | '/dashboard/health'
+    | '/dashboard/logs'
     | '/dashboard/media'
+    | '/dashboard/media-control'
     | '/dashboard/operators'
     | '/dashboard/servers'
+    | '/dashboard/staff'
     | '/dashboard/submit-plugin'
     | '/dashboard/subscription'
     | '/invite_/$code'
@@ -325,6 +409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSubmitPluginRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/staff': {
+      id: '/dashboard/staff'
+      path: '/staff'
+      fullPath: '/dashboard/staff'
+      preLoaderRoute: typeof DashboardStaffRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/servers': {
       id: '/dashboard/servers'
       path: '/servers'
@@ -339,11 +430,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardOperatorsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/media-control': {
+      id: '/dashboard/media-control'
+      path: '/media-control'
+      fullPath: '/dashboard/media-control'
+      preLoaderRoute: typeof DashboardMediaControlRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/media': {
       id: '/dashboard/media'
       path: '/media'
       fullPath: '/dashboard/media'
       preLoaderRoute: typeof DashboardMediaRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/logs': {
+      id: '/dashboard/logs'
+      path: '/logs'
+      fullPath: '/dashboard/logs'
+      preLoaderRoute: typeof DashboardLogsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/health': {
+      id: '/dashboard/health'
+      path: '/health'
+      fullPath: '/dashboard/health'
+      preLoaderRoute: typeof DashboardHealthRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/financials': {
+      id: '/dashboard/financials'
+      path: '/financials'
+      fullPath: '/dashboard/financials'
+      preLoaderRoute: typeof DashboardFinancialsRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/devices': {
@@ -353,11 +472,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardDevicesRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/control-plane': {
+      id: '/dashboard/control-plane'
+      path: '/control-plane'
+      fullPath: '/dashboard/control-plane'
+      preLoaderRoute: typeof DashboardControlPlaneRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/claim': {
       id: '/dashboard/claim'
       path: '/claim'
       fullPath: '/dashboard/claim'
       preLoaderRoute: typeof DashboardClaimRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/accounts': {
+      id: '/dashboard/accounts'
+      path: '/accounts'
+      fullPath: '/dashboard/accounts'
+      preLoaderRoute: typeof DashboardAccountsRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/account': {
@@ -386,11 +519,18 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteChildren {
   DashboardAccountRoute: typeof DashboardAccountRoute
+  DashboardAccountsRoute: typeof DashboardAccountsRoute
   DashboardClaimRoute: typeof DashboardClaimRoute
+  DashboardControlPlaneRoute: typeof DashboardControlPlaneRoute
   DashboardDevicesRoute: typeof DashboardDevicesRoute
+  DashboardFinancialsRoute: typeof DashboardFinancialsRoute
+  DashboardHealthRoute: typeof DashboardHealthRoute
+  DashboardLogsRoute: typeof DashboardLogsRoute
   DashboardMediaRoute: typeof DashboardMediaRoute
+  DashboardMediaControlRoute: typeof DashboardMediaControlRoute
   DashboardOperatorsRoute: typeof DashboardOperatorsRoute
   DashboardServersRoute: typeof DashboardServersRoute
+  DashboardStaffRoute: typeof DashboardStaffRoute
   DashboardSubmitPluginRoute: typeof DashboardSubmitPluginRoute
   DashboardSubscriptionRoute: typeof DashboardSubscriptionRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
@@ -399,11 +539,18 @@ interface DashboardRouteChildren {
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAccountRoute: DashboardAccountRoute,
+  DashboardAccountsRoute: DashboardAccountsRoute,
   DashboardClaimRoute: DashboardClaimRoute,
+  DashboardControlPlaneRoute: DashboardControlPlaneRoute,
   DashboardDevicesRoute: DashboardDevicesRoute,
+  DashboardFinancialsRoute: DashboardFinancialsRoute,
+  DashboardHealthRoute: DashboardHealthRoute,
+  DashboardLogsRoute: DashboardLogsRoute,
   DashboardMediaRoute: DashboardMediaRoute,
+  DashboardMediaControlRoute: DashboardMediaControlRoute,
   DashboardOperatorsRoute: DashboardOperatorsRoute,
   DashboardServersRoute: DashboardServersRoute,
+  DashboardStaffRoute: DashboardStaffRoute,
   DashboardSubmitPluginRoute: DashboardSubmitPluginRoute,
   DashboardSubscriptionRoute: DashboardSubscriptionRoute,
   DashboardIndexRoute: DashboardIndexRoute,

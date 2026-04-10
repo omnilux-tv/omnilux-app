@@ -5,7 +5,7 @@ import { buildPageHead } from '@/lib/seo';
 import { buildAppHref, getCurrentSiteSurface } from '@/lib/site-surface';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
-import { DEFAULT_OPERATOR_CONSOLE_VIEW } from '@/surfaces/app/lib/ops-console';
+import { DEFAULT_OPS_CONSOLE_PATH, isOpsConsolePath } from '@/surfaces/app/lib/ops-console';
 
 export const Route = createFileRoute('/dashboard')({
   head: () =>
@@ -49,15 +49,13 @@ function DashboardLayout() {
     }
 
     const isAllowedOpsRoute =
-      pathname === '/dashboard' ||
-      pathname === '/dashboard/' ||
+      isOpsConsolePath(pathname === '/dashboard/' ? '/dashboard' : pathname) ||
       pathname.startsWith('/dashboard/operators') ||
       pathname.startsWith('/dashboard/account');
 
     if (!isAllowedOpsRoute) {
       navigate({
-        to: '/dashboard/operators',
-        search: { view: DEFAULT_OPERATOR_CONSOLE_VIEW } as never,
+        to: DEFAULT_OPS_CONSOLE_PATH,
         replace: true,
       });
     }

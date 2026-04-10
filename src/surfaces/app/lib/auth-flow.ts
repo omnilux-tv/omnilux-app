@@ -1,4 +1,10 @@
 import { getCurrentHostedSiteSurface, type HostedSiteSurface } from '@/lib/site-surface';
+import {
+  DEFAULT_OPS_CONSOLE_PATH,
+  getLegacyOperatorViewDestination,
+  isLegacyOperatorView,
+  isOpsConsolePath,
+} from '@/surfaces/app/lib/ops-console';
 
 const PENDING_SIGNUP_KEY = 'omnilux:pending-signup';
 
@@ -7,13 +13,13 @@ export interface PendingSignupContext {
   next: string;
 }
 
-export const getDefaultAuthRedirect = (surface: HostedSiteSurface = 'app') =>
-  surface === 'ops' ? '/dashboard/operators' : '/dashboard';
+export const getDefaultAuthRedirect = (surface: HostedSiteSurface = 'app'): string =>
+  surface === 'ops' ? DEFAULT_OPS_CONSOLE_PATH : '/dashboard';
 
 export const sanitizeRedirectPath = (
   value: string | null | undefined,
   fallback = getDefaultAuthRedirect(),
-) => {
+): string => {
   if (!value || !value.startsWith('/')) {
     return fallback;
   }
@@ -24,7 +30,7 @@ export const sanitizeRedirectPath = (
 export const getRedirectPathFromSearch = (
   search: string,
   fallback = getDefaultAuthRedirect(),
-) => sanitizeRedirectPath(new URLSearchParams(search).get('redirect'), fallback);
+): string => sanitizeRedirectPath(new URLSearchParams(search).get('redirect'), fallback);
 
 export const getCurrentHostedSurface = (): HostedSiteSurface => {
   if (typeof window === 'undefined') {
@@ -37,7 +43,7 @@ export const getCurrentHostedSurface = (): HostedSiteSurface => {
 export const normalizeHostedRedirectPath = (
   surface: HostedSiteSurface,
   value: string | null | undefined,
-) => {
+): string => {
   const fallback = getDefaultAuthRedirect(surface);
   const safeNext = sanitizeRedirectPath(value, fallback);
 
@@ -45,23 +51,44 @@ export const normalizeHostedRedirectPath = (
     return safeNext;
   }
 
+  const parsed = new URL(safeNext, 'https://ops.omnilux.tv');
+  const normalizedPathname = parsed.pathname === '/dashboard/' ? '/dashboard' : parsed.pathname;
+
+  if (normalizedPathname.startsWith('/dashboard/operators')) {
+    const legacyView = parsed.searchParams.get('view');
+    const legacyLookup = parsed.searchParams.get('lookup');
+    const legacyDestination =
+      legacyView && isLegacyOperatorView(legacyView)
+        ? getLegacyOperatorViewDestination(legacyView)
+        : '/dashboard/accounts';
+
+    if (legacyDestination === '/dashboard/accounts' && legacyLookup) {
+      return `${legacyDestination}?lookup=${encodeURIComponent(legacyLookup)}`;
+    }
+
+    return legacyDestination;
+  }
+
   if (
-    safeNext === '/dashboard' ||
-    safeNext === '/dashboard/' ||
-    safeNext.startsWith('/dashboard/operators') ||
-    safeNext.startsWith('/dashboard/account') ||
-    safeNext.startsWith('/forgot-password') ||
-    safeNext.startsWith('/reset-password') ||
-    safeNext.startsWith('/auth/callback') ||
-    safeNext.startsWith('/login')
+    isOpsConsolePath(normalizedPathname) ||
+    normalizedPathname.startsWith('/dashboard/account') ||
+    normalizedPathname.startsWith('/forgot-password') ||
+    normalizedPathname.startsWith('/reset-password') ||
+    normalizedPathname.startsWith('/auth/callback') ||
+    normalizedPathname.startsWith('/login')
   ) {
-    return safeNext === '/dashboard/' ? '/dashboard/operators' : safeNext;
+    if (normalizedPathname !== parsed.pathname) {
+      const suffix = `${parsed.search}${parsed.hash}`;
+      return `${normalizedPathname}${suffix}`;
+    }
+
+    return safeNext;
   }
 
   return fallback;
 };
 
-export const buildAuthCallbackUrl = (next = getDefaultAuthRedirect(getCurrentHostedSurface())) => {
+export const buildAuthCallbackUrl = (next = getDefaultAuthRedirect(getCurrentHostedSurface())): string => {
   const safeNext = sanitizeRedirectPath(next);
 
   if (typeof window === 'undefined') {
