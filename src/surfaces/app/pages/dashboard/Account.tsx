@@ -18,6 +18,9 @@ export const Account = () => {
   const passwordHasLetter = /[A-Za-z]/.test(newPassword);
   const passwordHasNumber = /\d/.test(newPassword);
   const passwordConfirmed = confirmPassword.length > 0 && confirmPassword === newPassword;
+  const sessionAssuranceLabel = accessProfile?.sessionAssuranceLevel
+    ? accessProfile.sessionAssuranceLevel.toUpperCase()
+    : 'Unknown';
 
   const handleProfileSave = async (e: FormEvent) => {
     e.preventDefault();
@@ -169,7 +172,7 @@ export const Account = () => {
 
         <div className="rounded-xl surface-soft p-6 space-y-3">
           <h2 className="text-lg font-bold text-foreground">Cloud Access</h2>
-          <div className="grid gap-3 text-sm sm:grid-cols-2">
+          <div className="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-lg bg-surface/50 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Managed Media</p>
               <p className="mt-2 text-foreground">
@@ -199,6 +202,31 @@ export const Account = () => {
                   MFA is not live yet, so password strength and account separation are the primary operator safeguards today.
                 </p>
               ) : null}
+            </div>
+            <div className="rounded-lg bg-surface/50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Last Sign-In</p>
+              <p className="mt-2 text-foreground">
+                {accessProfile?.lastSignInAt ? new Date(accessProfile.lastSignInAt).toLocaleString() : 'Not available'}
+              </p>
+              <p className="mt-1 text-muted">
+                Latest hosted auth sign-in recorded by OmniLux Cloud for this account.
+              </p>
+            </div>
+            <div className="rounded-lg bg-surface/50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Session Window</p>
+              <p className="mt-2 text-foreground">
+                {accessProfile?.sessionExpiresAt ? new Date(accessProfile.sessionExpiresAt).toLocaleString() : 'Not available'}
+              </p>
+              <p className="mt-1 text-muted">
+                Session issued {accessProfile?.sessionIssuedAt ? new Date(accessProfile.sessionIssuedAt).toLocaleString() : 'not available'}.
+              </p>
+            </div>
+            <div className="rounded-lg bg-surface/50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Session Assurance</p>
+              <p className="mt-2 text-foreground">{sessionAssuranceLabel}</p>
+              <p className="mt-1 text-muted">
+                MFA is not live yet, so most sessions currently authenticate at the base assurance level.
+              </p>
             </div>
           </div>
         </div>

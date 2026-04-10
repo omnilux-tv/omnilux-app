@@ -1,3 +1,5 @@
+import { appendFile } from 'node:fs/promises';
+
 const defaultChecks = [
   {
     name: 'Cloud App',
@@ -73,17 +75,24 @@ const probe = async (check) => {
 const main = async () => {
   const failures = [];
   const results = [];
+  const summaryLines = ['# OmniLux Service Canary', ''];
 
   for (const check of defaultChecks) {
     try {
       const result = await probe(check);
       results.push(result);
       console.log(`${result.name}: HTTP ${result.status} in ${result.responseTimeMs}ms`);
+      summaryLines.push(`- PASS ${result.name}: HTTP ${result.status} in ${result.responseTimeMs}ms`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown failure';
       failures.push(`${check.name}: ${message}`);
       console.error(`${check.name}: ${message}`);
+      summaryLines.push(`- FAIL ${check.name}: ${message}`);
     }
+  }
+
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    await appendFile(process.env.GITHUB_STEP_SUMMARY, `${summaryLines.join('\n')}\n`).catch(() => undefined);
   }
 
   if (failures.length > 0) {

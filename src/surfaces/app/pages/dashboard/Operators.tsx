@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LifeBuoy, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -10,6 +10,7 @@ import {
   usePlatformSettings,
   usePlatformSettingsAuditLog,
   type AccessAuditRow,
+  type ManagedMediaOperatingMode,
   type ManagedMediaPolicy,
   type OperatorActionAuditRow,
   type PlatformSettingsAuditRow,
@@ -30,6 +31,8 @@ const managedMediaPolicyCopy: Record<ManagedMediaPolicy, { label: string; descri
 
 const renderProfileLabel = (profile: { displayName: string | null; email: string | null; userId: string | null }) =>
   profile.displayName || profile.email || profile.userId || 'Unknown account';
+
+const formatTimestamp = (value: string | null) => (value ? new Date(value).toLocaleString() : 'Not available');
 
 const renderAuditSummary = (row: AccessAuditRow) => {
   const changes: string[] = [];
@@ -58,6 +61,16 @@ const renderOperatorActionSummary = (row: OperatorActionAuditRow) => {
       return `Updated access controls for ${renderProfileLabel(row.target ?? { userId: null, email: null, displayName: null })}`;
     case 'update_managed_media_policy':
       return 'Updated the managed media platform policy';
+    case 'update_managed_media_operations':
+      return 'Updated managed media operating state';
+    case 'send_password_reset_email':
+      return `Sent a password reset email to ${renderProfileLabel(row.target ?? { userId: null, email: null, displayName: null })}`;
+    case 'create_support_note':
+      return `Saved a support note for ${renderProfileLabel(row.target ?? { userId: null, email: null, displayName: null })}`;
+    case 'revoke_relay_session':
+      return `Revoked a relay session for ${renderProfileLabel(row.target ?? { userId: null, email: null, displayName: null })}`;
+    case 'revoke_server_relay_token':
+      return `Revoked a relay token for ${row.server?.name ?? 'a self-hosted server'}`;
     default:
       return row.actionType.replaceAll('_', ' ');
   }
@@ -86,6 +99,33 @@ const renderOperatorActionDetail = (row: OperatorActionAuditRow) => {
     return nextPolicy ? managedMediaPolicyCopy[nextPolicy as ManagedMediaPolicy]?.description ?? nextPolicy : 'Platform policy changed';
   }
 
+  if (row.actionType === 'update_managed_media_operations') {
+    const nextMode = typeof row.metadata.managedMediaOperatingModeAfter === 'string'
+      ? row.metadata.managedMediaOperatingModeAfter
+      : null;
+    const nextMessage = typeof row.metadata.managedMediaIncidentMessageAfter === 'string'
+      ? row.metadata.managedMediaIncidentMessageAfter
+      : '';
+    return [nextMode ? `Mode: ${nextMode.replaceAll('-', ' ')}` : null, nextMessage || null].filter(Boolean).join(' · ');
+  }
+
+  if (row.actionType === 'send_password_reset_email') {
+    return typeof row.metadata.email === 'string' ? `Reset email sent to ${row.metadata.email}` : 'Password reset email sent';
+  }
+
+  if (row.actionType === 'create_support_note') {
+    const preview = typeof row.metadata.notePreview === 'string' ? row.metadata.notePreview : null;
+    return preview ? preview : 'Support note created';
+  }
+
+  if (row.actionType === 'revoke_relay_session') {
+    return typeof row.metadata.sessionId === 'string' ? `Session ${row.metadata.sessionId} revoked` : 'Relay session revoked';
+  }
+
+  if (row.actionType === 'revoke_server_relay_token') {
+    return typeof row.metadata.tokenId === 'string' ? `Token ${row.metadata.tokenId} revoked` : 'Relay token revoked';
+  }
+
   return row.server?.name ? `Target server: ${row.server.name}` : 'Sensitive operator action';
 };
 
@@ -95,6 +135,10 @@ export const Operators = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState('');
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [managedMediaOperatingModeDraft, setManagedMediaOperatingModeDraft] = useState<ManagedMediaOperatingMode>('normal');
+  const [managedMediaIncidentMessageDraft, setManagedMediaIncidentMessageDraft] = useState('');
+  const [supportNoteDraft, setSupportNoteDraft] = useState('');
+  const [supportNoteTagsDraft, setSupportNoteTagsDraft] = useState('');
   const deferredSearchValue = useDeferredValue(searchValue);
 
   const {
@@ -202,10 +246,20 @@ export const Operators = () => {
   });
 
   const updatePlatformSettings = useMutation({
-    mutationFn: async (managedMediaPolicy: ManagedMediaPolicy) => {
+    mutationFn: async ({
+      managedMediaPolicy,
+      managedMediaOperatingMode,
+      managedMediaIncidentMessage,
+    }: {
+      managedMediaPolicy?: ManagedMediaPolicy;
+      managedMediaOperatingMode?: ManagedMediaOperatingMode;
+      managedMediaIncidentMessage?: string;
+    }) => {
       const { data, error } = await supabase.functions.invoke('update-platform-settings', {
         body: {
           managedMediaPolicy,
+          managedMediaOperatingMode,
+          managedMediaIncidentMessage,
           source: 'operator-dashboard',
         },
       });
@@ -229,6 +283,147 @@ export const Operators = () => {
       setMessage(mutationError instanceof Error ? mutationError.message : 'Failed to update platform policy.');
     },
   });
+
+  const createSupportNote = useMutation({
+    mutationFn: async ({
+      userId,
+      note,
+      tags,
+    }: {
+      userId: string;
+      note: string;
+      tags: string[];
+    }) => {
+      const { data, error } = await supabase.functions.invoke('create-support-note', {
+        body: {
+          userId,
+          note,
+          tags,
+          source: 'operator-dashboard',
+        },
+      });
+      if (error) {
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: async (_, variables) => {
+      setSupportNoteDraft('');
+      setSupportNoteTagsDraft('');
+      setMessage('Support note saved.');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['operator-support-profile', variables.userId] }),
+        queryClient.invalidateQueries({ queryKey: ['operator-action-audit-log'] }),
+        queryClient.invalidateQueries({ queryKey: ['ops-overview'] }),
+      ]);
+    },
+    onError: (mutationError) => {
+      setMessage(mutationError instanceof Error ? mutationError.message : 'Failed to save support note.');
+    },
+  });
+
+  const sendPasswordResetEmail = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke<{ sent: boolean; email: string }>(
+        'send-password-reset-email',
+        {
+          body: {
+            userId,
+            source: 'operator-dashboard',
+          },
+        },
+      );
+      if (error) {
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: async (_, userId) => {
+      setMessage('Password reset email sent.');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['operator-support-profile', userId] }),
+        queryClient.invalidateQueries({ queryKey: ['operator-action-audit-log'] }),
+      ]);
+    },
+    onError: (mutationError) => {
+      setMessage(mutationError instanceof Error ? mutationError.message : 'Failed to send password reset email.');
+    },
+  });
+
+  const revokeRelaySession = useMutation({
+    mutationFn: async ({
+      sessionId,
+      userId,
+    }: {
+      sessionId: string;
+      userId: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('revoke-relay-session', {
+        body: {
+          sessionId,
+          source: 'operator-dashboard',
+        },
+      });
+      if (error) {
+        throw error;
+      }
+      return { data, userId };
+    },
+    onSuccess: async ({ userId }) => {
+      setMessage('Relay session revoked.');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['operator-support-profile', userId] }),
+        queryClient.invalidateQueries({ queryKey: ['operator-action-audit-log'] }),
+        queryClient.invalidateQueries({ queryKey: ['ops-overview'] }),
+      ]);
+    },
+    onError: (mutationError) => {
+      setMessage(mutationError instanceof Error ? mutationError.message : 'Failed to revoke relay session.');
+    },
+  });
+
+  const revokeServerRelayToken = useMutation({
+    mutationFn: async ({
+      tokenId,
+      userId,
+    }: {
+      tokenId: string;
+      userId: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('revoke-server-relay-token', {
+        body: {
+          tokenId,
+          source: 'operator-dashboard',
+        },
+      });
+      if (error) {
+        throw error;
+      }
+      return { data, userId };
+    },
+    onSuccess: async ({ userId }) => {
+      setMessage('Relay token revoked.');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['operator-support-profile', userId] }),
+        queryClient.invalidateQueries({ queryKey: ['operator-action-audit-log'] }),
+      ]);
+    },
+    onError: (mutationError) => {
+      setMessage(mutationError instanceof Error ? mutationError.message : 'Failed to revoke relay token.');
+    },
+  });
+
+  useEffect(() => {
+    if (!platformSettings) {
+      return;
+    }
+    setManagedMediaOperatingModeDraft(platformSettings.managedMediaOperatingMode);
+    setManagedMediaIncidentMessageDraft(platformSettings.managedMediaIncidentMessage ?? '');
+  }, [
+    platformSettings?.managedMediaIncidentMessage,
+    platformSettings?.managedMediaOperatingMode,
+    platformSettings,
+  ]);
 
   const sortedProfiles = useMemo(
     () =>
@@ -261,6 +456,13 @@ export const Operators = () => {
     [profiles],
   );
   const managedMediaPolicy = platformSettings?.managedMediaPolicy ?? 'all-authenticated-users';
+  const incidentStateDirty =
+    managedMediaOperatingModeDraft !== (platformSettings?.managedMediaOperatingMode ?? 'normal') ||
+    managedMediaIncidentMessageDraft !== (platformSettings?.managedMediaIncidentMessage ?? '');
+  const supportNoteTags = supportNoteTagsDraft
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean);
   const profileManagedMediaControlsDisabled = managedMediaPolicy === 'all-authenticated-users';
 
   if (isAccessProfileLoading) {
@@ -363,8 +565,11 @@ export const Operators = () => {
                       if (policy === managedMediaPolicy) {
                         return;
                       }
+                      if (!window.confirm(`Switch managed media policy to "${copy.label}"?`)) {
+                        return;
+                      }
                       setMessage(null);
-                      updatePlatformSettings.mutate(policy);
+                      updatePlatformSettings.mutate({ managedMediaPolicy: policy });
                     }}
                     className={`rounded-xl border p-5 text-left transition-colors ${
                       selected
@@ -392,6 +597,93 @@ export const Operators = () => {
               <div className="rounded-lg bg-surface/60 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">Explicit Overrides</p>
                 <p className="mt-2 font-display text-2xl font-bold text-foreground">{explicitlyEntitledCount}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-xl border border-border bg-surface/40 p-5">
+              <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h3 className="font-semibold text-foreground">Managed Media Operations</h3>
+                  <p className="mt-1 text-sm text-muted">
+                    Set the live operating state for `media.omnilux.tv` and publish an operator-facing incident message.
+                  </p>
+                </div>
+                <div className="text-xs uppercase tracking-wide text-muted">
+                  Current: {platformSettings?.managedMediaOperatingModeLabel ?? 'Normal operation'}
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                {([
+                  { value: 'normal', label: 'Normal', description: 'No incident banner and routine operations.' },
+                  { value: 'degraded', label: 'Degraded', description: 'Partial customer impact or elevated latency.' },
+                  { value: 'maintenance', label: 'Maintenance', description: 'Planned or emergency work affecting service.' },
+                ] as const).map((mode) => {
+                  const selected = managedMediaOperatingModeDraft === mode.value;
+                  return (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      disabled={updatePlatformSettings.isPending}
+                      onClick={() => setManagedMediaOperatingModeDraft(mode.value)}
+                      className={`rounded-xl border p-4 text-left transition-colors ${
+                        selected ? 'border-accent bg-accent/10' : 'border-border bg-background hover:bg-surface'
+                      }`}
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Mode</p>
+                      <h4 className="mt-2 font-semibold text-foreground">{mode.label}</h4>
+                      <p className="mt-2 text-sm text-muted">{mode.description}</p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4">
+                <label
+                  htmlFor="managed-media-incident-message"
+                  className="text-xs font-semibold uppercase tracking-[0.16em] text-muted"
+                >
+                  Incident Message
+                </label>
+                <textarea
+                  id="managed-media-incident-message"
+                  value={managedMediaIncidentMessageDraft}
+                  onChange={(event) => setManagedMediaIncidentMessageDraft(event.currentTarget.value)}
+                  rows={4}
+                  placeholder="Summarize the current customer impact, what is degraded, and the expected next update."
+                  className="mt-3 w-full rounded-xl border border-border bg-input px-3 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-accent"
+                />
+                <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <p className="text-sm text-muted">
+                    This state is intended for operator coordination and incident handling, not customer-facing status pages yet.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={updatePlatformSettings.isPending || !incidentStateDirty}
+                    onClick={() => {
+                      const nextMode = managedMediaOperatingModeDraft;
+                      const nextMessage = managedMediaIncidentMessageDraft.trim();
+                      const nextModeLabel = nextMode.replaceAll('-', ' ');
+                      const confirmationMessage =
+                        nextMode === 'normal' && nextMessage.length === 0
+                          ? 'Clear the managed media incident state and return to normal operation?'
+                          : `Update managed media operations to ${nextModeLabel}${nextMessage ? ' and publish the current incident summary?' : '?'}`;
+
+                      if (!window.confirm(confirmationMessage)) {
+                        return;
+                      }
+
+                      setMessage(null);
+                      updatePlatformSettings.mutate({
+                        managedMediaOperatingMode: nextMode,
+                        managedMediaIncidentMessage: nextMessage,
+                      });
+                    }}
+                    className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
+                  >
+                    Save Incident State
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -540,6 +832,9 @@ export const Operators = () => {
                           </p>
                         </div>
                       </div>
+                      <div className="mt-4 rounded-lg bg-background p-4 text-sm text-muted">
+                        Last sign-in {formatTimestamp(supportProfile.profile.lastSignInAt)}
+                      </div>
                     </div>
 
                     <div className="rounded-xl bg-surface/60 p-4">
@@ -561,6 +856,23 @@ export const Operators = () => {
                       )}
                       <div className="mt-4 rounded-lg bg-background p-4 text-sm text-muted">
                         Account created {new Date(supportProfile.profile.createdAt).toLocaleString()}
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          disabled={sendPasswordResetEmail.isPending}
+                          onClick={() => {
+                            const label = supportProfile.profile.email || supportProfile.profile.id;
+                            if (!window.confirm(`Send a password reset email to ${label}?`)) {
+                              return;
+                            }
+                            setMessage(null);
+                            sendPasswordResetEmail.mutate(supportProfile.profile.id);
+                          }}
+                          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
+                        >
+                          Send Password Reset
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -623,13 +935,179 @@ export const Operators = () => {
                         <div className="mt-4 space-y-3">
                           {supportProfile.recentRelaySessions.map((session) => (
                             <div key={session.id} className="rounded-lg bg-background p-4">
-                              <p className="font-medium text-foreground">{session.serverName}</p>
-                              <p className="mt-1 text-sm text-muted">
-                                {session.sessionType} · {session.status}
-                              </p>
-                              <p className="mt-2 text-xs text-muted">
-                                Issued {new Date(session.issuedAt).toLocaleString()}
-                              </p>
+                              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                <div>
+                                  <p className="font-medium text-foreground">{session.serverName}</p>
+                                  <p className="mt-1 text-sm text-muted">
+                                    {session.sessionType} · {session.status}
+                                  </p>
+                                  <p className="mt-2 text-xs text-muted">
+                                    Issued {new Date(session.issuedAt).toLocaleString()} · Expires {formatTimestamp(session.expiresAt)}
+                                  </p>
+                                </div>
+                                {session.revocable ? (
+                                  <button
+                                    type="button"
+                                    disabled={revokeRelaySession.isPending}
+                                    onClick={() => {
+                                      if (!window.confirm(`Revoke the relay session for ${session.serverName}?`)) {
+                                        return;
+                                      }
+                                      setMessage(null);
+                                      revokeRelaySession.mutate({
+                                        sessionId: session.id,
+                                        userId: supportProfile.profile.id,
+                                      });
+                                    }}
+                                    className="rounded-lg border border-danger/40 px-3 py-2 text-sm font-medium text-danger hover:bg-danger/10 disabled:opacity-50"
+                                  >
+                                    Revoke Session
+                                  </button>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                    <div className="rounded-xl bg-surface/60 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Active Relay Tokens</p>
+                          <p className="mt-1 text-sm text-muted">
+                            Current server relay credentials that can be revoked without changing server ownership.
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-background px-3 py-1 text-xs font-semibold text-foreground">
+                          {supportProfile.relayTokens.length}
+                        </span>
+                      </div>
+
+                      {supportProfile.relayTokens.length === 0 ? (
+                        <div className="mt-4 rounded-lg bg-background p-4 text-sm text-muted">
+                          No active relay tokens were found for this account’s self-hosted servers.
+                        </div>
+                      ) : (
+                        <div className="mt-4 space-y-3">
+                          {supportProfile.relayTokens.map((token) => (
+                            <div key={token.tokenId} className="rounded-lg bg-background p-4">
+                              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                <div>
+                                  <p className="font-medium text-foreground">{token.serverName}</p>
+                                  <p className="mt-1 text-sm text-muted">
+                                    {token.ownership === 'owner' ? 'Owner' : 'Shared'} · {token.issuedFor}
+                                  </p>
+                                  <p className="mt-2 text-xs text-muted">
+                                    {token.tokenPrefix} · Last used {formatTimestamp(token.lastUsedAt)} · Expires {formatTimestamp(token.expiresAt)}
+                                  </p>
+                                </div>
+                                {token.revocable ? (
+                                  <button
+                                    type="button"
+                                    disabled={revokeServerRelayToken.isPending}
+                                    onClick={() => {
+                                      if (!window.confirm(`Revoke the active relay token for ${token.serverName}?`)) {
+                                        return;
+                                      }
+                                      setMessage(null);
+                                      revokeServerRelayToken.mutate({
+                                        tokenId: token.tokenId,
+                                        userId: supportProfile.profile.id,
+                                      });
+                                    }}
+                                    className="rounded-lg border border-danger/40 px-3 py-2 text-sm font-medium text-danger hover:bg-danger/10 disabled:opacity-50"
+                                  >
+                                    Revoke Token
+                                  </button>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl bg-surface/60 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Support Notes</p>
+                      <p className="mt-1 text-sm text-muted">
+                        Operator-only notes for support handoff, incident context, and follow-up actions.
+                      </p>
+                      <div className="mt-4 space-y-3">
+                        <textarea
+                          value={supportNoteDraft}
+                          onChange={(event) => setSupportNoteDraft(event.currentTarget.value)}
+                          rows={5}
+                          placeholder="Summarize the issue, the action taken, and what the next operator should know."
+                          className="w-full rounded-xl border border-border bg-input px-3 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-accent"
+                        />
+                        <input
+                          type="text"
+                          value={supportNoteTagsDraft}
+                          onChange={(event) => setSupportNoteTagsDraft(event.currentTarget.value)}
+                          placeholder="Optional tags, comma separated (billing, relay, auth)"
+                          className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-accent"
+                        />
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-xs text-muted">
+                            Tagged notes stay in the operator audit history and support view for this account.
+                          </p>
+                          <button
+                            type="button"
+                            disabled={createSupportNote.isPending || supportNoteDraft.trim().length === 0}
+                            onClick={() => {
+                              const note = supportNoteDraft.trim();
+                              if (!note) {
+                                return;
+                              }
+                              if (!window.confirm(`Save a support note for ${supportProfile.profile.email || supportProfile.profile.id}?`)) {
+                                return;
+                              }
+                              setMessage(null);
+                              createSupportNote.mutate({
+                                userId: supportProfile.profile.id,
+                                note,
+                                tags: supportNoteTags,
+                              });
+                            }}
+                            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
+                          >
+                            Save Note
+                          </button>
+                        </div>
+                      </div>
+
+                      {supportProfile.supportNotes.length === 0 ? (
+                        <div className="mt-4 rounded-lg bg-background p-4 text-sm text-muted">
+                          No support notes have been recorded for this account yet.
+                        </div>
+                      ) : (
+                        <div className="mt-4 space-y-3">
+                          {supportProfile.supportNotes.map((note) => (
+                            <div key={note.id} className="rounded-lg bg-background p-4">
+                              <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                                <p className="text-sm font-medium text-foreground">
+                                  {renderProfileLabel(note.actor)} · {formatTimestamp(note.createdAt)}
+                                </p>
+                                {note.tags.length > 0 ? (
+                                  <div className="flex flex-wrap gap-2">
+                                    {note.tags.map((tag) => (
+                                      <span
+                                        key={tag}
+                                        className="rounded-full bg-surface px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : null}
+                              </div>
+                              <p className="mt-2 text-sm text-muted">{note.note}</p>
+                              {note.server ? (
+                                <p className="mt-2 text-xs text-muted">Server context: {note.server.name}</p>
+                              ) : null}
                             </div>
                           ))}
                         </div>
@@ -707,10 +1185,16 @@ export const Operators = () => {
                             checked={profile.managedMediaEntitled}
                             disabled={isUpdatingThisProfile || profileManagedMediaControlsDisabled}
                             onChange={(event) => {
+                              const nextValue = event.currentTarget.checked;
+                              const actionLabel = nextValue ? 'enable' : 'disable';
+                              if (!window.confirm(`Really ${actionLabel} managed media for ${profile.email || profile.id}?`)) {
+                                event.currentTarget.checked = !nextValue;
+                                return;
+                              }
                               setMessage(null);
                               updateProfileAccess.mutate({
                                 userId: profile.id,
-                                managedMediaEntitled: event.currentTarget.checked,
+                                managedMediaEntitled: nextValue,
                               });
                             }}
                             className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
@@ -724,10 +1208,16 @@ export const Operators = () => {
                             checked={profile.isOperator}
                             disabled={isUpdatingThisProfile}
                             onChange={(event) => {
+                              const nextValue = event.currentTarget.checked;
+                              const actionLabel = nextValue ? 'grant' : 'remove';
+                              if (!window.confirm(`Really ${actionLabel} operator access for ${profile.email || profile.id}?`)) {
+                                event.currentTarget.checked = !nextValue;
+                                return;
+                              }
                               setMessage(null);
                               updateProfileAccess.mutate({
                                 userId: profile.id,
-                                isOperator: event.currentTarget.checked,
+                                isOperator: nextValue,
                               });
                             }}
                             className="h-4 w-4 rounded border-border text-accent focus:ring-accent"

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
 export type ManagedMediaPolicy = 'all-authenticated-users' | 'explicit-per-profile';
+export type ManagedMediaOperatingMode = 'normal' | 'degraded' | 'maintenance';
 
 export interface AccessAuditRow {
   id: number;
@@ -56,6 +57,7 @@ export interface OperatorSupportProfile {
     isOperator: boolean;
     createdAt: string;
     updatedAt: string;
+    lastSignInAt: string | null;
     subscription: {
       tier: string;
       status: string;
@@ -84,6 +86,35 @@ export interface OperatorSupportProfile {
     expiresAt: string;
     consumedAt: string | null;
     endedAt: string | null;
+    revocable: boolean;
+  }>;
+  relayTokens: Array<{
+    serverId: string;
+    serverName: string;
+    ownership: 'owner' | 'shared';
+    tokenId: string;
+    tokenPrefix: string;
+    status: string;
+    issuedFor: string;
+    createdAt: string;
+    expiresAt: string;
+    lastUsedAt: string | null;
+    revocable: boolean;
+  }>;
+  supportNotes: Array<{
+    id: number;
+    createdAt: string;
+    tags: string[];
+    note: string;
+    actor: {
+      userId: string | null;
+      email: string | null;
+      displayName: string | null;
+    };
+    server: {
+      id: string;
+      name: string;
+    } | null;
   }>;
   recentAccessChanges: AccessAuditRow[];
 }
@@ -106,6 +137,9 @@ export interface PlatformSettings {
   managedMediaPolicy: ManagedMediaPolicy;
   managedMediaPolicyLabel: string;
   managedMediaPolicyDescription: string;
+  managedMediaOperatingMode: ManagedMediaOperatingMode;
+  managedMediaOperatingModeLabel: string;
+  managedMediaIncidentMessage: string;
   createdAt: string | null;
   updatedAt: string | null;
   updatedBy: string | null;
@@ -129,6 +163,9 @@ export interface OpsOverview {
     managedMediaPolicy: ManagedMediaPolicy;
     managedMediaPolicyLabel: string;
     managedMediaPolicyDescription: string;
+    managedMediaOperatingMode: ManagedMediaOperatingMode;
+    managedMediaOperatingModeLabel: string;
+    managedMediaIncidentMessage: string;
     updatedAt: string | null;
   };
   metrics: {
@@ -140,6 +177,8 @@ export interface OpsOverview {
     selfHostedServersTotal: number;
     relayOnlineServersTotal: number;
     relayAttentionServersTotal: number;
+    activeRelaySessionsTotal: number;
+    supportNotesTotal: number;
     recentAccessChangesTotal: number;
     recentPolicyChangesTotal: number;
   };

@@ -99,6 +99,18 @@ export const Dashboard = () => {
         value: opsOverview?.metrics.relayAttentionServersTotal ?? '—',
         detail: 'Self-hosted relay issues',
       },
+      {
+        icon: Activity,
+        label: 'Active Relay Sessions',
+        value: opsOverview?.metrics.activeRelaySessionsTotal ?? '—',
+        detail: 'Currently granted or active remote sessions',
+      },
+      {
+        icon: ShieldCheck,
+        label: 'Support Notes',
+        value: opsOverview?.metrics.supportNotesTotal ?? '—',
+        detail: 'Operator-only notes captured in support workflows',
+      },
     ] as const;
 
     return (
@@ -123,7 +135,20 @@ export const Dashboard = () => {
             </div>
           ) : (
             <>
-              <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {opsOverview?.platform.managedMediaOperatingMode !== 'normal' ||
+              (opsOverview?.platform.managedMediaIncidentMessage?.length ?? 0) > 0 ? (
+                <div className="mt-8 rounded-xl border border-warning/30 bg-warning/10 p-5 text-sm text-foreground">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-warning">Managed Media Incident State</p>
+                  <p className="mt-2 text-lg font-semibold text-foreground">
+                    {opsOverview?.platform.managedMediaOperatingModeLabel ?? 'Operating state updated'}
+                  </p>
+                  <p className="mt-2 text-muted">
+                    {opsOverview?.platform.managedMediaIncidentMessage || 'No incident summary has been published yet.'}
+                  </p>
+                </div>
+              ) : null}
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {opsMetricCards.map(({ icon: Icon, label, value, detail }) => (
                   <div key={label} className="rounded-xl surface-soft p-5">
                     <Icon className="h-5 w-5 text-accent" />
@@ -200,6 +225,9 @@ export const Dashboard = () => {
                   <div className="mt-4 rounded-lg bg-surface/60 p-4 text-sm text-muted">
                     <p>{opsOverview?.metrics.recentAccessChangesTotal ?? 0} access changes in the last 7 days</p>
                     <p className="mt-2">{opsOverview?.metrics.recentPolicyChangesTotal ?? 0} policy changes in the last 7 days</p>
+                    <p className="mt-2">
+                      Service canary failures now auto-open or update a GitHub issue for incident follow-up.
+                    </p>
                   </div>
                 </div>
               </div>

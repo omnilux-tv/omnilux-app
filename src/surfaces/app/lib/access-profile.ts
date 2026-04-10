@@ -12,6 +12,10 @@ export interface AccessProfile {
   isOperator: boolean;
   createdAt: string;
   updatedAt: string;
+  lastSignInAt: string | null;
+  sessionIssuedAt: string | null;
+  sessionExpiresAt: string | null;
+  sessionAssuranceLevel: string | null;
   subscription: {
     tier: string;
     status: string;
