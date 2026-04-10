@@ -2,7 +2,6 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { type ComponentType, type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
-  ArrowUpRight,
   ChevronRight,
   ChevronDown,
   Compass,
@@ -14,7 +13,7 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
-import { buildAppHref, buildDocsHref } from '@/lib/site-surface';
+import { buildDocsHref } from '@/lib/site-surface';
 import { cn } from '@/lib/utils';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { type OpsServiceHealthResponse, useOpsServiceHealth } from '@/surfaces/app/lib/ops';
@@ -236,7 +235,6 @@ export const OpsAppShell = ({ children }: { children: ReactNode }) => {
                         OmniLux
                       </Link>
                     </div>
-                    <p className="text-[10px] uppercase tracking-[0.22em] text-muted">Internal Operations</p>
                   </div>
                   <nav aria-label="Operator navigation" className="hidden shrink-0 items-center gap-1 lg:flex">
                     <Link
@@ -331,14 +329,6 @@ export const OpsAppShell = ({ children }: { children: ReactNode }) => {
                       >
                         Docs
                       </a>
-                      <a
-                        href={buildAppHref('/dashboard')}
-                        onClick={() => setOpenMenu(null)}
-                        className="flex min-h-11 w-full items-center gap-2.5 rounded-[0.9rem] px-4 py-3 text-left text-sm font-medium text-white/65 transition-colors hover:bg-white/6 hover:text-white"
-                      >
-                        <span>Open App</span>
-                        <ArrowUpRight className="h-3.5 w-3.5" />
-                      </a>
                       <div className="mx-2 my-1.5 border-t border-white/8" />
                       <button
                         type="button"
@@ -350,13 +340,6 @@ export const OpsAppShell = ({ children }: { children: ReactNode }) => {
                       </button>
                     </div>
                   ) : null}
-                  <a
-                    href={buildAppHref('/dashboard')}
-                    className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-primary/55 bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-[0_16px_40px_rgba(242,228,207,0.14)] transition-all hover:opacity-95"
-                  >
-                    <span>Open App</span>
-                    <ArrowUpRight className="h-4 w-4" />
-                  </a>
                 </div>
               </div>
 
