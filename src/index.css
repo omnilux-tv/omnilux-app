@@ -126,50 +126,49 @@
 
 @layer components {
   .ops-console-theme {
-    --color-background: #080d14;
-    --color-foreground: #e7edf6;
-    --color-muted: #98a7bb;
-    --color-muted-foreground: #6f8096;
-    --color-card: #111923;
+    --color-background: #0a0f14;
+    --color-foreground: #dce5f2;
+    --color-muted: #8c9cb0;
+    --color-muted-foreground: #66778d;
+    --color-card: #0f151d;
     --color-card-foreground: #e7edf6;
-    --color-card-hover: #162131;
-    --color-surface: rgba(126, 156, 197, 0.08);
+    --color-card-hover: #151d28;
+    --color-surface: rgba(126, 156, 197, 0.06);
     --color-surface-foreground: #e7edf6;
     --color-surface-strong: #162131;
-    --color-primary: #5d9dff;
+    --color-primary: #6ea8ff;
     --color-primary-foreground: #06101f;
-    --color-accent: #5d9dff;
+    --color-accent: #6ea8ff;
     --color-accent-foreground: #06101f;
     --color-info: #72b7ff;
-    --color-success: #4bc084;
+    --color-success: #54c58d;
     --color-success-foreground: #05120b;
-    --color-warning: #f4b768;
+    --color-warning: #f3b45f;
     --color-warning-foreground: #1f1202;
-    --color-danger: #ef6b73;
+    --color-danger: #ef7078;
     --color-danger-foreground: #210507;
-    --color-border: rgba(132, 164, 204, 0.16);
-    --color-border-hover: rgba(132, 164, 204, 0.26);
-    --color-input: rgba(132, 164, 204, 0.08);
-    --color-ring: rgba(93, 157, 255, 0.42);
-    --color-sidebar: #0b121a;
-    --color-panel: #111923;
-    --color-panel-elevated: #182230;
-    --color-panel-muted: #0d141e;
-    --color-grid: rgba(132, 164, 204, 0.08);
-    --radius-sm: 0.3rem;
-    --radius-md: 0.55rem;
-    --radius-lg: 0.8rem;
-    --radius-xl: 1.05rem;
+    --color-border: rgba(132, 164, 204, 0.14);
+    --color-border-hover: rgba(132, 164, 204, 0.24);
+    --color-input: rgba(132, 164, 204, 0.06);
+    --color-ring: rgba(110, 168, 255, 0.42);
+    --color-sidebar: #0a1016;
+    --color-panel: #0f151d;
+    --color-panel-elevated: #151d28;
+    --color-panel-muted: #0c1219;
+    --color-grid: rgba(132, 164, 204, 0.04);
+    --radius-sm: 0.25rem;
+    --radius-md: 0.45rem;
+    --radius-lg: 0.65rem;
+    --radius-xl: 0.9rem;
     --font-sans: 'IBM Plex Sans', 'Segoe UI', sans-serif;
-    --font-display: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+    --font-display: 'IBM Plex Sans', 'Segoe UI', sans-serif;
     color-scheme: dark;
     background:
-      radial-gradient(circle at top left, rgba(93, 157, 255, 0.08), transparent 26%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0)),
       linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), var(--color-grid) calc(100% - 1px)),
       linear-gradient(transparent 0, transparent calc(100% - 1px), var(--color-grid) calc(100% - 1px)),
       var(--color-background);
-    background-size: auto, auto, 28px 28px, 28px 28px, auto;
+    background-size: auto, 24px 24px, 24px 24px, auto;
   }
 }
 
@@ -221,22 +220,18 @@
 
 @utility ops-panel {
   border: 1px solid var(--color-border);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
-    var(--color-panel);
+  background: var(--color-panel);
   box-shadow:
-    0 18px 45px rgba(2, 6, 12, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    0 10px 28px rgba(2, 6, 12, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 @utility ops-panel-elevated {
   border: 1px solid var(--color-border);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
-    var(--color-panel-elevated);
+  background: var(--color-panel-elevated);
   box-shadow:
-    0 20px 48px rgba(2, 6, 12, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    0 14px 32px rgba(2, 6, 12, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 @utility ops-panel-muted {

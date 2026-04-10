@@ -30,6 +30,8 @@ import {
 import {
   OpsCallout,
   OpsEmptyState,
+  OpsKeyValueList,
+  OpsLinkList,
   OpsPageShell,
   OpsPanel,
   OpsStatusBadge,
@@ -477,39 +479,90 @@ function OpsDashboardView({
       label: 'Accounts',
       description:
         'Open the operator account workspace for customer lookups, billing context, and linked server history.',
-      icon: User,
+      meta: 'support',
     },
     {
       to: '/dashboard/logs',
       label: 'Audit Trail',
       description:
         'Audit sensitive operator actions, access changes, and control-plane motion in one timeline.',
-      icon: ShieldCheck,
+      meta: 'evidence',
     },
     {
       to: '/dashboard/financials',
       label: 'Financials',
       description:
         'Track plan coverage, trial exposure, and billing follow-up across the cloud account base.',
-      icon: CreditCard,
+      meta: 'billing',
     },
     {
       to: '/dashboard/control-plane',
       label: 'Control Plane',
       description: 'Change managed media policy, relay access rules, and runtime advisory state.',
-      icon: Server,
+      meta: 'policy',
     },
     {
       to: '/dashboard/media-control',
       label: 'Managed Runtime',
       description: 'Operate the managed runtime, its relay posture, and its current operator advisory.',
-      icon: RadioTower,
+      meta: 'runtime',
     },
     {
       to: '/dashboard/health',
       label: 'Service Health',
       description: 'Watch every public OmniLux surface, with failures and runbooks in one lane.',
-      icon: Waves,
+      meta: 'reliability',
+    },
+  ] as const;
+
+  const pressureItems = [
+    {
+      label: 'Relay attention queue',
+      value: formatOpsMetric(opsOverview?.metrics.relayAttentionServersTotal),
+      detail: 'Self-hosted runtimes with relay follow-up or degraded posture.',
+      tone:
+        (opsOverview?.metrics.relayAttentionServersTotal ?? 0) > 0 ? ('warning' as const) : ('neutral' as const),
+    },
+    {
+      label: 'Trial exposure',
+      value: formatOpsMetric(opsOverview?.metrics.trialingSubscriptionsTotal),
+      detail: 'Accounts still inside trial conversion windows.',
+      tone:
+        (opsOverview?.metrics.trialingSubscriptionsTotal ?? 0) > 0 ? ('info' as const) : ('neutral' as const),
+    },
+    {
+      label: 'Support handoff depth',
+      value: formatOpsMetric(opsOverview?.metrics.supportNotesTotal),
+      detail: 'Operator-authored notes available for follow-up context.',
+    },
+    {
+      label: 'Failing public checks',
+      value: String(servicesOffline),
+      detail: 'Health probes currently returning hard failures.',
+      tone: servicesOffline > 0 ? ('danger' as const) : ('neutral' as const),
+    },
+  ] as const;
+
+  const platformSnapshotItems = [
+    {
+      label: 'Managed media policy',
+      value: opsOverview?.platform.managedMediaPolicyLabel ?? 'Unknown',
+      detail: opsOverview?.platform.managedMediaPolicyDescription ?? 'Policy description unavailable.',
+    },
+    {
+      label: 'Relay access policy',
+      value: opsOverview?.platform.relayAccessPolicyLabel ?? 'Unknown',
+      detail: opsOverview?.platform.relayAccessPolicyDescription ?? 'Relay policy description unavailable.',
+    },
+    {
+      label: 'Managed runtime origin',
+      value: opsOverview?.managedMediaRuntime?.publicOrigin ?? 'Unassigned',
+      detail: opsOverview?.managedMediaRuntime?.name ?? 'No managed runtime registered.',
+    },
+    {
+      label: 'Policy updated',
+      value: formatOpsTimestamp(opsOverview?.platform.updatedAt, 'Unknown'),
+      detail: 'Last control-plane write observed by the hosted ops console.',
     },
   ] as const;
 
@@ -554,10 +607,10 @@ function OpsDashboardView({
         />
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_380px]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
         <OpsPanel
-          title="Immediate attention"
-          description="Systems and workloads that currently deserve operator review."
+          title="Service watchlist"
+          description="Live public surfaces ordered by severity so failures and degradations are visible before healthy services."
           meta={
             services.length > 0
               ? `${servicesOnline}/${services.length} services healthy`
@@ -565,9 +618,9 @@ function OpsDashboardView({
           }
         >
           {isOpsServiceHealthLoading ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              {[1, 2, 3, 4].map((index) => (
-                <div key={index} className="h-28 animate-pulse rounded-lg bg-white/[0.04]" />
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((index) => (
+                <div key={index} className="h-14 animate-pulse rounded-md bg-white/[0.04]" />
               ))}
             </div>
           ) : opsServiceHealthError ? (
@@ -586,96 +639,74 @@ function OpsDashboardView({
               body="The overview will populate once operator health probes start returning data."
             />
           ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {topAttentionServices.map((service) => (
-                <div key={service.key} className="rounded-lg border border-border bg-panel-muted px-4 py-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{service.label}</p>
-                      <p className="mt-1 text-sm text-muted">{service.detail}</p>
-                    </div>
-                    <OpsStatusBadge tone={opsServiceTone(service.status)}>{service.status}</OpsStatusBadge>
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-md border border-border bg-black/10 px-3 py-2">
-                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Latency</p>
-                      <p className="mt-1 font-mono text-foreground">
-                        {service.responseTimeMs !== null ? `${service.responseTimeMs} ms` : 'n/a'}
-                      </p>
-                    </div>
-                    <div className="rounded-md border border-border bg-black/10 px-3 py-2">
-                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted">HTTP</p>
-                      <p className="mt-1 font-mono text-foreground">
-                        {service.httpStatus !== null ? `HTTP ${service.httpStatus}` : 'n/a'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <OpsTable>
+              <OpsTableHead>
+                <tr>
+                  <OpsTableHeaderCell>Service</OpsTableHeaderCell>
+                  <OpsTableHeaderCell>Status</OpsTableHeaderCell>
+                  <OpsTableHeaderCell>Impact</OpsTableHeaderCell>
+                  <OpsTableHeaderCell align="right">Latency</OpsTableHeaderCell>
+                  <OpsTableHeaderCell align="right">HTTP</OpsTableHeaderCell>
+                </tr>
+              </OpsTableHead>
+              <OpsTableBody>
+                {topAttentionServices.map((service) => (
+                  <OpsTableRow key={service.key}>
+                    <OpsTableCell>
+                      <p className="font-medium text-foreground">{service.label}</p>
+                      <p className="mt-1 text-sm text-muted">{service.url}</p>
+                    </OpsTableCell>
+                    <OpsTableCell>
+                      <OpsStatusBadge tone={opsServiceTone(service.status)}>{service.status}</OpsStatusBadge>
+                    </OpsTableCell>
+                    <OpsTableCell className="text-muted">{service.detail}</OpsTableCell>
+                    <OpsTableCell align="right" className="font-mono text-muted">
+                      {service.responseTimeMs !== null ? `${service.responseTimeMs} ms` : 'n/a'}
+                    </OpsTableCell>
+                    <OpsTableCell align="right" className="font-mono text-muted">
+                      {service.httpStatus !== null ? `HTTP ${service.httpStatus}` : 'n/a'}
+                    </OpsTableCell>
+                  </OpsTableRow>
+                ))}
+              </OpsTableBody>
+            </OpsTable>
           )}
         </OpsPanel>
 
-        <OpsPanel
-          title="Control snapshot"
-          description="Current policies and runtime state that shape operator decisions."
-          meta={`Updated ${formatOpsTimestamp(opsOverview?.platform.updatedAt, 'recently')}`}
-        >
-          {isOpsOverviewLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((index) => (
-                <div key={index} className="h-20 animate-pulse rounded-lg bg-white/[0.04]" />
-              ))}
-            </div>
-          ) : opsOverviewError ? (
-            <OpsCallout
-              tone="danger"
-              title="Overview unavailable"
-              body={
-                opsOverviewError instanceof Error
-                  ? opsOverviewError.message
-                  : 'Failed to load the operator overview.'
-              }
-            />
-          ) : (
-            <div className="space-y-3">
-              <div className="rounded-lg border border-border bg-panel-muted px-4 py-4">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Managed media policy</p>
-                <p className="mt-2 text-sm font-semibold text-foreground">
-                  {opsOverview?.platform.managedMediaPolicyLabel ?? 'Unknown'}
-                </p>
-                <p className="mt-1 text-sm text-muted">
-                  {opsOverview?.platform.managedMediaPolicyDescription ?? 'Policy description unavailable.'}
-                </p>
+        <div className="space-y-4">
+          <OpsPanel
+            title="Operational pressure"
+            description="Queue depth and follow-up pressure across the hosted platform."
+          >
+            <OpsKeyValueList items={pressureItems} columns={1} />
+          </OpsPanel>
+
+          <OpsPanel
+            title="Control snapshot"
+            description="Current policies and managed runtime state that shape operator decisions."
+            meta={`Updated ${formatOpsTimestamp(opsOverview?.platform.updatedAt, 'recently')}`}
+          >
+            {isOpsOverviewLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((index) => (
+                  <div key={index} className="h-20 animate-pulse rounded-md bg-white/[0.04]" />
+                ))}
               </div>
-              <div className="rounded-lg border border-border bg-panel-muted px-4 py-4">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Relay access policy</p>
-                <p className="mt-2 text-sm font-semibold text-foreground">
-                  {opsOverview?.platform.relayAccessPolicyLabel ?? 'Unknown'}
-                </p>
-                <p className="mt-1 text-sm text-muted">
-                  {opsOverview?.platform.relayAccessPolicyDescription ?? 'Relay policy description unavailable.'}
-                </p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg border border-border bg-panel-muted px-4 py-4">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Managed runtime</p>
-                  <p className="mt-2 text-sm font-semibold text-foreground">
-                    {opsOverview?.managedMediaRuntime?.name ?? 'Not registered'}
-                  </p>
-                  <p className="mt-1 text-sm text-muted">
-                    {opsOverview?.managedMediaRuntime?.publicOrigin ?? 'No public origin'}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-border bg-panel-muted px-4 py-4">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Service alerts</p>
-                  <p className="mt-2 font-mono text-2xl font-semibold text-foreground">{servicesNeedingAttention}</p>
-                  <p className="mt-1 text-sm text-muted">{servicesOffline} failing probes</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </OpsPanel>
+            ) : opsOverviewError ? (
+              <OpsCallout
+                tone="danger"
+                title="Overview unavailable"
+                body={
+                  opsOverviewError instanceof Error
+                    ? opsOverviewError.message
+                    : 'Failed to load the operator overview.'
+                }
+              />
+            ) : (
+              <OpsKeyValueList items={platformSnapshotItems} columns={1} />
+            )}
+          </OpsPanel>
+        </div>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
@@ -724,26 +755,10 @@ function OpsDashboardView({
         </OpsPanel>
 
         <OpsPanel
-          title="Operator lanes"
+          title="Command lanes"
           description="Fast entry points for the workflows that matter most during daily operations."
         >
-          <div className="space-y-3">
-            {quickLinks.map(({ to, label, description, icon: Icon }) => (
-              <Link
-                key={to}
-                to={to}
-                className="flex items-start gap-3 rounded-lg border border-border bg-panel-muted px-4 py-4 transition-colors hover:bg-card-hover"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-black/10 text-info">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-foreground">{label}</span>
-                  <span className="mt-1 block text-sm leading-6 text-muted">{description}</span>
-                </span>
-              </Link>
-            ))}
-          </div>
+          <OpsLinkList items={quickLinks} />
         </OpsPanel>
       </div>
     </OpsPageShell>

@@ -21,11 +21,18 @@ import {
 import {
   OpsCallout,
   OpsConfirmDialog,
+  OpsKeyValueList,
   OpsLoadingState,
   OpsNotice,
   OpsPageShell,
   OpsPanel,
   OpsStatusBadge,
+  OpsTable,
+  OpsTableBody,
+  OpsTableCell,
+  OpsTableHead,
+  OpsTableHeaderCell,
+  OpsTableRow,
   opsButtonClassName,
 } from '@/surfaces/app/pages/dashboard/OpsPageShell';
 
@@ -217,7 +224,7 @@ export const OpsControlPlane = () => {
             {isPlatformSettingsLoading || isOpsOverviewLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((index) => (
-                  <div key={index} className="h-28 animate-pulse rounded-lg bg-white/[0.04]" />
+                  <div key={index} className="h-28 animate-pulse rounded-md bg-white/[0.04]" />
                 ))}
               </div>
             ) : platformSettingsError || opsOverviewError ? (
@@ -258,9 +265,9 @@ export const OpsControlPlane = () => {
                               },
                             })
                           }
-                          className={`rounded-lg border px-4 py-4 text-left transition-colors ${
+                          className={`rounded-md border px-4 py-4 text-left transition-colors ${
                             selected
-                              ? 'border-primary/30 bg-primary/12'
+                              ? 'border-primary/30 bg-primary/10'
                               : 'border-border bg-panel-muted hover:bg-card-hover'
                           }`}
                         >
@@ -306,9 +313,9 @@ export const OpsControlPlane = () => {
                               },
                             })
                           }
-                          className={`rounded-lg border px-4 py-4 text-left transition-colors ${
+                          className={`rounded-md border px-4 py-4 text-left transition-colors ${
                             selected
-                              ? 'border-primary/30 bg-primary/12'
+                              ? 'border-primary/30 bg-primary/10'
                               : 'border-border bg-panel-muted hover:bg-card-hover'
                           }`}
                         >
@@ -328,7 +335,7 @@ export const OpsControlPlane = () => {
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-border bg-panel-muted px-4 py-4">
+                <div className="rounded-md border border-border bg-panel-muted px-4 py-4">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">Managed runtime advisory</p>
@@ -356,9 +363,9 @@ export const OpsControlPlane = () => {
                           type="button"
                           disabled={updatePlatformSettings.isPending || operatorMutationsLocked}
                           onClick={() => setManagedMediaOperatingModeDraft(mode.value)}
-                          className={`rounded-lg border px-4 py-4 text-left transition-colors ${
+                          className={`rounded-md border px-4 py-4 text-left transition-colors ${
                             selected
-                              ? 'border-primary/30 bg-primary/12'
+                              ? 'border-primary/30 bg-primary/10'
                               : 'border-border bg-black/10 hover:bg-card-hover'
                           }`}
                         >
@@ -414,44 +421,91 @@ export const OpsControlPlane = () => {
             )}
           </OpsPanel>
 
-          <OpsPanel
-            title="Policy audit"
-            description="Every control-plane change stays attached to an actor and timestamp."
-            meta={isPolicyAuditLoading ? 'Refreshing' : `${policyAuditLog?.length ?? 0} events`}
-          >
-            {isPolicyAuditLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((index) => (
-                  <div key={index} className="h-16 animate-pulse rounded-lg bg-white/[0.04]" />
-                ))}
-              </div>
-            ) : policyAuditError ? (
-              <OpsNotice
-                title="Policy audit unavailable"
-                body={
-                  policyAuditError instanceof Error
-                    ? policyAuditError.message
-                    : 'Failed to load platform policy audit.'
-                }
-                tone="danger"
+          <div className="space-y-4">
+            <OpsPanel title="Current state" description="At-a-glance posture for policy and runtime controls.">
+              <OpsKeyValueList
+                columns={1}
+                items={[
+                  {
+                    label: 'Managed media policy',
+                    value: platformSettings?.managedMediaPolicyLabel ?? 'Unknown',
+                    detail:
+                      managedMediaPolicyCopy[platformSettings?.managedMediaPolicy ?? 'explicit-per-profile'].description,
+                  },
+                  {
+                    label: 'Relay policy',
+                    value: platformSettings?.relayAccessPolicyLabel ?? 'Unknown',
+                    detail: relayAccessPolicyCopy[platformSettings?.relayAccessPolicy ?? 'paid-subscription'].description,
+                  },
+                  {
+                    label: 'Managed runtime mode',
+                    value: platformSettings?.managedMediaOperatingModeLabel ?? 'Unknown',
+                    detail: platformSettings?.managedMediaIncidentMessage || 'No internal advisory published.',
+                    tone:
+                      platformSettings?.managedMediaOperatingMode === 'normal'
+                        ? 'success'
+                        : platformSettings?.managedMediaOperatingMode
+                          ? 'warning'
+                          : 'neutral',
+                  },
+                  {
+                    label: 'Explicit overrides',
+                    value: String(opsOverview?.metrics.explicitlyEntitledProfilesTotal ?? 0),
+                    detail: 'Accounts with direct managed-media access overrides.',
+                  },
+                ]}
               />
-            ) : (policyAuditLog?.length ?? 0) === 0 ? (
-              <OpsNotice title="No policy changes recorded" body="No control-plane policy changes have been recorded yet." />
-            ) : (
-              <div className="space-y-3">
-                {policyAuditLog?.slice(0, 10).map((row) => (
-                  <div key={row.id} className="rounded-lg border border-border bg-panel-muted px-4 py-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-foreground">{renderProfileLabel(row.actor)}</p>
-                      <p className="text-xs uppercase tracking-[0.16em] text-muted">{formatTimestamp(row.createdAt)}</p>
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-muted">{renderPolicySummary(row)}</p>
-                    <p className="mt-2 text-xs uppercase tracking-[0.16em] text-muted">{row.source}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </OpsPanel>
+            </OpsPanel>
+
+            <OpsPanel
+              title="Policy audit"
+              description="Every control-plane change stays attached to an actor, source, and timestamp."
+              meta={isPolicyAuditLoading ? 'Refreshing' : `${policyAuditLog?.length ?? 0} events`}
+            >
+              {isPolicyAuditLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((index) => (
+                    <div key={index} className="h-16 animate-pulse rounded-md bg-white/[0.04]" />
+                  ))}
+                </div>
+              ) : policyAuditError ? (
+                <OpsNotice
+                  title="Policy audit unavailable"
+                  body={
+                    policyAuditError instanceof Error
+                      ? policyAuditError.message
+                      : 'Failed to load platform policy audit.'
+                  }
+                  tone="danger"
+                />
+              ) : (policyAuditLog?.length ?? 0) === 0 ? (
+                <OpsNotice title="No policy changes recorded" body="No control-plane policy changes have been recorded yet." />
+              ) : (
+                <OpsTable>
+                  <OpsTableHead>
+                    <tr>
+                      <OpsTableHeaderCell>Actor</OpsTableHeaderCell>
+                      <OpsTableHeaderCell>Change</OpsTableHeaderCell>
+                      <OpsTableHeaderCell>Source</OpsTableHeaderCell>
+                      <OpsTableHeaderCell align="right">When</OpsTableHeaderCell>
+                    </tr>
+                  </OpsTableHead>
+                  <OpsTableBody>
+                    {policyAuditLog?.slice(0, 10).map((row) => (
+                      <OpsTableRow key={row.id}>
+                        <OpsTableCell>{renderProfileLabel(row.actor)}</OpsTableCell>
+                        <OpsTableCell className="text-muted">{renderPolicySummary(row)}</OpsTableCell>
+                        <OpsTableCell className="text-muted">{row.source}</OpsTableCell>
+                        <OpsTableCell align="right" className="text-muted">
+                          {formatTimestamp(row.createdAt)}
+                        </OpsTableCell>
+                      </OpsTableRow>
+                    ))}
+                  </OpsTableBody>
+                </OpsTable>
+              )}
+            </OpsPanel>
+          </div>
         </div>
       </OpsPageShell>
 

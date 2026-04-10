@@ -4,6 +4,8 @@ export {
   OpsCallout,
   OpsConfirmDialog,
   OpsEmptyState,
+  OpsKeyValueList,
+  OpsLinkList,
   OpsLoadingState,
   OpsMetricCard,
   OpsNotice,

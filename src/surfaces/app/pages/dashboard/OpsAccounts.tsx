@@ -18,6 +18,7 @@ import {
   OpsCallout,
   OpsConfirmDialog,
   OpsEmptyState,
+  OpsKeyValueList,
   OpsLoadingState,
   OpsNotice,
   OpsPageShell,
@@ -537,36 +538,33 @@ export const OpsAccounts = ({ initialLookup }: OpsAccountsProps) => {
                 >
                   <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_320px]">
                     <div className="space-y-4">
-                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <div className="rounded-lg border border-border bg-panel-muted px-4 py-4">
-                          <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Managed media</p>
-                          <p className="mt-2 text-sm font-semibold text-foreground">
-                            {supportProfile.profile.managedMediaEntitled ? 'Enabled' : 'Disabled'}
-                          </p>
-                          <p className="mt-1 text-sm text-muted">
-                            Override {supportProfile.profile.managedMediaAccessOverride ? 'enabled' : 'disabled'}
-                          </p>
-                        </div>
-                        <div className="rounded-lg border border-border bg-panel-muted px-4 py-4">
-                          <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Account role</p>
-                          <p className="mt-2 text-sm font-semibold text-foreground">
-                            {supportProfile.profile.isOperator ? 'Operator account' : 'Standard account'}
-                          </p>
-                          <p className="mt-1 text-sm text-muted">Updated {formatTimestamp(supportProfile.profile.updatedAt)}</p>
-                        </div>
-                        <div className="rounded-lg border border-border bg-panel-muted px-4 py-4">
-                          <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Last sign-in</p>
-                          <p className="mt-2 text-sm font-semibold text-foreground">
-                            {formatTimestamp(supportProfile.profile.lastSignInAt)}
-                          </p>
-                        </div>
-                        <div className="rounded-lg border border-border bg-panel-muted px-4 py-4">
-                          <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Created</p>
-                          <p className="mt-2 text-sm font-semibold text-foreground">
-                            {formatTimestamp(supportProfile.profile.createdAt)}
-                          </p>
-                        </div>
-                      </div>
+                      <OpsKeyValueList
+                        columns={4}
+                        items={[
+                          {
+                            label: 'Managed media',
+                            value: supportProfile.profile.managedMediaEntitled ? 'Enabled' : 'Disabled',
+                            detail: `Override ${supportProfile.profile.managedMediaAccessOverride ? 'enabled' : 'disabled'}`,
+                            tone: supportProfile.profile.managedMediaEntitled ? 'info' : 'neutral',
+                          },
+                          {
+                            label: 'Account role',
+                            value: supportProfile.profile.isOperator ? 'Operator account' : 'Standard account',
+                            detail: `Updated ${formatTimestamp(supportProfile.profile.updatedAt)}`,
+                            tone: supportProfile.profile.isOperator ? 'warning' : 'neutral',
+                          },
+                          {
+                            label: 'Last sign-in',
+                            value: formatTimestamp(supportProfile.profile.lastSignInAt),
+                            detail: 'Latest observed authentication event.',
+                          },
+                          {
+                            label: 'Created',
+                            value: formatTimestamp(supportProfile.profile.createdAt),
+                            detail: 'Cloud profile creation timestamp.',
+                          },
+                        ]}
+                      />
 
                       <div className="flex flex-wrap gap-2">
                         <button
@@ -636,30 +634,33 @@ export const OpsAccounts = ({ initialLookup }: OpsAccountsProps) => {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-border bg-panel-muted px-4 py-4">
+                    <div className="rounded-md border border-border bg-panel-muted px-4 py-4">
                       <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Billing posture</p>
                       {supportProfile.profile.subscription ? (
-                        <>
-                          <div className="mt-3">
-                            <OpsStatusBadge tone={subscriptionTone(supportProfile.profile.subscription.status)}>
-                              {supportProfile.profile.subscription.tier} · {supportProfile.profile.subscription.status}
-                            </OpsStatusBadge>
-                          </div>
-                          <p className="mt-3 text-sm text-muted">
-                            Current period ends {formatTimestamp(supportProfile.profile.subscription.currentPeriodEnd)}
-                          </p>
-                          <p className="mt-1 text-sm text-muted">
-                            Billing record updated {formatTimestamp(supportProfile.profile.subscription.updatedAt)}
-                          </p>
-                          <div className="mt-4">
-                            <Link
-                              to="/dashboard/financials"
-                              className={opsButtonClassName({ tone: 'secondary' })}
-                            >
-                              Open financial lane
-                            </Link>
-                          </div>
-                        </>
+                        <div className="mt-3 space-y-3">
+                          <OpsStatusBadge tone={subscriptionTone(supportProfile.profile.subscription.status)}>
+                            {supportProfile.profile.subscription.tier} · {supportProfile.profile.subscription.status}
+                          </OpsStatusBadge>
+                          <OpsKeyValueList
+                            columns={1}
+                            items={[
+                              {
+                                label: 'Current period end',
+                                value: formatTimestamp(supportProfile.profile.subscription.currentPeriodEnd),
+                              },
+                              {
+                                label: 'Billing record updated',
+                                value: formatTimestamp(supportProfile.profile.subscription.updatedAt),
+                              },
+                            ]}
+                          />
+                          <Link
+                            to="/dashboard/financials"
+                            className={opsButtonClassName({ tone: 'secondary' })}
+                          >
+                            Open financial lane
+                          </Link>
+                        </div>
                       ) : (
                         <>
                           <p className="mt-3 text-sm font-semibold text-foreground">No active subscription record</p>
@@ -891,7 +892,7 @@ export const OpsAccounts = ({ initialLookup }: OpsAccountsProps) => {
                       ) : (
                         <div className="space-y-3">
                           {supportProfile.supportNotes.map((note) => (
-                            <div key={note.id} className="rounded-lg border border-border bg-panel-muted px-4 py-4">
+                            <div key={note.id} className="rounded-md border border-border bg-panel-muted px-4 py-4">
                               <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
                                 <p className="text-sm font-medium text-foreground">
                                   {renderProfileLabel(note.actor)} · {formatTimestamp(note.createdAt)}

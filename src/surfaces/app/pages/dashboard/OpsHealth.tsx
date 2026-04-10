@@ -5,6 +5,8 @@ import { useOpsOverview, useOpsServiceHealth } from '@/surfaces/app/lib/ops';
 import {
   OpsCallout,
   OpsEmptyState,
+  OpsKeyValueList,
+  OpsLinkList,
   OpsLoadingState,
   OpsNotice,
   OpsPageShell,
@@ -176,22 +178,25 @@ export const OpsHealth = () => {
 
         <div className="space-y-4">
           <OpsPanel title="Runbooks" description="Operator references that matter when service posture shifts.">
-            <div className="space-y-3">
-              {[
-                { href: buildDocsHref('/guide/operator-runbook'), label: 'Operator runbook' },
-                { href: buildDocsHref('/guide/cloud-product-contract'), label: 'Cloud product contract' },
-                { href: buildDocsHref('/guide/client-readiness'), label: 'Client readiness' },
-              ].map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center justify-between rounded-lg border border-border bg-panel-muted px-4 py-3 text-sm transition-colors hover:bg-card-hover"
-                >
-                  <span className="font-medium text-foreground">{item.label}</span>
-                  <span className="text-muted">Open</span>
-                </a>
-              ))}
-            </div>
+            <OpsLinkList
+              items={[
+                {
+                  href: buildDocsHref('/guide/operator-runbook'),
+                  label: 'Operator runbook',
+                  description: 'Primary incident, support, and response flow reference.',
+                },
+                {
+                  href: buildDocsHref('/guide/cloud-product-contract'),
+                  label: 'Cloud product contract',
+                  description: 'Hosted product boundaries and policy constraints.',
+                },
+                {
+                  href: buildDocsHref('/guide/client-readiness'),
+                  label: 'Client readiness',
+                  description: 'Preflight checks before pushing changes into clients.',
+                },
+              ]}
+            />
           </OpsPanel>
 
           <OpsPanel
@@ -215,31 +220,31 @@ export const OpsHealth = () => {
                 tone="danger"
               />
             ) : (
-              <div className="space-y-3">
-                {[
+              <OpsKeyValueList
+                columns={1}
+                items={[
                   {
                     label: 'Managed media policy',
                     value: opsOverview?.platform.managedMediaPolicyLabel ?? 'Unknown',
+                    detail: 'Current hosted media entitlement posture.',
                   },
                   {
                     label: 'Relay access policy',
                     value: opsOverview?.platform.relayAccessPolicyLabel ?? 'Unknown',
+                    detail: 'Rule currently governing remote relay access.',
                   },
                   {
                     label: 'Self-hosted servers',
                     value: String(opsOverview?.metrics.selfHostedServersTotal ?? 0),
+                    detail: 'Registered customer runtimes visible to control plane.',
                   },
                   {
                     label: 'Active relay sessions',
                     value: String(opsOverview?.metrics.activeRelaySessionsTotal ?? 0),
+                    detail: 'Current relay sessions or grants in flight.',
                   },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-lg border border-border bg-panel-muted px-4 py-4">
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-muted">{item.label}</p>
-                    <p className="mt-2 text-sm font-semibold text-foreground">{item.value}</p>
-                  </div>
-                ))}
-              </div>
+                ]}
+              />
             )}
           </OpsPanel>
         </div>
