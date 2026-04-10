@@ -1,8 +1,6 @@
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import type { FormEvent, ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { Link, useRouterState } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 import {
-  AlertTriangle,
   ArrowUpRight,
   ChevronRight,
   LogOut,
@@ -70,19 +68,10 @@ const isPathActive = (pathname: string, itemPath: string) =>
 export const OpsAppShell = ({ children }: { children: ReactNode }) => {
   const { user, signOut } = useAuth();
   const { data: accessProfile } = useAccessProfile();
-  const { data: serviceHealth } = useOpsServiceHealth(Boolean(accessProfile?.isOperator));
   const pathname = useRouterState({
     select: (state) => (state.location.pathname === '/dashboard/' ? '/dashboard' : state.location.pathname),
   });
   const displayName = user?.user_metadata?.display_name ?? user?.email ?? 'Operator';
-  const initials =
-    displayName
-      .split(/\s+/)
-      .map((part: string) => part.charAt(0).toUpperCase())
-      .join('')
-      .slice(0, 2) || 'OP';
-  const alertCount =
-    serviceHealth?.services.filter((service) => service.status !== 'online').length ?? 0;
   const currentPage = pageByPath.get(pathname as OpsConsolePath) ?? null;
   const primaryNav = opsConsolePages.filter((page) => page.to !== '/dashboard/account');
 
@@ -90,23 +79,30 @@ export const OpsAppShell = ({ children }: { children: ReactNode }) => {
     <div className="ops-console-theme min-h-dvh bg-background text-foreground">
       <div className="mx-auto min-h-dvh w-full max-w-[1880px] px-2 py-3 lg:px-3">
         <header className="sticky top-2 z-40">
-          <div className="ops-panel overflow-hidden rounded-[1.65rem]">
-            <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5">
-              <div className="flex min-w-0 items-center gap-4">
-                <Link to="/dashboard" className="flex shrink-0 items-center gap-3" aria-label="OmniLux Ops home">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white/[0.03]">
-                    <img src="/favicon.svg" alt="" className="h-5 w-5" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block font-display text-[1.15rem] font-semibold text-foreground">OmniLux</span>
-                    <span className="block text-[10px] uppercase tracking-[0.28em] text-muted">
-                      Internal operations
-                    </span>
-                  </span>
-                </Link>
-
-                <nav aria-label="Operator navigation" className="hidden min-w-0 flex-1 overflow-x-auto lg:block">
-                  <div className="flex min-w-max items-center gap-1">
+          <div className="surface-panel rounded-[1.75rem] px-3 py-3 sm:px-4">
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <Link
+                    to="/dashboard"
+                    className="inline-flex shrink-0 items-center justify-center"
+                    aria-label="OmniLux Ops home"
+                  >
+                    <img
+                      src="/favicon.svg"
+                      alt=""
+                      className="h-9 w-9 drop-shadow-[0_0_18px_rgba(255,126,61,0.16)]"
+                    />
+                  </Link>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link to="/dashboard" className="font-display text-lg font-bold text-foreground">
+                        OmniLux
+                      </Link>
+                    </div>
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-muted">Internal Operations</p>
+                  </div>
+                  <nav aria-label="Operator navigation" className="hidden shrink-0 items-center gap-1 md:flex">
                     {primaryNav.map((item) => {
                       const active = isPathActive(pathname, item.to);
 
@@ -116,67 +112,62 @@ export const OpsAppShell = ({ children }: { children: ReactNode }) => {
                           to={item.to}
                           aria-current={active ? 'page' : undefined}
                           className={cn(
-                            'inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                            'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-semibold tracking-[0.01em] transition-all',
                             active
                               ? 'bg-white/[0.08] text-foreground'
-                              : 'text-foreground/68 hover:bg-white/[0.05] hover:text-foreground',
+                              : 'text-muted hover:bg-white/6 hover:text-foreground',
                           )}
                         >
                           {item.label}
                         </Link>
                       );
                     })}
-                  </div>
-                </nav>
+                  </nav>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  <a
+                    href={buildDocsHref('/guide/operator-runbook')}
+                    className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground/78 transition-all hover:bg-white/10 hover:text-foreground"
+                  >
+                    Docs
+                  </a>
+                  <Link
+                    to="/dashboard/account"
+                    className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground/78 transition-all hover:bg-white/10 hover:text-foreground"
+                  >
+                    {displayName}
+                  </Link>
+                  <a
+                    href={buildAppHref('/dashboard')}
+                    className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-primary/55 bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-[0_16px_40px_rgba(242,228,207,0.14)] transition-all hover:opacity-95"
+                  >
+                    <span>Open App</span>
+                    <ArrowUpRight className="h-4 w-4" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => void signOut().then(() => window.location.assign('/login'))}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-foreground/78 transition-all hover:bg-white/10 hover:text-foreground"
+                    aria-label="Sign out"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="hidden rounded-full border border-border bg-white/[0.03] px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted xl:inline-flex">
-                  env/{environmentLabel()}
-                </span>
-                <a href={buildDocsHref('/guide/operator-runbook')} className={opsButtonClassName({ tone: 'secondary', className: 'rounded-full px-4' })}>
-                  Runbook
-                </a>
-                <Link
-                  to="/dashboard/logs"
-                  className={opsButtonClassName({
-                    tone: alertCount > 0 ? 'danger' : 'secondary',
-                    className: 'rounded-full px-4',
-                  })}
-                >
-                  {alertCount > 0 ? `${alertCount} alerts` : 'Alerts'}
-                </Link>
-                <Link to="/dashboard/account" className={opsButtonClassName({ tone: 'secondary', className: 'rounded-full px-4' })}>
-                  {displayName}
-                </Link>
-                <a href={buildAppHref('/dashboard')} className={opsButtonClassName({ tone: 'primary', className: 'rounded-full px-5' })}>
-                  <span>Open App</span>
-                  <ArrowUpRight className="h-4 w-4" />
-                </a>
-                <button
-                  type="button"
-                  onClick={() => void signOut().then(() => window.location.assign('/login'))}
-                  className={opsButtonClassName({ tone: 'ghost', className: 'rounded-full px-3' })}
-                  aria-label="Sign out"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className="border-t border-border/80 px-3 py-2 lg:hidden">
-              <nav aria-label="Operator navigation">
-                <div className="flex gap-2 overflow-x-auto">
+              <nav aria-label="Operator navigation" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 md:hidden">
+                <div className="flex gap-1">
                   {primaryNav.map((item) => (
                     <Link
                       key={item.to}
                       to={item.to}
                       aria-current={isPathActive(pathname, item.to) ? 'page' : undefined}
                       className={cn(
-                        'whitespace-nowrap rounded-full px-4 py-2 text-sm transition-colors',
+                        'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-semibold tracking-[0.01em] transition-all',
                         isPathActive(pathname, item.to)
                           ? 'bg-white/[0.08] text-foreground'
-                          : 'text-foreground/68 hover:bg-white/[0.05] hover:text-foreground',
+                          : 'border-white/8 bg-white/[0.04] text-foreground/72 hover:bg-white/[0.08] hover:text-foreground',
                       )}
                     >
                       {item.label}
