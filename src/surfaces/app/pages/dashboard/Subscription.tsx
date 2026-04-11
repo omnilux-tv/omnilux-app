@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CreditCard, ExternalLink, Gem } from 'lucide-react';
 import {
   annualDiscountPercent,
@@ -51,6 +51,7 @@ export const Subscription = () => {
   const [portalAction, setPortalAction] = useState<'manage' | 'cancel' | null>(null);
   const [billingInterval, setBillingInterval] = useState<CloudBillingInterval>('monthly');
   const [foundingCheckoutPending, setFoundingCheckoutPending] = useState(false);
+  const autoCheckoutHandledRef = useRef(false);
 
   const { data: subscription, error, isLoading } = useQuery({
     queryKey: ['subscription', user?.id],
@@ -87,6 +88,7 @@ export const Subscription = () => {
   const currentTier = subscription?.tier ?? 'free';
   const hasFoundingMembership = foundingMembership?.status === 'paid';
   const billingPortalAvailable = Boolean(subscription?.stripe_customer_id);
+
   const currentBillingInterval = subscription?.metadata?.billingInterval
     ?? subscription?.metadata?.stripeMetadata?.interval
     ?? null;
@@ -103,12 +105,16 @@ export const Subscription = () => {
     return new URLSearchParams(window.location.search).get('founding');
   }, []);
 
-  const startCheckout = async (tier: PaidCloudTier) => {
+  const startCheckout = async (
+    tier: PaidCloudTier,
+    intervalOverride?: CloudBillingInterval,
+  ) => {
+    const selectedInterval = intervalOverride ?? billingInterval;
     setBillingError(null);
     setCheckoutTier(tier);
 
     const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-      body: { tier, interval: billingInterval },
+      body: { tier, interval: selectedInterval },
     });
 
     if (error) {
@@ -151,6 +157,18 @@ export const Subscription = () => {
     window.location.assign(url);
   };
 
+  const clearAutoCheckoutParams = () => {
+    if (typeof window === 'undefined') return;
+
+    const params = new URLSearchParams(window.location.search);
+    params.delete('intent');
+    params.delete('tier');
+    params.delete('interval');
+    const query = params.toString();
+    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
+    window.history.replaceState({}, '', nextUrl);
+  };
+
   const startFoundingMemberCheckout = async () => {
     setBillingError(null);
     setFoundingCheckoutPending(true);
@@ -172,6 +190,38 @@ export const Subscription = () => {
 
     window.location.assign(url);
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !user || autoCheckoutHandledRef.current) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const intent = params.get('intent');
+    const tier = params.get('tier');
+    const interval = params.get('interval');
+
+    const isCloudTier = tier === 'personal' || tier === 'duo' || tier === 'family';
+    const isBillingInterval = interval === 'monthly' || interval === 'annual';
+
+    if (intent !== 'founding-member' && !isCloudTier) {
+      return;
+    }
+
+    autoCheckoutHandledRef.current = true;
+    clearAutoCheckoutParams();
+
+    if (intent === 'founding-member') {
+      void startFoundingMemberCheckout();
+      return;
+    }
+
+    if (isCloudTier) {
+      const selectedInterval: CloudBillingInterval = isBillingInterval ? interval : 'monthly';
+      setBillingInterval(selectedInterval);
+      void startCheckout(tier, selectedInterval);
+    }
+  }, [user, startFoundingMemberCheckout, startCheckout]);
 
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
