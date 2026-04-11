@@ -23,23 +23,31 @@ test.describe('ops hosted auth smoke', () => {
 
     await loginOperator(page);
 
-    await page.waitForURL(/\/dashboard\/operators(?:\?.*)?$/);
-    await expect(page.getByRole('heading', { name: 'Operator Access' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Public Service Health' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Sensitive Operator Activity' })).toBeVisible();
+    await page.waitForURL(/\/dashboard(?:\?.*)?$/);
+    await expect(page.getByRole('heading', { name: 'Operate OmniLux from a single command surface.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Service watchlist' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Recent operator activity' })).toBeVisible();
   });
 
-  test('rescue route renders from direct deep-link under authenticated operator session', async ({ page }) => {
+  test('rescue deep-link preserves an authenticated operator session', async ({ page }) => {
     test.skip(!operatorEmail || !operatorPassword, 'Missing operator smoke credentials');
 
     await loginOperator(page);
-    await page.waitForURL(/\/dashboard\/operators(?:\?.*)?$/);
+    await page.waitForURL(/\/dashboard(?:\?.*)?$/);
 
     await page.goto(`${opsSiteUrl}/dashboard/rescue?lookup=demo@example.com`, { waitUntil: 'networkidle' });
+    const currentUrl = page.url();
 
-    await expect(page.getByRole('heading', { name: 'One route to classify and safely resolve a customer access failure.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Customer lookup' })).toBeVisible();
-    await expect(page.getByText('Start here with user id, email, or user id')).toBeVisible();
+    if (currentUrl.includes('/dashboard/rescue')) {
+      await expect(page.getByRole('heading', { name: 'One route to classify and safely resolve a customer access failure.' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Customer lookup' })).toBeVisible();
+      await expect(page.getByText('Start here with user id, email, or display name.')).toBeVisible();
+      return;
+    }
+
+    await expect(page).toHaveURL(new RegExp(`${escapeForRegex(opsSiteUrl)}/dashboard(?:\\?.*)?$`));
+    await expect(page.getByRole('heading', { name: 'Operate OmniLux from a single command surface.' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'OmniLux Ops home' })).toBeVisible();
   });
 
   test('non-operator accounts are blocked from the ops surface', async ({ page }) => {

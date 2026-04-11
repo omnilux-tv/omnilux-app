@@ -1,4 +1,7 @@
+import { loadEnvFile } from 'node:process';
 import { defineConfig } from '@playwright/test';
+
+loadEnvFile();
 
 export default defineConfig({
   testDir: './tests',
