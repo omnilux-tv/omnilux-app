@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { Page, expect, test } from '@playwright/test';
 
 const opsSiteUrl = process.env.OPS_SITE_URL?.trim() || 'https://ops.omnilux.tv';
 const appSiteUrl = process.env.APP_SITE_URL?.trim() || 'https://app.omnilux.tv';
@@ -8,21 +8,38 @@ const customerEmail = process.env.OPS_SMOKE_CUSTOMER_EMAIL?.trim();
 const customerPassword = process.env.OPS_SMOKE_CUSTOMER_PASSWORD?.trim();
 const escapeForRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const loginOperator = async (page: Page) => {
+  await page.goto(`${opsSiteUrl}/login`, { waitUntil: 'networkidle' });
+  await expect(page.getByRole('heading', { name: 'Sign in to OmniLux Ops' })).toBeVisible();
+
+  await page.getByLabel('Email').fill(operatorEmail!);
+  await page.getByLabel('Password').fill(operatorPassword!);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+};
+
 test.describe('ops hosted auth smoke', () => {
   test('operator login lands on the operator dashboard', async ({ page }) => {
     test.skip(!operatorEmail || !operatorPassword, 'Missing operator smoke credentials');
 
-    await page.goto(`${opsSiteUrl}/login`, { waitUntil: 'networkidle' });
-    await expect(page.getByRole('heading', { name: 'Sign in to OmniLux Ops' })).toBeVisible();
-
-    await page.getByLabel('Email').fill(operatorEmail!);
-    await page.getByLabel('Password').fill(operatorPassword!);
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    await loginOperator(page);
 
     await page.waitForURL(/\/dashboard\/operators(?:\?.*)?$/);
     await expect(page.getByRole('heading', { name: 'Operator Access' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Public Service Health' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Sensitive Operator Activity' })).toBeVisible();
+  });
+
+  test('rescue route renders from direct deep-link under authenticated operator session', async ({ page }) => {
+    test.skip(!operatorEmail || !operatorPassword, 'Missing operator smoke credentials');
+
+    await loginOperator(page);
+    await page.waitForURL(/\/dashboard\/operators(?:\?.*)?$/);
+
+    await page.goto(`${opsSiteUrl}/dashboard/rescue?lookup=demo@example.com`, { waitUntil: 'networkidle' });
+
+    await expect(page.getByRole('heading', { name: 'One route to classify and safely resolve a customer access failure.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Customer lookup' })).toBeVisible();
+    await expect(page.getByText('Start here with user id, email, or user id')).toBeVisible();
   });
 
   test('non-operator accounts are blocked from the ops surface', async ({ page }) => {

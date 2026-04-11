@@ -50,6 +50,7 @@ export interface OperatorActionAuditRow {
 }
 
 export interface OperatorSupportProfile {
+  caseContext?: RescueCaseContext | null;
   profile: {
     id: string;
     email: string | null;
@@ -200,7 +201,7 @@ export const toRescueFailure = (profile: OperatorSupportProfile | null): RescueF
     return 'authentication';
   }
 
-  if (!isBillingActive && !profile.profile.subscription) {
+  if (!isBillingActive) {
     return 'billing';
   }
 
@@ -221,7 +222,7 @@ export const toRescueFailure = (profile: OperatorSupportProfile | null): RescueF
     return 'linked-server';
   }
 
-  if (staleServer || !isBillingActive) {
+  if (staleServer) {
     return 'entitlement';
   }
 
@@ -229,7 +230,7 @@ export const toRescueFailure = (profile: OperatorSupportProfile | null): RescueF
     return 'relay';
   }
 
-  return isBillingActive ? (hasActiveSession ? 'mixed-signals' : 'unknown') : 'billing';
+  return hasActiveSession ? 'mixed-signals' : 'unknown';
 };
 
 export const buildRescueCase = (profile: OperatorSupportProfile | null): OperatorRescueProfile => {
@@ -330,7 +331,7 @@ export const buildRescueCase = (profile: OperatorSupportProfile | null): Operato
       hasRevocableToken: (profile?.relayTokens ?? []).some((token) => token.revocable),
       criticalSignals,
     },
-    caseContext: null,
+    caseContext: profile?.caseContext ?? null,
   };
 };
 
