@@ -1,7 +1,10 @@
+import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 import { defineConfig } from '@playwright/test';
 
-loadEnvFile();
+if (existsSync('.env')) {
+  loadEnvFile();
+}
 
 export default defineConfig({
   testDir: './tests',
