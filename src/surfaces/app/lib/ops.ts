@@ -121,6 +121,237 @@ export interface OperatorSupportProfile {
   recentAccessChanges: AccessAuditRow[];
 }
 
+export type RescueFailureClass =
+  | 'authentication'
+  | 'billing'
+  | 'entitlement'
+  | 'relay'
+  | 'linked-server'
+  | 'mixed-signals'
+  | 'unknown';
+
+export interface RescueCaseContext {
+  id: string;
+  status: string | null;
+  ownerId: string | null;
+  customerId: string | null;
+  channel: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  nextAction: string | null;
+}
+
+export interface RescueBillingState {
+  status: string | null;
+  tier: string | null;
+  currentPeriodEnd: string | null;
+  updatedAt: string | null;
+  isActive: boolean;
+  needsBillingReview: boolean;
+  reason: string | null;
+}
+
+export interface RescueEntitlementState {
+  managedMediaEntitled: boolean;
+  managedMediaAccessOverride: boolean;
+  entitlementMatchExpected: boolean;
+  entitlementSignal: string;
+}
+
+export interface RescueRelayState {
+  hasLinkedServer: boolean;
+  onlineServers: number;
+  staleServers: number;
+  recentSessionCount: number;
+  hasRevocableSession: boolean;
+  hasRevocableToken: boolean;
+  criticalSignals: string[];
+}
+
+export interface OperatorRescueProfile {
+  queryKey: string;
+  failureClass: RescueFailureClass;
+  failureReason: string;
+  nextSafeAction: string;
+  summary: {
+    account: OperatorSupportProfile['profile'];
+    subscription: OperatorSupportProfile['profile']['subscription'];
+    selfHostedServers: OperatorSupportProfile['selfHostedServers'];
+    recentRelaySessions: OperatorSupportProfile['recentRelaySessions'];
+    relayTokens: OperatorSupportProfile['relayTokens'];
+    supportNotes: OperatorSupportProfile['supportNotes'];
+    recentAccessChanges: OperatorSupportProfile['recentAccessChanges'];
+  };
+  entitlement: RescueEntitlementState;
+  billing: RescueBillingState;
+  relay: RescueRelayState;
+  caseContext: RescueCaseContext | null;
+}
+
+export const toRescueFailure = (profile: OperatorSupportProfile | null): RescueFailureClass => {
+  if (!profile) {
+    return 'unknown';
+  }
+
+  const subscriptionStatus = (profile.profile.subscription?.status ?? 'unknown').toLowerCase();
+  const isBillingActive = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
+
+  if (!profile.profile.lastSignInAt) {
+    return 'authentication';
+  }
+
+  if (!isBillingActive && !profile.profile.subscription) {
+    return 'billing';
+  }
+
+  const serverStatus = profile.selfHostedServers[0]?.relayStatus?.toLowerCase() ?? 'unknown';
+  const hasServer = profile.selfHostedServers.length > 0;
+  const staleServer = profile.selfHostedServers.some((server) => {
+    const lastSeen = server.lastSeenAt ? Date.parse(server.lastSeenAt) : NaN;
+    if (Number.isNaN(lastSeen)) return false;
+    return Date.now() - lastSeen > 72 * 60 * 60 * 1000;
+  });
+
+  const hasActiveSession = profile.recentRelaySessions.some(
+    (session) =>
+      session.status.toLowerCase() !== 'ended' && session.status.toLowerCase() !== 'revoked' && session.status.toLowerCase() !== 'expired',
+  );
+
+  if (!profile.profile.managedMediaEntitled || !hasServer) {
+    return 'linked-server';
+  }
+
+  if (staleServer || !isBillingActive) {
+    return 'entitlement';
+  }
+
+  if (serverStatus.includes('offline') || serverStatus.includes('error') || hasActiveSession === false) {
+    return 'relay';
+  }
+
+  return isBillingActive ? (hasActiveSession ? 'mixed-signals' : 'unknown') : 'billing';
+};
+
+export const buildRescueCase = (profile: OperatorSupportProfile | null): OperatorRescueProfile => {
+  const failureClass = toRescueFailure(profile);
+  const safeActionByClass: Record<RescueFailureClass, string> = {
+    authentication: 'Confirm the customer identity, then send a fresh password reset link and re-test auth from their device.',
+    billing: 'Open Financials for this customer first, confirm plan status, then add a billing note or escalate to finance if stale.',
+    entitlement:
+      'Verify entitlement policy and reconcile account subscription details in Financials, then retry access and watch for relay session token refresh.',
+    'linked-server': 'Check if a linked self-hosted server is missing or stale and request a fresh server claim link if needed.',
+    relay: 'Suspend any active sessions, rotate relay token if needed, then ask for a fresh relay handshake from the customer.',
+    'mixed-signals': 'Run through all sections, capture support notes, and escalate to tier-2 if signals remain mixed after mitigation.',
+    unknown: 'Open adjacent specialist pages and add a support note to capture manual diagnosis context.',
+  };
+  const reasonByClass: Record<RescueFailureClass, string> = {
+    authentication: 'Recent sign-in is absent or stale, which commonly indicates wrong account context or user confusion.',
+    billing: 'No active subscription record suggests entitlement may have dropped despite support expectations.',
+    entitlement: 'Profile entitlement flags and subscription posture do not align cleanly with expected access policy.',
+    'linked-server': 'No linked server or an unhealthy server link prevents relay handoff for self-hosted customers.',
+    relay: 'Relay status signals suggest revoked, stale, or absent relay sessions/tokens.',
+    'mixed-signals': 'Multiple signals are partially healthy, so this case is likely service- or timing-related.',
+    unknown: 'State requires extra context from logs and case actions before safe recommendations can be guaranteed.',
+  };
+  const billingStatus = profile?.profile.subscription?.status?.toLowerCase() ?? null;
+  const isBillingActive = billingStatus === 'active' || billingStatus === 'trialing';
+  const linkedServers = profile?.selfHostedServers ?? [];
+  const staleServers = linkedServers.filter((server) => {
+    const lastSeen = server.lastSeenAt ? Date.parse(server.lastSeenAt) : NaN;
+    if (Number.isNaN(lastSeen)) return true;
+    return Date.now() - lastSeen > 72 * 60 * 60 * 1000;
+  });
+
+  const sessionCount = (profile?.recentRelaySessions ?? []).filter((session) =>
+    !['ended', 'revoked', 'expired'].includes((session.status ?? '').toLowerCase()),
+  ).length;
+  const criticalSignals: string[] = [];
+  if (!isBillingActive && profile?.profile.subscription) {
+    criticalSignals.push('Billing status is not active/trialing.');
+  }
+  if (linkedServers.length === 0) {
+    criticalSignals.push('No linked server present.');
+  }
+  if (linkedServers.some((server) => ['offline', 'degraded'].includes((server.relayStatus ?? '').toLowerCase()))) {
+    criticalSignals.push('Linked server relay status is not healthy.');
+  }
+
+  return {
+    queryKey: profile?.profile.id ?? 'unknown',
+    failureClass,
+    failureReason: reasonByClass[failureClass],
+    nextSafeAction: safeActionByClass[failureClass],
+    summary: {
+      account: profile?.profile
+        ? {
+            ...profile.profile,
+            subscription: profile.profile.subscription,
+          }
+        : {
+            id: '',
+            email: null,
+            displayName: null,
+            managedMediaEntitled: false,
+            managedMediaAccessOverride: false,
+            isOperator: false,
+            createdAt: '',
+            updatedAt: '',
+            lastSignInAt: null,
+            subscription: null,
+          },
+      subscription: profile?.profile.subscription ?? null,
+      selfHostedServers: profile?.selfHostedServers ?? [],
+      recentRelaySessions: profile?.recentRelaySessions ?? [],
+      relayTokens: profile?.relayTokens ?? [],
+      supportNotes: profile?.supportNotes ?? [],
+      recentAccessChanges: profile?.recentAccessChanges ?? [],
+    },
+    entitlement: {
+      managedMediaEntitled: profile?.profile.managedMediaEntitled ?? false,
+      managedMediaAccessOverride: profile?.profile.managedMediaAccessOverride ?? false,
+      entitlementMatchExpected: Boolean(profile?.profile.subscription),
+      entitlementSignal: profile?.profile.managedMediaEntitled ? 'Entitled' : 'Not explicitly entitled',
+    },
+    billing: {
+      status: profile?.profile.subscription?.status ?? null,
+      tier: profile?.profile.subscription?.tier ?? null,
+      currentPeriodEnd: profile?.profile.subscription?.currentPeriodEnd ?? null,
+      updatedAt: profile?.profile.subscription?.updatedAt ?? null,
+      isActive: isBillingActive,
+      needsBillingReview: !isBillingActive,
+      reason: billingStatus ? `Subscription status is ${billingStatus}.` : 'No subscription found.',
+    },
+    relay: {
+      hasLinkedServer: linkedServers.length > 0,
+      onlineServers: linkedServers.filter((server) => (server.relayStatus ?? '').toLowerCase().includes('online')).length,
+      staleServers: staleServers.length,
+      recentSessionCount: sessionCount,
+      hasRevocableSession: (profile?.recentRelaySessions ?? []).some((session) => session.revocable),
+      hasRevocableToken: (profile?.relayTokens ?? []).some((token) => token.revocable),
+      criticalSignals,
+    },
+    caseContext: null,
+  };
+};
+
+export const useOperatorRescueProfile = (enabled: boolean, userId: string | null) =>
+  useQuery({
+    queryKey: ['operator-rescue-profile', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<OperatorSupportProfile>('get-operator-support-profile', {
+        body: {
+          userId,
+          source: 'operator-dashboard',
+        },
+      });
+      if (error) {
+        throw error;
+      }
+      return data ? buildRescueCase(data as OperatorSupportProfile) : undefined;
+    },
+    enabled: Boolean(enabled && userId),
+  });
+
 export interface OpsServiceHealthResponse {
   checkedAt: string;
   services: Array<{

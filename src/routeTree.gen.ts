@@ -21,6 +21,7 @@ import { Route as DashboardSubscriptionRouteImport } from './routes/dashboard/su
 import { Route as DashboardSubmitPluginRouteImport } from './routes/dashboard/submit-plugin'
 import { Route as DashboardStaffRouteImport } from './routes/dashboard/staff'
 import { Route as DashboardServersRouteImport } from './routes/dashboard/servers'
+import { Route as DashboardRescueRouteImport } from './routes/dashboard/rescue'
 import { Route as DashboardOperatorsRouteImport } from './routes/dashboard/operators'
 import { Route as DashboardMediaControlRouteImport } from './routes/dashboard/media-control'
 import { Route as DashboardMediaRouteImport } from './routes/dashboard/media'
@@ -93,6 +94,11 @@ const DashboardStaffRoute = DashboardStaffRouteImport.update({
 const DashboardServersRoute = DashboardServersRouteImport.update({
   id: '/servers',
   path: '/servers',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardRescueRoute = DashboardRescueRouteImport.update({
+  id: '/rescue',
+  path: '/rescue',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardOperatorsRoute = DashboardOperatorsRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/media': typeof DashboardMediaRoute
   '/dashboard/media-control': typeof DashboardMediaControlRoute
   '/dashboard/operators': typeof DashboardOperatorsRoute
+  '/dashboard/rescue': typeof DashboardRescueRoute
   '/dashboard/servers': typeof DashboardServersRoute
   '/dashboard/staff': typeof DashboardStaffRoute
   '/dashboard/submit-plugin': typeof DashboardSubmitPluginRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByTo {
   '/dashboard/media': typeof DashboardMediaRoute
   '/dashboard/media-control': typeof DashboardMediaControlRoute
   '/dashboard/operators': typeof DashboardOperatorsRoute
+  '/dashboard/rescue': typeof DashboardRescueRoute
   '/dashboard/servers': typeof DashboardServersRoute
   '/dashboard/staff': typeof DashboardStaffRoute
   '/dashboard/submit-plugin': typeof DashboardSubmitPluginRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/dashboard/media': typeof DashboardMediaRoute
   '/dashboard/media-control': typeof DashboardMediaControlRoute
   '/dashboard/operators': typeof DashboardOperatorsRoute
+  '/dashboard/rescue': typeof DashboardRescueRoute
   '/dashboard/servers': typeof DashboardServersRoute
   '/dashboard/staff': typeof DashboardStaffRoute
   '/dashboard/submit-plugin': typeof DashboardSubmitPluginRoute
@@ -264,6 +273,7 @@ export interface FileRouteTypes {
     | '/dashboard/media'
     | '/dashboard/media-control'
     | '/dashboard/operators'
+    | '/dashboard/rescue'
     | '/dashboard/servers'
     | '/dashboard/staff'
     | '/dashboard/submit-plugin'
@@ -290,6 +300,7 @@ export interface FileRouteTypes {
     | '/dashboard/media'
     | '/dashboard/media-control'
     | '/dashboard/operators'
+    | '/dashboard/rescue'
     | '/dashboard/servers'
     | '/dashboard/staff'
     | '/dashboard/submit-plugin'
@@ -317,6 +328,7 @@ export interface FileRouteTypes {
     | '/dashboard/media'
     | '/dashboard/media-control'
     | '/dashboard/operators'
+    | '/dashboard/rescue'
     | '/dashboard/servers'
     | '/dashboard/staff'
     | '/dashboard/submit-plugin'
@@ -421,6 +433,13 @@ declare module '@tanstack/react-router' {
       path: '/servers'
       fullPath: '/dashboard/servers'
       preLoaderRoute: typeof DashboardServersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/rescue': {
+      id: '/dashboard/rescue'
+      path: '/rescue'
+      fullPath: '/dashboard/rescue'
+      preLoaderRoute: typeof DashboardRescueRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/operators': {
@@ -529,6 +548,7 @@ interface DashboardRouteChildren {
   DashboardMediaRoute: typeof DashboardMediaRoute
   DashboardMediaControlRoute: typeof DashboardMediaControlRoute
   DashboardOperatorsRoute: typeof DashboardOperatorsRoute
+  DashboardRescueRoute: typeof DashboardRescueRoute
   DashboardServersRoute: typeof DashboardServersRoute
   DashboardStaffRoute: typeof DashboardStaffRoute
   DashboardSubmitPluginRoute: typeof DashboardSubmitPluginRoute
@@ -549,6 +569,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardMediaRoute: DashboardMediaRoute,
   DashboardMediaControlRoute: DashboardMediaControlRoute,
   DashboardOperatorsRoute: DashboardOperatorsRoute,
+  DashboardRescueRoute: DashboardRescueRoute,
   DashboardServersRoute: DashboardServersRoute,
   DashboardStaffRoute: DashboardStaffRoute,
   DashboardSubmitPluginRoute: DashboardSubmitPluginRoute,

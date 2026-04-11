@@ -12,6 +12,12 @@ export const opsConsolePages = [
     group: 'operations',
   },
   {
+    to: '/dashboard/rescue',
+    label: 'Customer Rescue',
+    description: 'Unified first-response view for access failures and safe remediation actions.',
+    group: 'operations',
+  },
+  {
     to: '/dashboard/logs',
     label: 'Audit Trail',
     description: 'Sensitive activity, access changes, and policy audit history.',
@@ -72,7 +78,7 @@ export const opsConsoleGroups = [
   {
     id: 'operations',
     label: 'Operations',
-    items: ['/dashboard/accounts', '/dashboard/financials', '/dashboard/staff', '/dashboard/logs'],
+    items: ['/dashboard/rescue', '/dashboard/accounts', '/dashboard/financials', '/dashboard/staff', '/dashboard/logs'],
   },
   {
     id: 'systems',
