@@ -52,7 +52,7 @@ export const AppHeader = () => {
                 <Link
                   to="/dashboard"
                   className="inline-flex shrink-0 items-center justify-center"
-                  aria-label="OmniLux Cloud home"
+                  aria-label="OmniLux Account home"
                 >
                   <img
                     src="/favicon.svg"
@@ -75,7 +75,7 @@ export const AppHeader = () => {
               <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                 <div className="flex flex-wrap items-center gap-2">
                   <a href={buildMarketingHref('/')} className={utilityItemClassName}>
-                    <span>Marketing Site</span>
+                    <span>omnilux.tv</span>
                   </a>
                   <a href={buildDocsHref('/guide/overview')} className={utilityItemClassName}>
                     Docs

@@ -9,8 +9,8 @@ export const Route = createFileRoute('/login')({
   }),
   head: () =>
     buildPageHead({
-      title: 'Sign In | OmniLux Cloud',
-      description: 'Sign in to your OmniLux Cloud account to manage servers, billing, and connected services.',
+      title: 'Sign In | OmniLux Account',
+      description: 'Sign in to your OmniLux account to manage servers, billing, and connected experiences.',
       pathname: '/login',
       surface: 'app',
       noIndex: true,

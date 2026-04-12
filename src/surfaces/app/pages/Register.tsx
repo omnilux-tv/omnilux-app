@@ -75,7 +75,7 @@ export const Register = () => {
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
         <h1 className="mb-8 text-center font-display text-2xl font-bold text-foreground">
-          Create your OmniLux Cloud account
+          Create your OmniLux account
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">

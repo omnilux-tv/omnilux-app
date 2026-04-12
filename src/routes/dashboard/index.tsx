@@ -5,8 +5,8 @@ import { Dashboard } from '@/surfaces/app/pages/Dashboard';
 export const Route = createFileRoute('/dashboard/')({
   head: () =>
     buildPageHead({
-      title: 'Overview | OmniLux Cloud',
-      description: 'Review your OmniLux Cloud overview, managed media access, self-hosted state, and next actions.',
+      title: 'Overview | OmniLux Account',
+      description: 'Review your OmniLux account overview, managed media access, server status, and next steps.',
       pathname: '/dashboard',
       surface: 'app',
       noIndex: true,

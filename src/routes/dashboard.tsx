@@ -7,8 +7,8 @@ import { useAuth } from '@/providers/AuthProvider';
 export const Route = createFileRoute('/dashboard')({
   head: () =>
     buildPageHead({
-      title: 'OmniLux Cloud',
-      description: 'Manage your OmniLux Cloud account, servers, billing, and remote services.',
+      title: 'OmniLux Account',
+      description: 'Manage your OmniLux account, servers, billing, and connected experiences.',
       pathname: '/dashboard',
       surface: 'app',
       noIndex: true,

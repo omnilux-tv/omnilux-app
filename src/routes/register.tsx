@@ -9,8 +9,8 @@ export const Route = createFileRoute('/register')({
   }),
   head: () =>
     buildPageHead({
-      title: 'Create Account | OmniLux Cloud',
-      description: 'Create an OmniLux Cloud account for remote services, billing, and connected media features.',
+      title: 'Create Account | OmniLux Account',
+      description: 'Create your OmniLux account for connected playback, billing, and account services.',
       pathname: '/register',
       surface: 'app',
       noIndex: true,

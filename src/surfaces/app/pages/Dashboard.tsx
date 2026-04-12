@@ -68,11 +68,10 @@ export const Dashboard = () => {
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
-        <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted">Cloud Console</p>
+        <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted">Account</p>
         <h1 className="mt-2 font-display text-3xl font-bold text-foreground">Overview</h1>
         <p className="mt-2 max-w-2xl text-muted">
-          {displayName}, this is the cloud side of OmniLux. Your libraries and playback stay on your self-hosted
-          server; this console manages identity, billing, and remote services around it.
+          {displayName}, this is your OmniLux account hub. Your libraries and playback stay on your server, while this space handles identity, billing, and connected experiences around it.
         </p>
 
         {customerOverview?.platform.managedMediaOperatingMode !== 'normal' ||
