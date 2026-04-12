@@ -2,18 +2,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #060b19;
+  --color-background: #0b1020;
   --color-foreground: #f5f7ff;
   --color-muted: #b4bfde;
   --color-muted-foreground: #7f8db3;
 
-  --color-card: rgba(11, 18, 42, 0.9);
+  --color-card: rgba(16, 24, 44, 0.88);
   --color-card-foreground: #f5f7ff;
-  --color-card-hover: rgba(19, 30, 68, 0.94);
+  --color-card-hover: rgba(22, 32, 56, 0.94);
 
   --color-surface: rgba(255, 255, 255, 0.06);
   --color-surface-foreground: #f5f7ff;
-  --color-surface-strong: rgba(9, 14, 33, 0.96);
+  --color-surface-strong: rgba(13, 20, 38, 0.96);
 
   --color-primary: #ffe13f;
   --color-primary-foreground: #142457;
@@ -72,10 +72,10 @@
   body {
     min-height: 100dvh;
     background:
-      radial-gradient(circle at top left, rgba(255, 225, 63, 0.13), transparent 24%),
-      radial-gradient(circle at 82% 12%, rgba(37, 64, 143, 0.3), transparent 26%),
-      radial-gradient(circle at 55% 120%, rgba(20, 36, 87, 0.34), transparent 36%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 18%),
+      radial-gradient(circle at 14% 10%, rgba(255, 225, 63, 0.08), transparent 22%),
+      radial-gradient(circle at 84% 10%, rgba(37, 64, 143, 0.16), transparent 24%),
+      radial-gradient(circle at 50% 100%, rgba(20, 36, 87, 0.18), transparent 30%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0) 18%),
       var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
@@ -126,16 +126,16 @@
 
 @layer components {
   .ops-console-theme {
-    --color-background: #060b19;
+    --color-background: #0b1020;
     --color-foreground: #f5f7ff;
     --color-muted: #b4bfde;
     --color-muted-foreground: #7f8db3;
-    --color-card: rgba(11, 18, 42, 0.9);
+    --color-card: rgba(16, 24, 44, 0.88);
     --color-card-foreground: #f5f7ff;
-    --color-card-hover: rgba(19, 30, 68, 0.94);
+    --color-card-hover: rgba(22, 32, 56, 0.94);
     --color-surface: rgba(255, 255, 255, 0.06);
     --color-surface-foreground: #f5f7ff;
-    --color-surface-strong: rgba(9, 14, 33, 0.96);
+    --color-surface-strong: rgba(13, 20, 38, 0.96);
     --color-primary: #ffe13f;
     --color-primary-foreground: #142457;
     --color-accent: #ffcc34;
@@ -206,8 +206,8 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
-    linear-gradient(135deg, rgba(37, 64, 143, 0.14), rgba(11, 20, 54, 0.12)),
-    rgba(9, 14, 33, 0.88);
+    linear-gradient(135deg, rgba(37, 64, 143, 0.08), rgba(11, 20, 54, 0.06)),
+    rgba(15, 22, 40, 0.9);
   box-shadow:
     0 22px 60px rgba(0, 0, 0, 0.32),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
