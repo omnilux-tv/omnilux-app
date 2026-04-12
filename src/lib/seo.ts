@@ -64,7 +64,7 @@ export const buildRootHead = () => ({
   meta: [
     { charSet: 'utf-8' },
     { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
-    { name: 'theme-color', content: '#050608' },
+    { name: 'theme-color', content: '#060b19' },
     { name: 'author', content: 'OmniLux' },
     {
       name: 'keywords',

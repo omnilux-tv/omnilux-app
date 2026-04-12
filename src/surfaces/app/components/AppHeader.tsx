@@ -2,6 +2,7 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
+import { BrandLogo } from '@/components/BrandLogo';
 import { buildAppHref, buildDocsHref, buildMarketingHref, buildOpsHref } from '@/lib/site-surface';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +20,7 @@ export const AppHeader = () => {
   const inactiveSectionItemClassName =
     'border-white/8 bg-white/[0.04] text-foreground/72 hover:bg-white/[0.08] hover:text-foreground';
   const activeSectionItemClassName =
-    'border-transparent bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(242,228,207,0.14)]';
+    'border-transparent bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(255,225,63,0.14)]';
   const utilityItemClassName =
     'inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-white/8 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground/74 transition-all hover:bg-white/[0.08] hover:text-foreground';
   const iconUtilityItemClassName =
@@ -54,17 +55,18 @@ export const AppHeader = () => {
                   className="inline-flex shrink-0 items-center justify-center"
                   aria-label="OmniLux Account home"
                 >
-                  <img
-                    src="/favicon.svg"
-                    alt=""
-                    className="h-9 w-9 drop-shadow-[0_0_18px_rgba(255,126,61,0.16)]"
+                  <BrandLogo
+                    className="text-foreground"
+                    markClassName="h-9 w-9"
+                    wordmarkClassName="text-lg"
+                    showSubtitle={false}
                   />
                 </Link>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link to="/dashboard" className="font-display text-lg font-bold text-foreground">
+                    <span className="font-display text-lg font-black tracking-[-0.02em] text-foreground">
                       OmniLux Cloud
-                    </Link>
+                    </span>
                     <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">
                       app
                     </span>
@@ -114,7 +116,7 @@ export const AppHeader = () => {
                       href={buildAppHref('/register')}
                       className={cn(
                         utilityItemClassName,
-                        'bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(242,228,207,0.14)] hover:opacity-95',
+                        'bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(255,225,63,0.14)] hover:opacity-95',
                       )}
                     >
                       Create account
