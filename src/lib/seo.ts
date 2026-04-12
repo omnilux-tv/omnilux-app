@@ -1,4 +1,5 @@
 import { APP_SITE_ORIGIN, MARKETING_SITE_ORIGIN, OPS_SITE_ORIGIN, getCurrentSiteSurface } from '@/lib/site-surface';
+import { getThemeInitScript } from '@/lib/theme';
 
 const MARKETING_ORIGIN = MARKETING_SITE_ORIGIN;
 const APP_ORIGIN = APP_SITE_ORIGIN;
@@ -37,8 +38,8 @@ export const buildPageHead = ({
   const absoluteUrl = buildAbsoluteUrl(pathname, surface);
 
   return {
-    title,
     meta: [
+      { title },
       { name: 'description', content: description },
       { name: 'robots', content: noIndex ? 'noindex, nofollow' : 'index, follow' },
       { property: 'og:type', content: 'website' },
@@ -62,9 +63,10 @@ export const buildPageHead = ({
 
 export const buildRootHead = () => ({
   meta: [
+    { title: 'OmniLux Account' },
     { charSet: 'utf-8' },
     { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
-    { name: 'theme-color', content: '#060b19' },
+    { name: 'theme-color', content: '#f4f7ff' },
     { name: 'author', content: 'OmniLux' },
     {
       name: 'keywords',
@@ -84,5 +86,8 @@ export const buildRootHead = () => ({
     { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
   ],
   scripts: [
+    {
+      children: getThemeInitScript(),
+    },
   ],
 });

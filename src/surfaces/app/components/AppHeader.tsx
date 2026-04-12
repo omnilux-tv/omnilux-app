@@ -3,6 +3,7 @@ import { LogOut } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { BrandLogo } from '@/components/BrandLogo';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { buildAppHref, buildDocsHref, buildMarketingHref, buildOpsHref } from '@/lib/site-surface';
 import { cn } from '@/lib/utils';
 
@@ -18,13 +19,13 @@ export const AppHeader = () => {
   const sectionItemClassName =
     'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-semibold tracking-[0.01em] transition-all';
   const inactiveSectionItemClassName =
-    'border-white/8 bg-white/[0.04] text-foreground/72 hover:bg-white/[0.08] hover:text-foreground';
+    'border-border bg-surface text-foreground/72 hover:border-border-hover hover:bg-card-hover hover:text-foreground';
   const activeSectionItemClassName =
     'border-transparent bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(255,225,63,0.14)]';
   const utilityItemClassName =
-    'inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-white/8 bg-white/[0.04] px-4 py-2 text-sm font-medium text-foreground/74 transition-all hover:bg-white/[0.08] hover:text-foreground';
+    'inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground/74 transition-all hover:border-border-hover hover:bg-card-hover hover:text-foreground';
   const iconUtilityItemClassName =
-    'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-foreground/74 transition-all hover:bg-white/[0.08] hover:text-foreground';
+    'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-foreground/74 transition-all hover:border-border-hover hover:bg-card-hover hover:text-foreground';
   const appLinks = [
     { to: '/dashboard', label: 'Overview' },
     { to: '/dashboard/media', label: 'Media' },
@@ -67,7 +68,7 @@ export const AppHeader = () => {
                     <span className="font-display text-lg font-black tracking-[-0.02em] text-foreground">
                       OmniLux Cloud
                     </span>
-                    <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">
+                    <span className="rounded-full border border-border bg-surface px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">
                       app
                     </span>
                   </div>
@@ -75,6 +76,7 @@ export const AppHeader = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                <ThemeToggle className="shrink-0" />
                 <div className="flex flex-wrap items-center gap-2">
                   <a href={buildMarketingHref('/')} className={utilityItemClassName}>
                     <span>omnilux.tv</span>
@@ -91,8 +93,8 @@ export const AppHeader = () => {
 
                 {isAuthenticated ? (
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1.5 text-foreground">
-                      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[11px] font-semibold text-foreground/80">
+                    <div className="inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border border-border bg-surface px-2.5 py-1.5 text-foreground">
+                      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-strong text-[11px] font-semibold text-foreground/80">
                         {displayInitial}
                       </span>
                       <span className="max-w-[12rem] truncate pr-1 text-sm font-medium">{displayName}</span>
