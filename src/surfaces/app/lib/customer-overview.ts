@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
-import type { ManagedMediaOperatingMode, ManagedMediaPolicy, RelayAccessPolicy } from '@/surfaces/app/lib/ops';
+import type {
+  ManagedMediaOperatingMode,
+  ManagedMediaPolicy,
+  RelayAccessPolicy,
+} from '@/surfaces/app/lib/platform-policy';
 
 export interface CustomerOverview {
   profile: {

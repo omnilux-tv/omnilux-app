@@ -2,29 +2,17 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import {
   buildAuthCallbackUrl,
-  getCurrentHostedSurface,
-  getDefaultAuthRedirect,
   getRedirectPathFromSearch,
-  normalizeHostedRedirectPath,
 } from '@/surfaces/app/lib/auth-flow';
-import { buildAppHref, buildOpsHref, buildSurfaceHrefForPath } from '@/lib/site-surface';
+import { buildAppHref, buildSurfaceHrefForPath } from '@/lib/site-surface';
 import { supabase } from '@/lib/supabase';
-
-interface AccessProfileSummary {
-  isOperator: boolean;
-}
 
 export const Login = () => {
   const navigate = useNavigate();
-  const currentSurface = getCurrentHostedSurface();
-  const isOpsSurface = currentSurface === 'ops';
   const redirectPath =
     typeof window === 'undefined'
-      ? getDefaultAuthRedirect(currentSurface)
-      : normalizeHostedRedirectPath(
-          currentSurface,
-          getRedirectPathFromSearch(window.location.search, getDefaultAuthRedirect(currentSurface)),
-        );
+      ? '/dashboard'
+      : getRedirectPathFromSearch(window.location.search, '/dashboard');
   const registerHref = buildAppHref(`/register?redirect=${encodeURIComponent(redirectPath)}`);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,19 +28,6 @@ export const Login = () => {
     if (err) {
       setError(err.message);
       setLoading(false);
-      return;
-    }
-
-    if (isOpsSurface) {
-      const { data, error: accessError } = await supabase.functions.invoke<AccessProfileSummary>('get-access-profile');
-      if (accessError || !data?.isOperator) {
-        await supabase.auth.signOut();
-        setError('This account does not have operator access. Use an internal operator account for OmniLux Ops.');
-        setLoading(false);
-        return;
-      }
-
-      window.location.assign(buildOpsHref(redirectPath));
       return;
     }
 
@@ -74,14 +49,7 @@ export const Login = () => {
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
-        <h1 className="mb-8 text-center font-display text-2xl font-bold text-foreground">
-          {isOpsSurface ? 'Sign in to OmniLux Ops' : 'Sign in to OmniLux Cloud'}
-        </h1>
-        {isOpsSurface ? (
-          <p className="mb-8 text-center text-sm text-muted">
-            Use an internal operator account to access the OmniLux Ops console.
-          </p>
-        ) : null}
+        <h1 className="mb-8 text-center font-display text-2xl font-bold text-foreground">Sign in to OmniLux Cloud</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
@@ -155,17 +123,8 @@ export const Login = () => {
         </div>
 
         <p className="mt-6 text-center text-sm text-muted">
-          {isOpsSurface ? (
-            <>
-              Need the customer-facing app?{' '}
-              <a href={buildAppHref('/login')} className="text-accent hover:underline">Open OmniLux Cloud</a>
-            </>
-          ) : (
-            <>
-              Need a cloud account?{' '}
-              <a href={registerHref} className="text-accent hover:underline">Register</a>
-            </>
-          )}
+          Need a cloud account?{' '}
+          <a href={registerHref} className="text-accent hover:underline">Register</a>
         </p>
       </div>
     </div>

@@ -9,9 +9,7 @@
     "build": "vite build && tsc --noEmit",
     "build:artifact": "vite build && tsc --noEmit",
     "preview": "vite preview",
-    "lint": "tsc --noEmit --pretty false",
-    "test:smoke:ops": "playwright test tests/ops-auth.smoke.spec.ts",
-    "test:canary": "node scripts/run-service-canary.mjs"
+    "lint": "tsc --noEmit --pretty false"
   },
   "dependencies": {
     "@sentry/browser": "^10.47.0",
@@ -31,7 +29,6 @@
     "web-vitals": "^5.2.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.55.0",
     "@tanstack/router-plugin": "^1.167.0",
     "@types/node": "^22.19.15",
     "@types/react": "^19.0.10",

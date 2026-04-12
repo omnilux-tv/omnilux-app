@@ -1,22 +1,19 @@
 # omnilux-app
 
-Hosted frontend surfaces for `app.omnilux.tv` and `ops.omnilux.tv`.
+Hosted customer frontend for `app.omnilux.tv`.
 
-This repo owns the hosted OmniLux web consoles:
+This repo owns the hosted OmniLux customer cloud app:
 
 - cloud auth and account flows
 - billing and subscription management
 - self-hosted server claim and invite management
-- managed runtime visibility for `managed-media`
-- operator access management, support lookup tooling, service health, and audit history
-- the dedicated operator console at `ops.omnilux.tv`
+- managed runtime visibility for `media.omnilux.tv`
 - plugin submission and other authenticated cloud surfaces
 
 Approved boundary:
 
 - `omnilux-app` owns `app.omnilux.tv`
-- `omnilux-app` also owns `ops.omnilux.tv` as a separate operator-only hosted surface
-- `ops.omnilux.tv` stays in this repo for now; only split it into a dedicated `omnilux-ops` repo if the operator console starts diverging materially from the hosted customer app
+- `omnilux-ops` owns `ops.omnilux.tv`
 - `omnilux.tv` owns the public marketing site only
 - `omnilux-cloud` owns auth, billing, entitlements, invites, and relay control-plane state
 - `omnilux-edge` owns ingress and routes `app.omnilux.tv` to this artifact
@@ -60,18 +57,7 @@ Optional browser config:
 ```bash
 pnpm lint
 pnpm build
-pnpm test:smoke:ops
-pnpm test:canary
 ```
-
-`pnpm test:smoke:ops` targets the live `ops.omnilux.tv` surface and expects these env vars:
-
-- `OPS_SMOKE_OPERATOR_EMAIL`
-- `OPS_SMOKE_OPERATOR_PASSWORD`
-- `OPS_SMOKE_CUSTOMER_EMAIL`
-- `OPS_SMOKE_CUSTOMER_PASSWORD`
-
-`pnpm test:canary` probes the live hosted app, ops console, relay, managed media runtime, docs, and cloud auth reachability.
 
 ## Artifact
 
@@ -88,5 +74,4 @@ The canonical edge-consumed app artifact is the published OCI image `ghcr.io/omn
 - `managed-media` visibility is entitlement driven
 - `get-customer-overview` is the hosted-app contract for customer onboarding state, managed media runtime status, and relay policy
 - the current official managed-media rule is that every OmniLux Cloud account, including free accounts, can access first-party managed media unless operators intentionally switch the platform policy to explicit access
-- `ops.omnilux.tv` is an operator-only hosted console, not a registered OmniLux runtime
-- server listings in this app should only model `self-hosted` and `managed-media`; operator access belongs to hosted console access controls, not the server registry
+- server listings in this app should only model `self-hosted` and `managed-media`; operator access belongs to the separate ops console, not the server registry

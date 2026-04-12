@@ -1,49 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import {
-  ArrowUpRight,
-  CreditCard,
-  Puzzle,
-  RadioTower,
-  Server,
-  ShieldCheck,
-  Smartphone,
-  User,
-  Waves,
-} from 'lucide-react';
+import { CreditCard, Puzzle, RadioTower, Server, ShieldCheck, Smartphone, User } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
-import { buildAppHref, buildDocsHref, getCurrentSiteSurface } from '@/lib/site-surface';
+import { buildDocsHref, buildOpsHref } from '@/lib/site-surface';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { useCustomerOverview } from '@/surfaces/app/lib/customer-overview';
-import {
-  type OperatorActionAuditRow,
-  type OpsOverview,
-  type OpsServiceHealthResponse,
-  useOperatorActionAuditLog,
-  useOpsOverview,
-  useOpsServiceHealth,
-} from '@/surfaces/app/lib/ops';
-import {
-  formatTimestamp,
-  renderOperatorActionSummary,
-  renderProfileLabel,
-} from '@/surfaces/app/lib/ops-formatters';
-import {
-  OpsCallout,
-  OpsEmptyState,
-  OpsKeyValueList,
-  OpsLinkList,
-  OpsPageShell,
-  OpsPanel,
-  OpsStatusBadge,
-  OpsTable,
-  OpsTableBody,
-  OpsTableCell,
-  OpsTableHead,
-  OpsTableHeaderCell,
-  OpsTableRow,
-  opsButtonClassName,
-  opsServiceTone,
-} from '@/surfaces/app/pages/dashboard/OpsPageShell';
 
 const dashboardLinks = [
   {
@@ -90,56 +50,20 @@ const secondaryLinks = [
 export const Dashboard = () => {
   const { user } = useAuth();
   const { data: accessProfile } = useAccessProfile();
-  const currentSurface =
-    typeof window === 'undefined' ? 'app' : getCurrentSiteSurface(window.location.hostname);
-  const isOpsSurface = currentSurface === 'ops';
   const displayName = user?.user_metadata?.display_name ?? user?.email ?? 'User';
-  const operatorLinks = accessProfile?.isOperator
-    ? [
-        {
-          to: '/dashboard/accounts',
-          icon: ShieldCheck,
-          label: 'Ops Console',
-          description:
-            'Open the dedicated operator workspace for accounts, control plane, logs, and service health.',
-        },
-      ]
-    : [];
-  const {
-    data: opsOverview,
-    isLoading: isOpsOverviewLoading,
-    error: opsOverviewError,
-  } = useOpsOverview(Boolean(isOpsSurface && accessProfile?.isOperator));
-  const {
-    data: opsServiceHealth,
-    isLoading: isOpsServiceHealthLoading,
-    error: opsServiceHealthError,
-  } = useOpsServiceHealth(Boolean(isOpsSurface && accessProfile?.isOperator));
-  const {
-    data: operatorActionAuditLog,
-    isLoading: isOperatorActionAuditLoading,
-  } = useOperatorActionAuditLog(Boolean(isOpsSurface && accessProfile?.isOperator));
+  const operatorLink = accessProfile?.isOperator
+    ? {
+        href: buildOpsHref('/dashboard'),
+        icon: ShieldCheck,
+        label: 'Ops Console',
+        description: 'Open the separate operator workspace for support, policy, logs, and service health.',
+      }
+    : null;
   const {
     data: customerOverview,
     isLoading: isCustomerOverviewLoading,
     error: customerOverviewError,
   } = useCustomerOverview();
-
-  if (isOpsSurface) {
-    return (
-      <OpsDashboardView
-        displayName={displayName}
-        opsOverview={opsOverview}
-        isOpsOverviewLoading={isOpsOverviewLoading}
-        opsOverviewError={opsOverviewError}
-        opsServiceHealth={opsServiceHealth}
-        isOpsServiceHealthLoading={isOpsServiceHealthLoading}
-        opsServiceHealthError={opsServiceHealthError}
-        operatorActionAuditLog={operatorActionAuditLog}
-        isOperatorActionAuditLoading={isOperatorActionAuditLoading}
-      />
-    );
-  }
 
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
@@ -374,17 +298,14 @@ export const Dashboard = () => {
                 <p className="mt-1 text-sm text-muted">{description}</p>
               </Link>
             ))}
-            {operatorLinks.map(({ to, icon: Icon, label, description }) => (
-              <Link
-                key={to}
-                to={to}
-                className="group rounded-xl border border-border bg-background p-5 transition-colors hover:bg-surface"
-              >
-                <Icon className="mb-3 h-6 w-6 text-accent" />
-                <h3 className="font-semibold text-foreground">{label}</h3>
-                <p className="mt-1 text-sm text-muted">{description}</p>
-              </Link>
-            ))}
+            {operatorLink ? (
+              <OperatorLinkCard
+                href={operatorLink.href}
+                icon={operatorLink.icon}
+                label={operatorLink.label}
+                description={operatorLink.description}
+              />
+            ) : null}
           </div>
         </section>
       </div>
@@ -392,375 +313,22 @@ export const Dashboard = () => {
   );
 };
 
-interface OpsDashboardViewProps {
-  displayName: string;
-  opsOverview: OpsOverview | undefined;
-  isOpsOverviewLoading: boolean;
-  opsOverviewError: unknown;
-  opsServiceHealth: OpsServiceHealthResponse | undefined;
-  isOpsServiceHealthLoading: boolean;
-  opsServiceHealthError: unknown;
-  operatorActionAuditLog: OperatorActionAuditRow[] | undefined;
-  isOperatorActionAuditLoading: boolean;
-}
-
-const formatOpsMetric = (value: number | null | undefined) =>
-  typeof value === 'number' ? value.toLocaleString() : '—';
-
-const formatOpsTimestamp = (value: string | null | undefined, fallback: string) =>
-  value ? new Date(value).toLocaleString() : fallback;
-
-function OpsDashboardView({
-  displayName,
-  opsOverview,
-  isOpsOverviewLoading,
-  opsOverviewError,
-  opsServiceHealth,
-  isOpsServiceHealthLoading,
-  opsServiceHealthError,
-  operatorActionAuditLog,
-  isOperatorActionAuditLoading,
-}: OpsDashboardViewProps) {
-  const services = opsServiceHealth?.services ?? [];
-  const servicesOnline = services.filter((service) => service.status === 'online').length;
-  const servicesNeedingAttention = services.filter((service) => service.status !== 'online').length;
-  const servicesOffline = services.filter((service) => service.status === 'error').length;
-  const incidentActive =
-    opsOverview?.platform.managedMediaOperatingMode !== 'normal' ||
-    (opsOverview?.platform.managedMediaIncidentMessage?.length ?? 0) > 0;
-  const topAttentionServices = [...services]
-    .sort((left, right) => {
-      const rank = (status: string) => (status === 'error' ? 0 : status === 'degraded' ? 1 : 2);
-      return rank(left.status) - rank(right.status);
-    })
-    .slice(0, 5);
-  const recentActions = operatorActionAuditLog?.slice(0, 6) ?? [];
-  const opsMetrics = [
-    {
-      label: 'Cloud accounts',
-      value: formatOpsMetric(opsOverview?.metrics.profilesTotal),
-      detail: `${opsOverview?.metrics.operatorsTotal ?? 0} operators`,
-      tone: 'neutral' as const,
-    },
-    {
-      label: 'Paid plans',
-      value: formatOpsMetric(opsOverview?.metrics.activeSubscriptionsTotal),
-      detail: `${opsOverview?.metrics.trialingSubscriptionsTotal ?? 0} trialing`,
-      tone: 'neutral' as const,
-    },
-    {
-      label: 'Self-hosted servers',
-      value: formatOpsMetric(opsOverview?.metrics.selfHostedServersTotal),
-      detail: `${opsOverview?.metrics.relayOnlineServersTotal ?? 0} relay online`,
-      tone: 'info' as const,
-    },
-    {
-      label: 'Attention queue',
-      value: formatOpsMetric((opsOverview?.metrics.relayAttentionServersTotal ?? 0) + servicesNeedingAttention),
-      detail: 'Relay, health, or runtime follow-up',
-      tone: servicesNeedingAttention > 0 ? ('warning' as const) : ('neutral' as const),
-    },
-    {
-      label: 'Relay sessions',
-      value: formatOpsMetric(opsOverview?.metrics.activeRelaySessionsTotal),
-      detail: 'Currently live or granted',
-      tone: 'neutral' as const,
-    },
-    {
-      label: 'Support notes',
-      value: formatOpsMetric(opsOverview?.metrics.supportNotesTotal),
-      detail: 'Operator handoff context saved',
-      tone: 'neutral' as const,
-    },
-  ] as const;
-  const quickLinks = [
-    {
-      to: '/dashboard/accounts',
-      label: 'Accounts',
-      description:
-        'Open the operator account workspace for customer lookups, billing context, and linked server history.',
-      meta: 'support',
-    },
-    {
-      to: '/dashboard/logs',
-      label: 'Audit Trail',
-      description:
-        'Audit sensitive operator actions, access changes, and control-plane motion in one timeline.',
-      meta: 'evidence',
-    },
-    {
-      to: '/dashboard/financials',
-      label: 'Financials',
-      description:
-        'Track plan coverage, trial exposure, and billing follow-up across the cloud account base.',
-      meta: 'billing',
-    },
-    {
-      to: '/dashboard/control-plane',
-      label: 'Control Plane',
-      description: 'Change managed media policy, relay access rules, and runtime advisory state.',
-      meta: 'policy',
-    },
-    {
-      to: '/dashboard/media-control',
-      label: 'Managed Runtime',
-      description: 'Operate the managed runtime, its relay posture, and its current operator advisory.',
-      meta: 'runtime',
-    },
-    {
-      to: '/dashboard/health',
-      label: 'Service Health',
-      description: 'Watch every public OmniLux surface, with failures and runbooks in one lane.',
-      meta: 'reliability',
-    },
-  ] as const;
-
-  const pressureItems = [
-    {
-      label: 'Relay attention queue',
-      value: formatOpsMetric(opsOverview?.metrics.relayAttentionServersTotal),
-      detail: 'Self-hosted runtimes with relay follow-up or degraded posture.',
-      tone:
-        (opsOverview?.metrics.relayAttentionServersTotal ?? 0) > 0 ? ('warning' as const) : ('neutral' as const),
-    },
-    {
-      label: 'Trial exposure',
-      value: formatOpsMetric(opsOverview?.metrics.trialingSubscriptionsTotal),
-      detail: 'Accounts still inside trial conversion windows.',
-      tone:
-        (opsOverview?.metrics.trialingSubscriptionsTotal ?? 0) > 0 ? ('info' as const) : ('neutral' as const),
-    },
-    {
-      label: 'Support handoff depth',
-      value: formatOpsMetric(opsOverview?.metrics.supportNotesTotal),
-      detail: 'Operator-authored notes available for follow-up context.',
-    },
-    {
-      label: 'Failing public checks',
-      value: String(servicesOffline),
-      detail: 'Health probes currently returning hard failures.',
-      tone: servicesOffline > 0 ? ('danger' as const) : ('neutral' as const),
-    },
-  ] as const;
-
-  const platformSnapshotItems = [
-    {
-      label: 'Managed media policy',
-      value: opsOverview?.platform.managedMediaPolicyLabel ?? 'Unknown',
-      detail: opsOverview?.platform.managedMediaPolicyDescription ?? 'Policy description unavailable.',
-    },
-    {
-      label: 'Relay access policy',
-      value: opsOverview?.platform.relayAccessPolicyLabel ?? 'Unknown',
-      detail: opsOverview?.platform.relayAccessPolicyDescription ?? 'Relay policy description unavailable.',
-    },
-    {
-      label: 'Managed runtime origin',
-      value: opsOverview?.managedMediaRuntime?.publicOrigin ?? 'Unassigned',
-      detail: opsOverview?.managedMediaRuntime?.name ?? 'No managed runtime registered.',
-    },
-    {
-      label: 'Policy updated',
-      value: formatOpsTimestamp(opsOverview?.platform.updatedAt, 'Unknown'),
-      detail: 'Last control-plane write observed by the hosted ops console.',
-    },
-  ] as const;
-
+function OperatorLinkCard({
+  href,
+  icon: Icon,
+  label,
+  description,
+}: {
+  href: string;
+  icon: typeof ShieldCheck;
+  label: string;
+  description: string;
+}) {
   return (
-    <OpsPageShell
-      eyebrow="Overview"
-      title="Operate OmniLux from a single command surface."
-      description={`${displayName}, use this console to scan platform health, customer pressure, runtime state, and recent operator actions without bouncing between disconnected admin cards.`}
-      actions={
-        <>
-          <Link
-            to="/dashboard/accounts"
-            search={{ lookup: undefined } as never}
-            className={opsButtonClassName({ tone: 'primary' })}
-          >
-            Open accounts
-          </Link>
-          <Link to="/dashboard/control-plane" className={opsButtonClassName({ tone: 'secondary' })}>
-            Control plane
-          </Link>
-          <a href={buildAppHref('/dashboard')} className={opsButtonClassName({ tone: 'ghost' })}>
-            <span>Cloud app</span>
-            <ArrowUpRight className="h-4 w-4" />
-          </a>
-        </>
-      }
-      metrics={opsMetrics}
-    >
-      {incidentActive ? (
-        <OpsCallout
-          tone="warning"
-          title={opsOverview?.platform.managedMediaOperatingModeLabel ?? 'Managed runtime advisory'}
-          body={
-            opsOverview?.platform.managedMediaIncidentMessage ||
-            'An operator advisory is active for the managed media runtime.'
-          }
-          action={
-            <Link to="/dashboard/control-plane" className={opsButtonClassName({ tone: 'secondary' })}>
-              Update advisory
-            </Link>
-          }
-        />
-      ) : null}
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
-        <OpsPanel
-          title="Service watchlist"
-          description="Live public surfaces ordered by severity so failures and degradations are visible before healthy services."
-          meta={
-            services.length > 0
-              ? `${servicesOnline}/${services.length} services healthy`
-              : 'No live health samples'
-          }
-        >
-          {isOpsServiceHealthLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((index) => (
-                <div key={index} className="h-14 animate-pulse rounded-md bg-white/[0.04]" />
-              ))}
-            </div>
-          ) : opsServiceHealthError ? (
-            <OpsCallout
-              tone="danger"
-              title="Health signal unavailable"
-              body={
-                opsServiceHealthError instanceof Error
-                  ? opsServiceHealthError.message
-                  : 'Failed to load service health.'
-              }
-            />
-          ) : topAttentionServices.length === 0 ? (
-            <OpsEmptyState
-              title="No health checks available"
-              body="The overview will populate once operator health probes start returning data."
-            />
-          ) : (
-            <OpsTable>
-              <OpsTableHead>
-                <tr>
-                  <OpsTableHeaderCell>Service</OpsTableHeaderCell>
-                  <OpsTableHeaderCell>Status</OpsTableHeaderCell>
-                  <OpsTableHeaderCell>Impact</OpsTableHeaderCell>
-                  <OpsTableHeaderCell align="right">Latency</OpsTableHeaderCell>
-                  <OpsTableHeaderCell align="right">HTTP</OpsTableHeaderCell>
-                </tr>
-              </OpsTableHead>
-              <OpsTableBody>
-                {topAttentionServices.map((service) => (
-                  <OpsTableRow key={service.key}>
-                    <OpsTableCell>
-                      <p className="font-medium text-foreground">{service.label}</p>
-                      <p className="mt-1 text-sm text-muted">{service.url}</p>
-                    </OpsTableCell>
-                    <OpsTableCell>
-                      <OpsStatusBadge tone={opsServiceTone(service.status)}>{service.status}</OpsStatusBadge>
-                    </OpsTableCell>
-                    <OpsTableCell className="text-muted">{service.detail}</OpsTableCell>
-                    <OpsTableCell align="right" className="font-mono text-muted">
-                      {service.responseTimeMs !== null ? `${service.responseTimeMs} ms` : 'n/a'}
-                    </OpsTableCell>
-                    <OpsTableCell align="right" className="font-mono text-muted">
-                      {service.httpStatus !== null ? `HTTP ${service.httpStatus}` : 'n/a'}
-                    </OpsTableCell>
-                  </OpsTableRow>
-                ))}
-              </OpsTableBody>
-            </OpsTable>
-          )}
-        </OpsPanel>
-
-        <div className="space-y-4">
-          <OpsPanel
-            title="Operational pressure"
-            description="Queue depth and follow-up pressure across the hosted platform."
-          >
-            <OpsKeyValueList items={pressureItems} columns={1} />
-          </OpsPanel>
-
-          <OpsPanel
-            title="Control snapshot"
-            description="Current policies and managed runtime state that shape operator decisions."
-            meta={`Updated ${formatOpsTimestamp(opsOverview?.platform.updatedAt, 'recently')}`}
-          >
-            {isOpsOverviewLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((index) => (
-                  <div key={index} className="h-20 animate-pulse rounded-md bg-white/[0.04]" />
-                ))}
-              </div>
-            ) : opsOverviewError ? (
-              <OpsCallout
-                tone="danger"
-                title="Overview unavailable"
-                body={
-                  opsOverviewError instanceof Error
-                    ? opsOverviewError.message
-                    : 'Failed to load the operator overview.'
-                }
-              />
-            ) : (
-              <OpsKeyValueList items={platformSnapshotItems} columns={1} />
-            )}
-          </OpsPanel>
-        </div>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-        <OpsPanel
-          title="Recent operator activity"
-          description="Last high-signal actions across account, relay, and control-plane workflows."
-          meta={isOperatorActionAuditLoading ? 'Refreshing activity' : `${recentActions.length} recent events`}
-        >
-          {isOperatorActionAuditLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((index) => (
-                <div key={index} className="h-14 animate-pulse rounded-lg bg-white/[0.04]" />
-              ))}
-            </div>
-          ) : recentActions.length === 0 ? (
-            <OpsEmptyState
-              title="No recent operator actions"
-              body="Sensitive actions will appear here as soon as account lookups or policy changes are recorded."
-            />
-          ) : (
-            <OpsTable>
-              <OpsTableHead>
-                <tr>
-                  <OpsTableHeaderCell>Action</OpsTableHeaderCell>
-                  <OpsTableHeaderCell>Actor</OpsTableHeaderCell>
-                  <OpsTableHeaderCell>Source</OpsTableHeaderCell>
-                  <OpsTableHeaderCell align="right">When</OpsTableHeaderCell>
-                </tr>
-              </OpsTableHead>
-              <OpsTableBody>
-                {recentActions.map((row) => (
-                  <OpsTableRow key={row.id}>
-                    <OpsTableCell>
-                      <p className="font-medium text-foreground">{renderOperatorActionSummary(row)}</p>
-                    </OpsTableCell>
-                    <OpsTableCell>{renderProfileLabel(row.actor)}</OpsTableCell>
-                    <OpsTableCell className="text-muted">{row.source}</OpsTableCell>
-                    <OpsTableCell align="right" className="text-muted">
-                      {formatTimestamp(row.createdAt)}
-                    </OpsTableCell>
-                  </OpsTableRow>
-                ))}
-              </OpsTableBody>
-            </OpsTable>
-          )}
-        </OpsPanel>
-
-        <OpsPanel
-          title="Command lanes"
-          description="Fast entry points for the workflows that matter most during daily operations."
-        >
-          <OpsLinkList items={quickLinks} />
-        </OpsPanel>
-      </div>
-    </OpsPageShell>
+    <a href={href} className="group rounded-xl border border-border bg-background p-5 transition-colors hover:bg-surface">
+      <Icon className="mb-3 h-6 w-6 text-accent" />
+      <h3 className="font-semibold text-foreground">{label}</h3>
+      <p className="mt-1 text-sm text-muted">{description}</p>
+    </a>
   );
 }

@@ -1,16 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
   clearPendingSignup,
-  getCurrentHostedSurface,
   getDefaultAuthRedirect,
   normalizeHostedRedirectPath,
 } from '@/surfaces/app/lib/auth-flow';
-import { buildAppHref, buildOpsHref, buildSurfaceHrefForPath } from '@/lib/site-surface';
+import { buildAppHref, buildSurfaceHrefForPath } from '@/lib/site-surface';
 import { supabase } from '@/lib/supabase';
-
-interface AccessProfileSummary {
-  isOperator: boolean;
-}
 
 export const AuthCallback = () => {
   const [error, setError] = useState<string | null>(null);
@@ -22,10 +17,9 @@ export const AuthCallback = () => {
       try {
         const currentUrl = new URL(window.location.href);
         const code = currentUrl.searchParams.get('code');
-        const currentSurface = getCurrentHostedSurface();
         const next = normalizeHostedRedirectPath(
-          currentSurface,
-          currentUrl.searchParams.get('next') ?? getDefaultAuthRedirect(currentSurface),
+          'app',
+          currentUrl.searchParams.get('next') ?? getDefaultAuthRedirect('app'),
         );
 
         if (code) {
@@ -42,15 +36,6 @@ export const AuthCallback = () => {
 
         if (!data.session) {
           throw new Error('Authentication session could not be established. Request a new link and try again.');
-        }
-
-        if (currentSurface === 'ops') {
-          const { data: accessProfile, error: accessError } =
-            await supabase.functions.invoke<AccessProfileSummary>('get-access-profile');
-          if (accessError || !accessProfile?.isOperator) {
-            await supabase.auth.signOut();
-            throw new Error('This account does not have operator access. Use an internal operator account for OmniLux Ops.');
-          }
         }
 
         clearPendingSignup();
@@ -91,10 +76,7 @@ export const AuthCallback = () => {
       <div className="max-w-md text-center">
         <h1 className="font-display text-2xl font-bold text-foreground">Auth link failed</h1>
         <p className="mt-3 text-sm text-muted">{error}</p>
-        <a
-          href={getCurrentHostedSurface() === 'ops' ? buildOpsHref('/login') : buildAppHref('/login')}
-          className="mt-6 inline-block text-sm text-accent hover:underline"
-        >
+        <a href={buildAppHref('/login')} className="mt-6 inline-block text-sm text-accent hover:underline">
           Back to login
         </a>
       </div>
