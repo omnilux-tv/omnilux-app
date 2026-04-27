@@ -28,29 +28,18 @@ export const SubmitPlugin = () => {
     setError(null);
     setLoading(true);
 
-    const packageName = name.trim();
-    const slug = packageName.split('/').pop() ?? packageName;
-
-    const { error: err } = await supabase.from('plugins').insert({
-      slug,
-      name: packageName,
-      display_name: displayName,
-      description,
-      category: category.toLowerCase(),
-      long_description: description,
-      github_url: githubUrl || null,
-      author: user.user_metadata?.display_name ?? user.email,
-      author_id: user.id,
-      compatibility: '^0.1.0',
-      permissions: [],
-      trust: 'community',
-      published: false,
-      version: '1.0.0',
-      rating: 0,
-      download_count: 0,
-      price: 0,
-      screenshots: [],
-      featured: false,
+    const { error: err } = await supabase.functions.invoke<{
+      pluginId: string;
+      slug: string;
+      submissionStatus: string;
+    }>('submit-plugin', {
+      body: {
+        name: name.trim(),
+        displayName: displayName.trim(),
+        description: description.trim(),
+        category,
+        githubUrl: githubUrl.trim() || null,
+      },
     });
 
     setLoading(false);
