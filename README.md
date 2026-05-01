@@ -18,6 +18,16 @@ Approved boundary:
 - `omnilux-cloud` owns auth, billing, entitlements, invites, and relay control-plane state
 - `omnilux-edge` owns ingress and routes `app.omnilux.tv` to this artifact
 
+## Canonical Contracts
+
+- Cloud console IA: `../omnilux/docs/planning/cloud-console-ia.md`
+- Cloud app contract: `../omnilux/docs/planning/cross-repo-plans/cloud-app-contract-plan.md`
+- Cloud service plans: `../omnilux/docs/planning/cloud-services-plans/`
+- Managed media contract: `../omnilux/docs/planning/cross-repo-plans/managed-media-plan.md`
+- Relay contract: `../omnilux/docs/planning/cross-repo-plans/relay-contract-plan.md`
+
+Keep customer app docs focused on hosted UI behavior. Cloud API shape, entitlement rules, relay state, and server summaries should be changed in the relevant canonical contract when they affect other repos.
+
 ## Structure
 
 - `src/surfaces/app/` — app-specific page and component ownership
