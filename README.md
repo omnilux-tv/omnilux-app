@@ -2,6 +2,14 @@
 
 Hosted customer frontend for `app.omnilux.tv`.
 
+## Workspace
+
+This repository is part of the official OmniLux multi-repo workspace. Use the root `omnilux-workspace` repo for onboarding, profiles, and cross-repo contracts:
+
+- Onboarding: `../ONBOARDING.md`
+- Manifest: `../workspace.repositories.json`
+- Contracts: `../contracts/`
+
 This repo owns the hosted OmniLux customer cloud app:
 
 - cloud auth and account flows
@@ -21,10 +29,10 @@ Approved boundary:
 ## Canonical Contracts
 
 - Cloud console IA: `../omnilux/docs/planning/cloud-console-ia.md`
-- Cloud app contract: `../omnilux/docs/planning/cross-repo-plans/cloud-app-contract-plan.md`
+- Cloud app contract: `../contracts/cloud-app-contract-plan.md`
 - Cloud service plans: `../omnilux/docs/planning/cloud-services-plans/`
-- Managed media contract: `../omnilux/docs/planning/cross-repo-plans/managed-media-plan.md`
-- Relay contract: `../omnilux/docs/planning/cross-repo-plans/relay-contract-plan.md`
+- Managed media contract: `../contracts/managed-media-plan.md`
+- Relay contract: `../contracts/relay-contract-plan.md`
 
 Keep customer app docs focused on hosted UI behavior. Cloud API shape, entitlement rules, relay state, and server summaries should be changed in the relevant canonical contract when they affect other repos.
 
