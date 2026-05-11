@@ -9,6 +9,7 @@ import {
   isManagedMediaDeploymentProfile,
   isSelfHostedDeploymentProfile,
 } from '@/surfaces/app/lib/server-deployment-profile';
+import { isRelayConditionState } from '@/surfaces/app/lib/relay-condition';
 
 interface ServerRow {
   id: string;
@@ -19,6 +20,7 @@ interface ServerRow {
   last_seen_at: string | null;
   relay_enabled: boolean | null;
   relay_status: string | null;
+  relay_condition?: string | null;
 }
 
 export const Servers = () => {
@@ -100,6 +102,8 @@ export const Servers = () => {
                       lastSeenAt={s.last_seen_at}
                       relayEnabled={s.relay_enabled}
                       relayStatus={s.relay_status}
+                      relayCondition={isRelayConditionState(s.relay_condition) ? s.relay_condition : null}
+                      relayEntitled={accessProfile?.relayRemoteAccessEntitled ?? null}
                     />
                   ))}
                 </section>
@@ -141,6 +145,8 @@ export const Servers = () => {
                       lastSeenAt={s.last_seen_at}
                       relayEnabled={s.relay_enabled}
                       relayStatus={s.relay_status}
+                      relayCondition={isRelayConditionState(s.relay_condition) ? s.relay_condition : null}
+                      relayEntitled={accessProfile?.managedMediaEntitled ?? null}
                     />
                   ))}
                 </section>

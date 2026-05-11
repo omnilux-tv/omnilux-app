@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { ExternalLink, RadioTower, ShieldCheck, Sparkles, Waves } from 'lucide-react';
 import { buildDocsHref } from '@/lib/site-surface';
 import { useCustomerOverview } from '@/surfaces/app/lib/customer-overview';
+import { getRelayConditionLabel } from '@/surfaces/app/lib/relay-condition';
 
 const fallbackMediaOrigin = 'https://media.omnilux.tv';
 
@@ -114,7 +115,16 @@ export const ManagedMedia = () => {
                 </div>
                 <div>
                   <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Relay State</dt>
-                  <dd className="mt-1 capitalize text-foreground">{overview.managedMediaRuntime.relayStatus ?? 'unknown'}</dd>
+                  <dd className="mt-1 text-foreground">
+                    {overview.managedMediaRuntime.relayCondition
+                      ? getRelayConditionLabel(overview.managedMediaRuntime.relayCondition)
+                      : overview.managedMediaRuntime.relayStatus ?? 'Unknown'}
+                  </dd>
+                  {overview.managedMediaRuntime.relayConditionDetail?.summary && (
+                    <dd className="mt-1 text-xs text-muted">
+                      {overview.managedMediaRuntime.relayConditionDetail.summary}
+                    </dd>
+                  )}
                 </div>
                 <div>
                   <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Version</dt>

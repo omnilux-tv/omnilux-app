@@ -6,6 +6,7 @@ import type {
   ManagedMediaPolicy,
   RelayAccessPolicy,
 } from '@/surfaces/app/lib/platform-policy';
+import type { RelayConditionDetail, RelayConditionState } from '@/surfaces/app/lib/relay-condition';
 
 export interface CustomerOverview {
   profile: {
@@ -47,6 +48,8 @@ export interface CustomerOverview {
     name: string;
     publicOrigin: string | null;
     relayStatus: string | null;
+    relayCondition: RelayConditionState | null;
+    relayConditionDetail: RelayConditionDetail | null;
     lastSeenAt: string | null;
     version: string | null;
   } | null;

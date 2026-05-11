@@ -7,6 +7,12 @@ import {
   isSelfHostedDeploymentProfile,
   normalizeServerDeploymentProfile,
 } from '@/surfaces/app/lib/server-deployment-profile';
+import {
+  deriveRelayCondition,
+  getRelayConditionLabel,
+  getRelayConditionSummary,
+  getRelayConditionTone,
+} from '@/surfaces/app/lib/relay-condition';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
@@ -140,13 +146,12 @@ export const ServerDetail = () => {
   const deploymentProfile = normalizeServerDeploymentProfile(server.deployment_profile);
   const deploymentLabel = getServerDeploymentProfileLabel(deploymentProfile);
   const isSelfHosted = deploymentProfile === 'self-hosted';
-  const relayTone = {
-    offline: 'bg-danger',
-    connecting: 'bg-warning',
-    online: 'bg-success',
-    degraded: 'bg-warning',
-    error: 'bg-danger',
-  }[server.relay_status];
+  const relayCondition = deriveRelayCondition({
+    relayEnabled: server.relay_enabled,
+    relayStatus: server.relay_status,
+    entitled: isSelfHosted ? accessProfile?.relayRemoteAccessEntitled ?? null : accessProfile?.managedMediaEntitled ?? null,
+  });
+  const relayTone = getRelayConditionTone(relayCondition);
 
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
@@ -167,9 +172,17 @@ export const ServerDetail = () => {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-muted">Relay:</span>
-              <span className={cn('inline-block h-2.5 w-2.5 rounded-full', relayTone)} />
-              <span className="text-foreground capitalize">{server.relay_status}</span>
-              {!server.relay_enabled && <span className="text-xs text-muted">(disabled)</span>}
+              <span
+                className={cn(
+                  'inline-block h-2.5 w-2.5 rounded-full',
+                  relayTone === 'success' && 'bg-success',
+                  relayTone === 'warning' && 'bg-warning',
+                  relayTone === 'danger' && 'bg-danger',
+                  relayTone === 'muted' && 'bg-muted',
+                )}
+              />
+              <span className="text-foreground">{getRelayConditionLabel(relayCondition)}</span>
+              <span className="text-xs text-muted">(raw: {server.relay_status})</span>
             </div>
             {server.relay_region && (
               <div>
@@ -202,15 +215,18 @@ export const ServerDetail = () => {
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               Runtime model
             </p>
+            <p className="mt-2 text-sm text-foreground">
+              {getRelayConditionSummary(relayCondition)}
+            </p>
             {deploymentProfile === 'self-hosted' ? (
-              <p className="mt-2 text-sm text-foreground">
+              <p className="mt-2 text-sm text-muted">
                 OmniLux Cloud treats relay state as the remote access source of truth. Users can still
                 reach their own server directly on their local network or their own reverse proxy, but
                 cloud-mediated remote access should use relay when this server is online. {accessProfile?.relayAccessPolicyDescription ??
                   'Self-hosted relay remote access requires an active OmniLux Cloud subscription for the server owner.'}
               </p>
             ) : (
-              <p className="mt-2 text-sm text-foreground">
+              <p className="mt-2 text-sm text-muted">
                 This is OmniLux-managed media surfaced through the cloud console, not a customer-owned
                 self-hosted server. It is expected to be reachable through its OmniLux-managed public
                 origin instead of a user-owned LAN or reverse-proxy path. {accessProfile?.managedMediaPolicy === 'all-authenticated-users'
