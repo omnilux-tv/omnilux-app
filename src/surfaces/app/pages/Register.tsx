@@ -2,8 +2,10 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import {
   buildAuthCallbackUrl,
+  getConfiguredOAuthProviders,
   getRedirectPathFromSearch,
   setPendingSignup,
+  type OAuthProvider,
 } from '@/surfaces/app/lib/auth-flow';
 import { buildAppHref, buildMarketingHref } from '@/lib/site-surface';
 import { supabase } from '@/lib/supabase';
@@ -20,6 +22,8 @@ const getPasswordStrength = (pw: string): { label: string; color: string; width:
   if (score === 3) return { label: 'Good', color: 'bg-success', width: 'w-4/5' };
   return { label: 'Strong', color: 'bg-success', width: 'w-full' };
 };
+
+const configuredOAuthProviders = getConfiguredOAuthProviders();
 
 export const Register = () => {
   const navigate = useNavigate();
@@ -64,7 +68,7 @@ export const Register = () => {
     navigate({ to: '/verify-email' });
   };
 
-  const handleOAuth = async (provider: 'google' | 'apple' | 'github') => {
+  const handleOAuth = async (provider: OAuthProvider) => {
     await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: buildAuthCallbackUrl(redirectPath) },
@@ -164,24 +168,28 @@ export const Register = () => {
           </button>
         </form>
 
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground">or continue with</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
+        {configuredOAuthProviders.length > 0 && (
+          <>
+            <div className="my-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">or continue with</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          {(['google', 'apple', 'github'] as const).map((provider) => (
-            <button
-              key={provider}
-              type="button"
-              onClick={() => handleOAuth(provider)}
-              className="rounded-lg border border-border py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface capitalize"
-            >
-              {provider}
-            </button>
-          ))}
-        </div>
+            <div className="grid grid-cols-3 gap-3">
+              {configuredOAuthProviders.map((provider) => (
+                <button
+                  key={provider}
+                  type="button"
+                  onClick={() => handleOAuth(provider)}
+                  className="rounded-lg border border-border py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface capitalize"
+                >
+                  {provider}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <p className="mt-6 text-center text-sm text-muted">
           Already have a cloud account?{' '}

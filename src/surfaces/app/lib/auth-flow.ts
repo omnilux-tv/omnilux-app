@@ -1,6 +1,22 @@
 import type { HostedSiteSurface } from '@/lib/site-surface';
 
 const PENDING_SIGNUP_KEY = 'omnilux:pending-signup';
+const SUPPORTED_OAUTH_PROVIDERS = ['google', 'apple', 'github'] as const;
+
+export type OAuthProvider = typeof SUPPORTED_OAUTH_PROVIDERS[number];
+
+export const getConfiguredOAuthProviders = (): OAuthProvider[] => {
+  const configuredProviders = import.meta.env.VITE_OAUTH_PROVIDERS;
+  if (!configuredProviders) {
+    return [];
+  }
+
+  const supportedProviders = new Set<string>(SUPPORTED_OAUTH_PROVIDERS);
+  return configuredProviders
+    .split(',')
+    .map((provider) => provider.trim().toLowerCase())
+    .filter((provider): provider is OAuthProvider => supportedProviders.has(provider));
+};
 
 export interface PendingSignupContext {
   email: string;
