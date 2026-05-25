@@ -67,6 +67,7 @@ Optional browser config:
 - `VITE_APP_SITE_URL`
 - `VITE_OPS_SITE_URL`
 - `VITE_DOCS_SITE_URL`
+- `VITE_OAUTH_PROVIDERS` — comma-separated OAuth buttons to show on login, for example `google,github`. Only set providers that are enabled in Supabase Auth; leave empty to hide the SSO section.
 - `VITE_SENTRY_DSN`
 - `VITE_WEB_VITALS_ENDPOINT`
 
