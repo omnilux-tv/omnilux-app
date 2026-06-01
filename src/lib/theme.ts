@@ -5,8 +5,8 @@ export const THEME_STORAGE_KEY = 'omnilux-theme-preference';
 const THEME_COOKIE_KEY = 'omnilux-theme';
 const MEDIA_QUERY = '(prefers-color-scheme: dark)';
 const THEME_COLORS: Record<ResolvedTheme, string> = {
-  light: '#f4f7ff',
-  dark: '#0b1020',
+  light: '#eef1ec',
+  dark: '#10181f',
 };
 
 const isThemePreference = (value: string | null | undefined): value is ThemePreference =>
