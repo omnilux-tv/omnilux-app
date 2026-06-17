@@ -28,7 +28,7 @@ const dashboardLinks = [
     to: '/dashboard/subscription',
     icon: CreditCard,
     label: 'Billing',
-    description: 'Plan status for relay, remote access, and paid cloud features.',
+    description: 'Plan status for relay entitlement, cloud continuity, and paid cloud features.',
   },
   {
     to: '/dashboard/account',
@@ -141,14 +141,14 @@ export const Dashboard = () => {
                     detail:
                       (customerOverview?.metrics.selfHostedServersTotal ?? 0) > 0
                         ? 'Your cloud account is already linked to one or more self-hosted runtimes.'
-                        : 'Claim a server when you want private libraries, invites, or relay-backed remote access.',
+                        : 'Claim a server when you want private libraries, cloud continuity, and relay diagnostics.',
                   },
                   {
                     title: 'Remote relay',
-                    value: customerOverview?.access.relayRemoteAccessEntitled ? 'Ready' : 'Policy-gated',
+                    value: customerOverview?.access.relayRemoteAccessEntitled ? 'Entitled' : 'Policy-gated',
                     detail:
                       customerOverview?.platform.relayAccessPolicyDescription ??
-                      'Relay access to self-hosted servers follows the current platform policy.',
+                      'Relay entitlement is tracked now; browser remote sessions remain gated until the end-to-end client is enabled.',
                   },
                 ].map(({ title, value, detail }) => (
                   <div key={title} className="rounded-xl border border-border bg-background p-5">
@@ -179,7 +179,7 @@ export const Dashboard = () => {
                         body:
                           (customerOverview?.metrics.selfHostedServersTotal ?? 0) > 0
                             ? 'At least one self-hosted runtime is already linked to this cloud account.'
-                            : 'Claiming a server adds your private libraries, household sharing, and relay-backed remote services.',
+                            : 'Claiming a server adds your private libraries, cloud continuity, and relay diagnostics.',
                         actionHref: '/dashboard/claim',
                         actionLabel:
                           (customerOverview?.metrics.selfHostedServersTotal ?? 0) > 0
@@ -188,11 +188,11 @@ export const Dashboard = () => {
                       },
                       {
                         complete: customerOverview?.access.relayRemoteAccessEntitled ?? false,
-                        label: 'Upgrade only if your self-hosted relay path needs it',
+                        label: 'Upgrade only when a cloud feature needs it',
                         body: customerOverview?.access.relayRemoteAccessEntitled
-                          ? 'This account already satisfies the current relay access rule.'
+                          ? 'This account already satisfies the current relay entitlement rule.'
                           : customerOverview?.platform.relayAccessPolicyDescription ??
-                            'Relay access to self-hosted servers is currently policy-gated.',
+                            'Relay entitlement for self-hosted servers is currently policy-gated.',
                         actionHref: '/dashboard/subscription',
                         actionLabel: 'Review billing',
                       },
@@ -248,7 +248,7 @@ export const Dashboard = () => {
                     {[
                       'Cloud accounts get first-party managed media according to the current platform policy.',
                       'Self-hosted servers remain directly reachable by their owners outside OmniLux edge.',
-                      'Relay billing only applies to cloud-mediated remote access for self-hosted servers.',
+                      'Relay billing applies only to OmniLux-managed relay entitlement for self-hosted servers.',
                     ].map((item) => (
                       <li key={item} className="flex gap-2">
                         <span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent" />
@@ -281,7 +281,7 @@ export const Dashboard = () => {
             <h2 className="font-display text-xl font-bold text-foreground">Developer Area</h2>
             <p className="mt-2 text-sm text-muted">
               Secondary cloud workflows live here so the main navigation stays focused on account management, servers,
-              billing, and remote access.
+              billing, and cloud continuity.
             </p>
           </div>
 

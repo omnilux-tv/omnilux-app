@@ -6,7 +6,7 @@ export const Route = createFileRoute('/dashboard/devices')({
   head: () =>
     buildPageHead({
       title: 'Devices | OmniLux Cloud',
-      description: 'Review connected OmniLux devices and remote access state.',
+      description: 'Review connected OmniLux devices and cloud continuity state.',
       pathname: '/dashboard/devices',
       surface: 'app',
       noIndex: true,

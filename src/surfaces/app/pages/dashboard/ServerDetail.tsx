@@ -220,10 +220,11 @@ export const ServerDetail = () => {
             </p>
             {deploymentProfile === 'self-hosted' ? (
               <p className="mt-2 text-sm text-muted">
-                OmniLux Cloud treats relay state as the remote access source of truth. Users can still
-                reach their own server directly on their local network or their own reverse proxy, but
-                cloud-mediated remote access should use relay when this server is online. {accessProfile?.relayAccessPolicyDescription ??
-                  'Self-hosted relay remote access requires an active OmniLux Cloud subscription for the server owner.'}
+                OmniLux Cloud treats relay state as a cloud-continuity and diagnostics signal for this
+                release. Users can still reach their own server directly on their local network, VPN, or
+                user-owned reverse proxy. Browser remote streaming over OmniLux relay should stay hidden
+                until the relay session client is enabled end to end. {accessProfile?.relayAccessPolicyDescription ??
+                  'Self-hosted relay access is governed by the cloud subscription policy once remote sessions are enabled.'}
               </p>
             ) : (
               <p className="mt-2 text-sm text-muted">

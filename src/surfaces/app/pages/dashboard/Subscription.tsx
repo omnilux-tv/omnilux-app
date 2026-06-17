@@ -230,7 +230,7 @@ export const Subscription = () => {
           <h1 className="font-display text-2xl font-bold text-foreground">Cloud Plan & Billing</h1>
           <p className="mt-1 text-sm text-muted">
             Local playback and hosting stay free. Managed OmniLux media is included with your cloud account, while
-            paid billing applies to self-hosted relay remote access and premium cloud services around it.
+            paid billing applies to self-hosted relay entitlement and premium cloud services around it.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <a
@@ -384,8 +384,9 @@ export const Subscription = () => {
           <div className="rounded-xl surface-soft p-6">
             <h2 className="text-lg font-bold text-foreground">Paid Cloud Policy</h2>
             <p className="mt-2 text-sm text-muted">
-              Self-hosted relay remote access follows the current platform rule, while local and user-owned direct
-              access stay outside cloud billing.
+              Self-hosted relay entitlement follows the current platform rule, while local and user-owned direct
+              access stay outside cloud billing. Browser remote sessions should remain gated until the end-to-end
+              relay client is enabled.
             </p>
             <div className="mt-4 rounded-lg bg-surface/60 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Self-Hosted Relay Access</p>
@@ -394,7 +395,7 @@ export const Subscription = () => {
               </p>
               <p className="mt-2 text-sm text-muted">
                 {accessProfile?.relayAccessPolicyDescription ??
-                  'Self-hosted relay access requires an active OmniLux Cloud subscription.'}
+                  'Self-hosted relay entitlement requires an active OmniLux Cloud subscription once remote sessions are enabled.'}
               </p>
               <p className="mt-3 text-xs text-muted">
                 {accessProfile?.hasPaidCloudPlan
@@ -422,7 +423,7 @@ export const Subscription = () => {
               },
               {
                 title: 'Paid when needed',
-                body: 'Self-hosted relay remote access and higher-tier cloud services around your private runtime.',
+                body: 'Self-hosted relay entitlement and higher-tier cloud services around your private runtime.',
               },
             ].map(({ title, body }) => (
               <div key={title} className="rounded-xl bg-surface/60 p-4">

@@ -93,13 +93,13 @@ export function getRelayConditionSummary(condition: RelayConditionState): string
     case 'unlinked':
       return 'This server is not linked to OmniLux Cloud.';
     case 'not_entitled':
-      return 'The current account is not entitled to relay remote access.';
+      return 'The current account is not entitled to relay service.';
     case 'connecting':
       return 'Relay tunnel is being established.';
     case 'ready':
-      return 'Relay tunnel is ready for cloud-mediated remote access.';
+      return 'Relay tunnel is connected for cloud diagnostics. Direct local access remains the supported playback path in this release.';
     case 'degraded':
-      return 'Relay is partially available or unhealthy.';
+      return 'Relay tunnel diagnostics are partially available or unhealthy.';
     case 'revoked':
       return 'Cloud access for this server has been revoked.';
     case 'offline':

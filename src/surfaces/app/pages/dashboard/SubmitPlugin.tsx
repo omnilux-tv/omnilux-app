@@ -70,7 +70,7 @@ export const SubmitPlugin = () => {
         <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted">Developer Area</p>
         <h1 className="mb-3 mt-2 font-display text-2xl font-bold text-foreground">Submit a Plugin</h1>
         <p className="mb-8 text-sm text-muted">
-          Plugin publishing is part of your cloud account tooling, but it stays outside the primary account navigation so the main app remains focused on servers, billing, and remote access.
+          Plugin publishing is part of your cloud account tooling, but it stays outside the primary account navigation so the main app remains focused on servers, billing, and cloud continuity.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4 rounded-xl surface-soft p-6">

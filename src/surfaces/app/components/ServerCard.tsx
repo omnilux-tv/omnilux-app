@@ -42,7 +42,8 @@ export const ServerCard = ({
     relayStatus,
     entitled: relayEntitled,
   });
-  const remoteAccessAvailable = condition === 'ready' || condition === 'degraded';
+  const isSelfHosted = normalizeServerDeploymentProfile(deploymentProfile) === 'self-hosted';
+  const relayTunnelObserved = condition === 'ready' || condition === 'degraded';
   const profileLabel = getServerDeploymentProfileLabel(normalizeServerDeploymentProfile(deploymentProfile));
   const conditionTone = getRelayConditionTone(condition);
 
@@ -68,7 +69,11 @@ export const ServerCard = ({
         </p>
         <p className="mt-1 text-xs text-muted">
           Relay: <span className="text-foreground">{getRelayConditionLabel(condition)}</span>
-          {remoteAccessAvailable ? null : <span> &middot; remote access unavailable</span>}
+          {isSelfHosted
+            ? relayTunnelObserved
+              ? <span> &middot; tunnel observed, direct access supported</span>
+              : <span> &middot; relay session unavailable</span>
+            : null}
         </p>
       </div>
     </Link>

@@ -21,11 +21,11 @@ export const paidCloudPlans: readonly PaidCloudPlan[] = [
   {
     tier: 'personal',
     name: 'Personal',
-    description: 'Remote access and cloud-connected features for one primary user.',
+    description: 'Cloud continuity and connected features for one primary user.',
     bullets: [
       '1 primary household member',
-      '1 concurrent remote stream',
-      'Cloud account services and secure remote access',
+      '1 linked self-hosted runtime',
+      'Cloud account services and relay entitlement tracking',
     ],
     monthlyCents: 499,
     annualCents: toAnnualCents(499),
@@ -36,7 +36,7 @@ export const paidCloudPlans: readonly PaidCloudPlan[] = [
     description: 'Cloud access for two adults sharing one household setup.',
     bullets: [
       '2 household adults',
-      '2 concurrent remote streams',
+      '2 linked self-hosted runtimes',
       'Shared invites and household billing',
     ],
     monthlyCents: 799,
@@ -48,7 +48,7 @@ export const paidCloudPlans: readonly PaidCloudPlan[] = [
     description: 'Shared cloud access for households with multiple viewers and devices.',
     bullets: [
       'Up to 5 household members',
-      'Up to 5 concurrent remote streams',
+      'Up to 5 linked self-hosted runtimes',
       'Same dashboard billing controls and invites',
     ],
     monthlyCents: 999,
