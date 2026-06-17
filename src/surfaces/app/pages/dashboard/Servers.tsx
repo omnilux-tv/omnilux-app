@@ -85,7 +85,7 @@ export const Servers = () => {
                       <p className="font-medium text-foreground">Relay entitlement policy</p>
                       <p className="mt-2">
                         {accessProfile?.relayAccessPolicyDescription ??
-                          'Relay entitlement for self-hosted servers requires an active OmniLux Cloud subscription once remote sessions are enabled.'}
+                          'Relay entitlement for self-hosted servers requires an active OmniLux Cloud subscription for remote relay sessions.'}
                       </p>
                       <p className="mt-2 text-xs">
                         Direct LAN, VPN, and user-owned reverse-proxy access stay outside OmniLux cloud billing.

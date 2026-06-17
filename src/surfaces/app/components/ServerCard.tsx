@@ -71,8 +71,8 @@ export const ServerCard = ({
           Relay: <span className="text-foreground">{getRelayConditionLabel(condition)}</span>
           {isSelfHosted
             ? relayTunnelObserved
-              ? <span> &middot; tunnel observed, direct access supported</span>
-              : <span> &middot; relay session unavailable</span>
+              ? <span> &middot; relay tunnel observed</span>
+              : <span> &middot; relay unavailable</span>
             : null}
         </p>
       </div>

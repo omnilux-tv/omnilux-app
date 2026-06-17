@@ -141,14 +141,14 @@ export const Dashboard = () => {
                     detail:
                       (customerOverview?.metrics.selfHostedServersTotal ?? 0) > 0
                         ? 'Your cloud account is already linked to one or more self-hosted runtimes.'
-                        : 'Claim a server when you want private libraries, cloud continuity, and relay diagnostics.',
+                        : 'Claim a server when you want private libraries, cloud continuity, and relay access.',
                   },
                   {
                     title: 'Remote relay',
                     value: customerOverview?.access.relayRemoteAccessEntitled ? 'Entitled' : 'Policy-gated',
                     detail:
                       customerOverview?.platform.relayAccessPolicyDescription ??
-                      'Relay entitlement is tracked now; browser remote sessions remain gated until the end-to-end client is enabled.',
+                      'Relay sessions require an entitled account, an online tunnel, and a runtime that supports HTTP session bridging.',
                   },
                 ].map(({ title, value, detail }) => (
                   <div key={title} className="rounded-xl border border-border bg-background p-5">
@@ -179,7 +179,7 @@ export const Dashboard = () => {
                         body:
                           (customerOverview?.metrics.selfHostedServersTotal ?? 0) > 0
                             ? 'At least one self-hosted runtime is already linked to this cloud account.'
-                            : 'Claiming a server adds your private libraries, cloud continuity, and relay diagnostics.',
+                            : 'Claiming a server adds your private libraries, cloud continuity, and relay access.',
                         actionHref: '/dashboard/claim',
                         actionLabel:
                           (customerOverview?.metrics.selfHostedServersTotal ?? 0) > 0

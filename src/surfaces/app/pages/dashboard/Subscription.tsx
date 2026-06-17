@@ -385,8 +385,8 @@ export const Subscription = () => {
             <h2 className="text-lg font-bold text-foreground">Paid Cloud Policy</h2>
             <p className="mt-2 text-sm text-muted">
               Self-hosted relay entitlement follows the current platform rule, while local and user-owned direct
-              access stay outside cloud billing. Browser remote sessions should remain gated until the end-to-end
-              relay client is enabled.
+              access stay outside cloud billing. Browser remote sessions require an entitled account, an online
+              tunnel, and a runtime that supports HTTP relay session bridging.
             </p>
             <div className="mt-4 rounded-lg bg-surface/60 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Self-Hosted Relay Access</p>
@@ -395,7 +395,7 @@ export const Subscription = () => {
               </p>
               <p className="mt-2 text-sm text-muted">
                 {accessProfile?.relayAccessPolicyDescription ??
-                  'Self-hosted relay entitlement requires an active OmniLux Cloud subscription once remote sessions are enabled.'}
+                  'Self-hosted relay entitlement requires an active OmniLux Cloud subscription for remote relay sessions.'}
               </p>
               <p className="mt-3 text-xs text-muted">
                 {accessProfile?.hasPaidCloudPlan

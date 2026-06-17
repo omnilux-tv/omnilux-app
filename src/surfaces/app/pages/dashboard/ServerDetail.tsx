@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Copy, Link2, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { Copy, ExternalLink, Link2, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
 import {
   getServerDeploymentProfileLabel,
   isSelfHostedDeploymentProfile,
@@ -14,6 +14,11 @@ import {
   getRelayConditionTone,
 } from '@/surfaces/app/lib/relay-condition';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
+import {
+  buildRelaySessionUrl,
+  hasRemoteHttpRelaySupport,
+  type CreateRelaySessionResponse,
+} from '@/surfaces/app/lib/relay-session';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 
@@ -126,6 +131,26 @@ export const ServerDetail = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['server-access', serverId] }),
   });
 
+  const openRelaySession = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke<CreateRelaySessionResponse>('create-relay-session', {
+        body: {
+          serverId,
+          sessionType: 'remote-access',
+          metadata: {
+            surface: 'app-server-detail',
+          },
+        },
+      });
+      if (error) throw error;
+      if (!data?.token) throw new Error('Relay session token was not returned');
+      return data;
+    },
+    onSuccess: (data) => {
+      window.open(buildRelaySessionUrl(data.token), '_blank', 'noopener,noreferrer');
+    },
+  });
+
   const copyInviteLink = async (code: string) => {
     await navigator.clipboard.writeText(`${window.location.origin}/invite/${code}`);
     setCopiedInvite(code);
@@ -152,15 +177,43 @@ export const ServerDetail = () => {
     entitled: isSelfHosted ? accessProfile?.relayRemoteAccessEntitled ?? null : accessProfile?.managedMediaEntitled ?? null,
   });
   const relayTone = getRelayConditionTone(relayCondition);
+  const remoteRelaySupported = hasRemoteHttpRelaySupport(server.relay_capabilities);
+  const relayEntitled = accessProfile?.relayRemoteAccessEntitled === true;
+  const canOpenRelaySession = isSelfHosted && relayCondition === 'ready' && relayEntitled && remoteRelaySupported;
 
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl space-y-8">
         <div className="rounded-xl surface-soft p-6">
-          <div className="flex items-center gap-3">
-            <div className={cn('h-3 w-3 rounded-full', isOnline ? 'bg-success' : 'bg-danger')} />
-            <h1 className="font-display text-2xl font-bold text-foreground">{server.name}</h1>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className={cn('h-3 w-3 rounded-full', isOnline ? 'bg-success' : 'bg-danger')} />
+              <h1 className="font-display text-2xl font-bold text-foreground">{server.name}</h1>
+            </div>
+            {isSelfHosted && (
+              <button
+                type="button"
+                onClick={() => openRelaySession.mutate()}
+                disabled={!canOpenRelaySession || openRelaySession.isPending}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+                title={
+                  canOpenRelaySession
+                    ? 'Open this server through OmniLux relay'
+                    : 'Relay remote access requires entitlement, an online tunnel, and an upgraded runtime'
+                }
+              >
+                <ExternalLink className="h-4 w-4" />
+                {openRelaySession.isPending ? 'Opening relay...' : 'Open through relay'}
+              </button>
+            )}
           </div>
+          {openRelaySession.error && (
+            <p className="mt-3 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+              {openRelaySession.error instanceof Error
+                ? openRelaySession.error.message
+                : 'Unable to open relay session.'}
+            </p>
+          )}
           <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div>
               <span className="text-muted">Profile:</span>{' '}
@@ -220,11 +273,10 @@ export const ServerDetail = () => {
             </p>
             {deploymentProfile === 'self-hosted' ? (
               <p className="mt-2 text-sm text-muted">
-                OmniLux Cloud treats relay state as a cloud-continuity and diagnostics signal for this
-                release. Users can still reach their own server directly on their local network, VPN, or
-                user-owned reverse proxy. Browser remote streaming over OmniLux relay should stay hidden
-                until the relay session client is enabled end to end. {accessProfile?.relayAccessPolicyDescription ??
-                  'Self-hosted relay access is governed by the cloud subscription policy once remote sessions are enabled.'}
+                OmniLux Cloud can open a relay browser session when this runtime reports HTTP session
+                bridging, the tunnel is online, and the current account is entitled. Local network, VPN,
+                and user-owned reverse-proxy access remain outside cloud billing. {accessProfile?.relayAccessPolicyDescription ??
+                  'Self-hosted relay access is governed by the cloud subscription policy.'}
               </p>
             ) : (
               <p className="mt-2 text-sm text-muted">

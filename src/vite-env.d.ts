@@ -3,6 +3,7 @@
 interface ImportMetaEnv {
   readonly VITE_MARKETING_SITE_URL?: string;
   readonly VITE_APP_SITE_URL?: string;
+  readonly VITE_RELAY_SITE_URL?: string;
   readonly VITE_SUPABASE_URL: string;
   readonly VITE_SUPABASE_ANON_KEY: string;
   readonly VITE_OAUTH_PROVIDERS?: string;
