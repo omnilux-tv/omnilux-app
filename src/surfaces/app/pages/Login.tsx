@@ -71,7 +71,7 @@ export const Login = () => {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
+              className="h-11 w-full rounded-xl border border-border bg-input px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
               placeholder="you@example.com"
             />
           </div>
@@ -87,13 +87,13 @@ export const Login = () => {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
+              className="h-11 w-full rounded-xl border border-border bg-input px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
               placeholder="Enter your password"
             />
           </div>
 
           <div className="flex justify-end">
-            <Link to="/forgot-password" className="text-xs text-accent hover:underline">
+            <Link to="/forgot-password" className="inline-flex min-h-11 items-center text-xs text-accent hover:underline">
               Forgot password?
             </Link>
           </div>
@@ -101,7 +101,7 @@ export const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-50"
+            className="min-h-11 w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
@@ -121,7 +121,7 @@ export const Login = () => {
                   key={provider}
                   type="button"
                   onClick={() => handleOAuth(provider)}
-                  className="rounded-lg border border-border py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface capitalize"
+                  className="min-h-11 rounded-xl border border-border px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface capitalize"
                 >
                   {provider}
                 </button>
@@ -132,7 +132,7 @@ export const Login = () => {
 
         <p className="mt-6 text-center text-sm text-muted">
           Need a cloud account?{' '}
-          <a href={registerHref} className="text-accent hover:underline">Register</a>
+          <a href={registerHref} className="inline-flex min-h-11 items-center text-accent hover:underline">Register</a>
         </p>
       </div>
     </div>

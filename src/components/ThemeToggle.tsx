@@ -37,7 +37,7 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
             aria-label={label}
             title={label}
             className={cn(
-              'inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors',
+              'inline-flex h-11 w-11 items-center justify-center rounded-full text-muted transition-colors lg:h-9 lg:w-9',
               active
                 ? 'bg-primary text-primary-foreground shadow-[0_10px_28px_rgba(20,36,87,0.18)]'
                 : 'hover:bg-card hover:text-foreground',

@@ -98,7 +98,7 @@ export const Register = () => {
               autoComplete="name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
+              className="h-11 w-full rounded-xl border border-border bg-input px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
               placeholder="Your name"
             />
           </div>
@@ -114,7 +114,7 @@ export const Register = () => {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
+              className="h-11 w-full rounded-xl border border-border bg-input px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
               placeholder="you@example.com"
             />
           </div>
@@ -131,7 +131,7 @@ export const Register = () => {
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
+              className="h-11 w-full rounded-xl border border-border bg-input px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
               placeholder="Min. 6 characters"
             />
             {password.length > 0 && (
@@ -149,20 +149,20 @@ export const Register = () => {
               type="checkbox"
               checked={tosAccepted}
               onChange={(e) => setTosAccepted(e.target.checked)}
-              className="mt-0.5 rounded border-border"
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-border"
             />
             <span>
               I agree to the{' '}
-              <a href={buildMarketingHref('/terms')} className="text-accent hover:underline">Terms of Service</a>
+              <a href={buildMarketingHref('/terms')} className="inline-flex min-h-11 items-center text-accent hover:underline">Terms of Service</a>
               {' '}and{' '}
-              <a href={buildMarketingHref('/privacy')} className="text-accent hover:underline">Privacy Policy</a>
+              <a href={buildMarketingHref('/privacy')} className="inline-flex min-h-11 items-center text-accent hover:underline">Privacy Policy</a>
             </span>
           </label>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-50"
+            className="min-h-11 w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-50"
           >
             {loading ? 'Creating account...' : 'Create account'}
           </button>
@@ -182,7 +182,7 @@ export const Register = () => {
                   key={provider}
                   type="button"
                   onClick={() => handleOAuth(provider)}
-                  className="rounded-lg border border-border py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface capitalize"
+                  className="min-h-11 rounded-xl border border-border px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface capitalize"
                 >
                   {provider}
                 </button>
@@ -193,7 +193,7 @@ export const Register = () => {
 
         <p className="mt-6 text-center text-sm text-muted">
           Already have a cloud account?{' '}
-          <a href={loginHref} className="text-accent hover:underline">Log in</a>
+          <a href={loginHref} className="inline-flex min-h-11 min-w-11 items-center justify-center text-accent hover:underline">Log in</a>
         </p>
       </div>
     </div>

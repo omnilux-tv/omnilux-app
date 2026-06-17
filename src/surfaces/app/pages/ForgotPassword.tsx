@@ -36,7 +36,7 @@ export const ForgotPassword = () => {
           <p className="mt-3 text-sm text-muted">
             If an account exists for {email}, we sent a password reset link.
           </p>
-          <a href={buildAppHref('/login')} className="mt-6 inline-block text-sm text-accent hover:underline">
+          <a href={buildAppHref('/login')} className="mt-6 inline-flex min-h-11 items-center justify-center text-sm text-accent hover:underline">
             Back to sign in
           </a>
         </div>
@@ -66,7 +66,7 @@ export const ForgotPassword = () => {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
+              className="h-11 w-full rounded-xl border border-border bg-input px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
               placeholder="you@example.com"
             />
           </div>
@@ -74,14 +74,14 @@ export const ForgotPassword = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-50"
+            className="min-h-11 w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-50"
           >
             {loading ? 'Sending...' : 'Send Reset Link'}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted">
-          <a href={buildAppHref('/login')} className="text-accent hover:underline">
+          <a href={buildAppHref('/login')} className="inline-flex min-h-11 items-center justify-center text-accent hover:underline">
             Back to sign in
           </a>
         </p>
