@@ -1,6 +1,14 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('account smoke', () => {
+  test('root route enters the account flow instead of rendering not found', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.waitForURL((url) => url.pathname === '/login' && url.searchParams.get('redirect') === '/dashboard');
+
+    await expect(page.getByRole('heading', { name: 'Sign in to your OmniLux account' })).toBeVisible();
+    await expect(page.getByText('Error 404')).toHaveCount(0);
+  });
+
   test('login and register entry points render the hosted auth shell', async ({ page }) => {
     await page.goto('/login', { waitUntil: 'networkidle' });
     await expect(page.getByRole('heading', { name: 'Sign in to your OmniLux account' })).toBeVisible();
