@@ -21,6 +21,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Checkout shared packages
+        uses: actions/checkout@v5
+        with:
+          repository: omnilux-tv/omnilux-packages
+          path: shared/omnilux-packages
+          token: ${{ secrets.OMNILUX_PACKAGES_CHECKOUT_TOKEN || github.token }}
+
+      - name: Link shared packages
+        run: ln -sfn "$GITHUB_WORKSPACE/shared/omnilux-packages" "$GITHUB_WORKSPACE/../omnilux-packages"
+
       - uses: actions/setup-node@v5
         with:
           node-version: 22

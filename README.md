@@ -86,6 +86,7 @@ The canonical edge-consumed app artifact is the published OCI image `ghcr.io/omn
 - local build: `pnpm build`
 - canonical artifact build: `pnpm build:artifact`
 - canonical container build input: `Dockerfile`
+- local container build: `docker build --build-context omnilux-packages=../omnilux-packages -t omnilux-app:local .`
 
 ## Product rules
 
