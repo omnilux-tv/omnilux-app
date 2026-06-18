@@ -4,7 +4,10 @@ RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 
 WORKDIR /app
 
+COPY --from=omnilux-packages package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json /omnilux-packages/
 COPY --from=omnilux-packages packages/types /omnilux-packages/packages/types
+RUN cd /omnilux-packages && pnpm install --frozen-lockfile && pnpm --filter @omnilux/types build
+
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 

@@ -39,6 +39,14 @@ jobs:
       - name: Enable pnpm
         run: corepack enable
 
+      - name: Install shared package dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: shared/omnilux-packages
+
+      - name: Build shared types
+        run: pnpm --filter @omnilux/types build
+        working-directory: shared/omnilux-packages
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
