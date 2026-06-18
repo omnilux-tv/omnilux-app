@@ -12,21 +12,10 @@ import {
 import { buildDocsHref, buildMarketingHref } from '@/lib/site-surface';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
-import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
-
-interface SubscriptionData {
-  id: string;
-  tier: string;
-  status: string;
-  current_period_end: string | null;
-  stripe_customer_id: string | null;
-  metadata?: {
-    billingInterval?: string | null;
-    stripeMetadata?: {
-      interval?: string | null;
-    };
-  } | null;
-}
+import {
+  getAccessProfileSubscriptionState,
+  useAccessProfile,
+} from '@/surfaces/app/lib/access-profile';
 
 interface FoundingMembershipData {
   id: string;
@@ -45,27 +34,17 @@ const tierNames: Record<string, string> = {
 
 export const Subscription = () => {
   const { user } = useAuth();
-  const { data: accessProfile } = useAccessProfile();
+  const {
+    data: accessProfile,
+    error: accessProfileError,
+    isLoading: isAccessProfileLoading,
+  } = useAccessProfile();
   const [billingError, setBillingError] = useState<string | null>(null);
   const [checkoutTier, setCheckoutTier] = useState<string | null>(null);
   const [portalAction, setPortalAction] = useState<'manage' | 'cancel' | null>(null);
   const [billingInterval, setBillingInterval] = useState<CloudBillingInterval>('monthly');
   const [foundingCheckoutPending, setFoundingCheckoutPending] = useState(false);
   const autoCheckoutHandledRef = useRef(false);
-
-  const { data: subscription, error, isLoading } = useQuery({
-    queryKey: ['subscription', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user!.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data as SubscriptionData | null;
-    },
-    enabled: !!user,
-  });
 
   const {
     data: foundingMembership,
@@ -85,13 +64,11 @@ export const Subscription = () => {
     enabled: !!user,
   });
 
-  const currentTier = subscription?.tier ?? 'free';
+  const subscriptionState = getAccessProfileSubscriptionState(accessProfile);
+  const currentTier = subscriptionState.tier;
   const hasFoundingMembership = foundingMembership?.status === 'paid';
-  const billingPortalAvailable = Boolean(subscription?.stripe_customer_id);
-
-  const currentBillingInterval = subscription?.metadata?.billingInterval
-    ?? subscription?.metadata?.stripeMetadata?.interval
-    ?? null;
+  const billingPortalAvailable = subscriptionState.billingPortalAvailable;
+  const currentBillingInterval = subscriptionState.billingInterval;
   const checkoutState = useMemo(() => {
     if (typeof window === 'undefined') return null;
     return new URLSearchParams(window.location.search).get('checkout');
@@ -285,7 +262,7 @@ export const Subscription = () => {
           </div>
         ) : null}
 
-        {isLoading ? (
+        {isAccessProfileLoading ? (
           <div className="h-32 animate-pulse rounded-xl bg-surface" />
         ) : (
           <div className="rounded-xl surface-soft p-6">
@@ -295,24 +272,24 @@ export const Subscription = () => {
                 <h2 className="text-lg font-bold text-foreground">
                   {tierNames[currentTier] ?? currentTier} Plan
                 </h2>
-                {subscription?.status && (
-                  <p className="text-sm text-muted capitalize">{subscription.status}</p>
+                {subscriptionState.status && (
+                  <p className="text-sm text-muted capitalize">{subscriptionState.status}</p>
                 )}
               </div>
             </div>
 
-            {error ? (
+            {accessProfileError ? (
               <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm text-muted">
                 Live subscription data could not be loaded right now. The billing actions below stay available, but
                 the plan details on this page might be temporarily stale.
               </div>
             ) : null}
 
-            {subscription?.current_period_end && (
+            {subscriptionState.currentPeriodEnd && (
               <p className="mt-3 text-sm text-muted">
-                {subscription.status === 'canceled'
-                  ? `Access continues until ${new Date(subscription.current_period_end).toLocaleDateString()}`
-                  : `Renews on ${new Date(subscription.current_period_end).toLocaleDateString()}`}
+                {subscriptionState.status === 'canceled'
+                  ? `Access continues until ${new Date(subscriptionState.currentPeriodEnd).toLocaleDateString()}`
+                  : `Renews on ${new Date(subscriptionState.currentPeriodEnd).toLocaleDateString()}`}
               </p>
             )}
 
@@ -333,7 +310,7 @@ export const Subscription = () => {
                   <ExternalLink className="h-3.5 w-3.5" />
                   {portalAction === 'manage' ? 'Opening Billing Portal...' : 'Manage Billing'}
                 </button>
-                {subscription?.status && subscription.status !== 'canceled' && (
+                {subscriptionState.status && subscriptionState.status !== 'canceled' && (
                   <button
                     type="button"
                     onClick={() => void openBillingPortal('cancel')}

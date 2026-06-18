@@ -7,6 +7,7 @@ import type {
   RelayAccessPolicy,
 } from '@/surfaces/app/lib/platform-policy';
 import type { RelayConditionDetail, RelayConditionState } from '@/surfaces/app/lib/relay-condition';
+import type { LaunchEntitlementContract } from '@/surfaces/app/lib/access-profile';
 
 export interface CustomerOverview {
   profile: {
@@ -18,6 +19,8 @@ export interface CustomerOverview {
     managedMediaEntitled: boolean;
     hasPaidCloudPlan: boolean;
     relayRemoteAccessEntitled: boolean;
+    launchEntitlementContract: LaunchEntitlementContract | null;
+    billingReconciliation: unknown;
     subscription: {
       tier: string;
       status: string;

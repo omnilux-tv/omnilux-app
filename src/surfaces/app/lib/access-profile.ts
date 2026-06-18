@@ -1,6 +1,44 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
+import type { CloudBillingInterval } from '@/lib/cloud-plans';
+
+export interface AccessProfileSubscription {
+  tier: string;
+  status: string;
+  currentPeriodEnd: string | null;
+  updatedAt: string;
+}
+
+export interface LaunchEntitlementContractSubscription {
+  tier: string;
+  billingState: string;
+  planState: string;
+  billingInterval: CloudBillingInterval | 'unknown' | null;
+  currentPeriodEnd: string | null;
+  updatedAt: string | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export interface LaunchEntitlementContract {
+  version: string;
+  subscription: LaunchEntitlementContractSubscription;
+  entitlements?: Record<string, unknown>;
+  manualStates?: Record<string, unknown>;
+  policies?: Record<string, unknown>;
+  tierEligibleForPaidPlan?: boolean;
+  matrix?: Record<string, unknown>;
+}
+
+export interface AccessProfileSubscriptionState {
+  tier: string;
+  status: string | null;
+  currentPeriodEnd: string | null;
+  billingInterval: CloudBillingInterval | null;
+  billingPortalAvailable: boolean;
+}
 
 export interface AccessProfile {
   id: string;
@@ -21,13 +59,29 @@ export interface AccessProfile {
   sessionIssuedAt: string | null;
   sessionExpiresAt: string | null;
   sessionAssuranceLevel: string | null;
-  subscription: {
-    tier: string;
-    status: string;
-    currentPeriodEnd: string | null;
-    updatedAt: string;
-  } | null;
+  launchEntitlementContract: LaunchEntitlementContract | null;
+  subscription: AccessProfileSubscription | null;
 }
+
+const normalizeBillingInterval = (value: unknown): CloudBillingInterval | null => (
+  value === 'monthly' || value === 'annual' ? value : null
+);
+
+export const getAccessProfileSubscriptionState = (
+  accessProfile: AccessProfile | null | undefined,
+): AccessProfileSubscriptionState => {
+  const contractSubscription = accessProfile?.launchEntitlementContract?.subscription ?? null;
+  const fallbackSubscription = accessProfile?.subscription ?? null;
+  const tier = contractSubscription?.tier ?? fallbackSubscription?.tier ?? 'free';
+
+  return {
+    tier,
+    status: contractSubscription?.billingState ?? fallbackSubscription?.status ?? null,
+    currentPeriodEnd: contractSubscription?.currentPeriodEnd ?? fallbackSubscription?.currentPeriodEnd ?? null,
+    billingInterval: normalizeBillingInterval(contractSubscription?.billingInterval),
+    billingPortalAvailable: Boolean(contractSubscription?.stripeCustomerId),
+  };
+};
 
 export const useAccessProfile = () => {
   const { user } = useAuth();
