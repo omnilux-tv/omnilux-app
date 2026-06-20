@@ -80,6 +80,17 @@ jobs:
             test -d /srv/assets
           '
 
+      - name: Verify branded API boundary
+        run: |
+          docker run --rm --entrypoint sh omnilux-app-verify:latest -lc '
+            set -eu
+            if grep -R -E "https://[a-z0-9-]+\\.supabase\\.co" /srv >/dev/null; then
+              echo "Browser artifact contains a raw Supabase project URL; use https://api.omnilux.tv instead." >&2
+              exit 1
+            fi
+            grep -R "https://api.omnilux.tv" /srv >/dev/null
+          '
+
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
