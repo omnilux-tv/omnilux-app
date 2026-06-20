@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { CreditCard, Puzzle, RadioTower, Server, ShieldCheck, Smartphone, User } from 'lucide-react';
+import { useEffect } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { buildDocsHref, buildOpsHref } from '@/lib/site-surface';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
@@ -59,6 +60,13 @@ export const Dashboard = () => {
         description: 'Open the separate operator workspace for support, policy, logs, and service health.',
       }
     : null;
+
+  useEffect(() => {
+    if (accessProfile?.isOperator) {
+      window.location.replace(buildOpsHref('/dashboard'));
+    }
+  }, [accessProfile?.isOperator]);
+
   const {
     data: customerOverview,
     isLoading: isCustomerOverviewLoading,
