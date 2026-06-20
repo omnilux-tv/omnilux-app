@@ -4,6 +4,7 @@ import {
   getCloudBillingPriceCents,
   paidCloudTierOrder,
   type CloudBillingInterval,
+  type CloudBillingPlanCopy,
   type PaidCloudTier,
 } from '@omnilux/types';
 
@@ -20,6 +21,17 @@ type PaidCloudPlan = {
 };
 
 export const annualDiscountPercent = cloudBillingAnnualDiscountPercent;
+export const lifetimePlan = {
+  tier: 'family',
+  name: 'Lifetime',
+  description: 'One-time OmniPass access with Family-level cloud entitlement while active.',
+  bullets: [
+    'Family-level cloud entitlement without recurring billing',
+    'Self-hosted relay entitlement through renewable runtime leases',
+    'Account-managed lifetime access separate from monthly subscriptions',
+  ],
+  priceCents: 49999,
+} as const satisfies CloudBillingPlanCopy & { tier: PaidCloudTier; priceCents: number };
 
 export const paidCloudPlans: readonly PaidCloudPlan[] = paidCloudTierOrder.map((tier) => ({
   tier,
@@ -38,5 +50,7 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 export const formatCloudPrice = (cents: number, interval: CloudBillingInterval) => (
   `${currencyFormatter.format(cents / 100)}/${interval === 'monthly' ? 'mo' : 'yr'}`
 );
+
+export const formatOneTimeCloudPrice = (cents: number) => `${currencyFormatter.format(cents / 100)} one-time`;
 
 export const getCloudPlanPriceCents = getCloudBillingPriceCents;

@@ -4,6 +4,8 @@ import { CreditCard, ExternalLink, Gem } from 'lucide-react';
 import {
   annualDiscountPercent,
   formatCloudPrice,
+  formatOneTimeCloudPrice,
+  lifetimePlan,
   paidCloudPlans,
   paidCloudTierOrder,
   type CloudBillingInterval,
@@ -44,6 +46,7 @@ export const Subscription = () => {
   const [portalAction, setPortalAction] = useState<'manage' | 'cancel' | null>(null);
   const [billingInterval, setBillingInterval] = useState<CloudBillingInterval>('monthly');
   const [foundingCheckoutPending, setFoundingCheckoutPending] = useState(false);
+  const [lifetimeCheckoutPending, setLifetimeCheckoutPending] = useState(false);
   const autoCheckoutHandledRef = useRef(false);
 
   const {
@@ -65,7 +68,10 @@ export const Subscription = () => {
   });
 
   const subscriptionState = getAccessProfileSubscriptionState(accessProfile);
+  const effectiveEntitlement = accessProfile?.launchEntitlementContract?.effectiveEntitlement ?? null;
   const currentTier = subscriptionState.tier;
+  const hasLifetimeMembership = effectiveEntitlement?.source === 'lifetime_purchase'
+    && effectiveEntitlement.paidCloudPlan;
   const hasFoundingMembership = foundingMembership?.status === 'paid';
   const billingPortalAvailable = subscriptionState.billingPortalAvailable;
   const currentBillingInterval = subscriptionState.billingInterval;
@@ -80,6 +86,10 @@ export const Subscription = () => {
   const foundingState = useMemo(() => {
     if (typeof window === 'undefined') return null;
     return new URLSearchParams(window.location.search).get('founding');
+  }, []);
+  const lifetimeState = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    return new URLSearchParams(window.location.search).get('lifetime');
   }, []);
 
   const startCheckout = async (
@@ -168,6 +178,28 @@ export const Subscription = () => {
     window.location.assign(url);
   };
 
+  const startLifetimeMembershipCheckout = async () => {
+    setBillingError(null);
+    setLifetimeCheckoutPending(true);
+
+    const { data, error } = await supabase.functions.invoke('create-lifetime-membership-session');
+
+    if (error) {
+      setLifetimeCheckoutPending(false);
+      setBillingError(error.message);
+      return;
+    }
+
+    const url = typeof data?.url === 'string' ? data.url : null;
+    if (!url) {
+      setLifetimeCheckoutPending(false);
+      setBillingError('Stripe checkout URL was not returned.');
+      return;
+    }
+
+    window.location.assign(url);
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined' || !user || autoCheckoutHandledRef.current) {
       return;
@@ -181,7 +213,7 @@ export const Subscription = () => {
     const isCloudTier = tier === 'personal' || tier === 'duo' || tier === 'family';
     const isBillingInterval = interval === 'monthly' || interval === 'annual';
 
-    if (intent !== 'founding-member' && !isCloudTier) {
+    if (intent !== 'founding-member' && intent !== 'lifetime-membership' && !isCloudTier) {
       return;
     }
 
@@ -193,12 +225,17 @@ export const Subscription = () => {
       return;
     }
 
+    if (intent === 'lifetime-membership') {
+      void startLifetimeMembershipCheckout();
+      return;
+    }
+
     if (isCloudTier) {
       const selectedInterval: CloudBillingInterval = isBillingInterval ? interval : 'monthly';
       setBillingInterval(selectedInterval);
       void startCheckout(tier, selectedInterval);
     }
-  }, [user, startFoundingMemberCheckout, startCheckout]);
+  }, [user, startFoundingMemberCheckout, startLifetimeMembershipCheckout, startCheckout]);
 
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
@@ -214,7 +251,7 @@ export const Subscription = () => {
               href={buildDocsHref('/guide/cloud-product-contract')}
               className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"
             >
-              Product contract
+              Cloud product guide
             </a>
             <a
               href={buildDocsHref('/guide/managed-media')}
@@ -256,6 +293,18 @@ export const Subscription = () => {
           </div>
         ) : null}
 
+        {lifetimeState === 'success' ? (
+          <div className="rounded-xl border border-success/30 bg-success/10 p-4 text-sm text-foreground">
+            Lifetime checkout completed. Your paid entitlement is syncing now.
+          </div>
+        ) : null}
+
+        {lifetimeState === 'canceled' ? (
+          <div className="rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-foreground">
+            Lifetime checkout was canceled before payment completed.
+          </div>
+        ) : null}
+
         {billingError ? (
           <div className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-foreground">
             {billingError}
@@ -273,7 +322,7 @@ export const Subscription = () => {
                   {tierNames[currentTier] ?? currentTier} Plan
                 </h2>
                 {subscriptionState.status && (
-                  <p className="text-sm text-muted capitalize">{subscriptionState.status}</p>
+                  <p className="text-sm text-muted capitalize">{subscriptionState.status.replaceAll('_', ' ')}</p>
                 )}
               </div>
             </div>
@@ -296,6 +345,12 @@ export const Subscription = () => {
             {currentBillingInterval ? (
               <p className="mt-2 text-sm text-muted capitalize">
                 {currentBillingInterval === 'annual' ? 'Annual billing' : 'Monthly billing'}
+              </p>
+            ) : null}
+
+            {effectiveEntitlement?.paidCloudPlan ? (
+              <p className="mt-2 text-sm text-muted">
+                Entitlement source: {effectiveEntitlement.source.replaceAll('_', ' ')}
               </p>
             ) : null}
 
@@ -376,8 +431,8 @@ export const Subscription = () => {
               </p>
               <p className="mt-3 text-xs text-muted">
                 {accessProfile?.hasPaidCloudPlan
-                  ? 'This account currently has an active or trialing paid cloud plan.'
-                  : 'This account does not currently have an active or trialing paid cloud plan.'}
+                  ? 'This account currently has an active paid cloud entitlement.'
+                  : 'This account does not currently have an active paid cloud entitlement.'}
               </p>
             </div>
             <p className="mt-4 text-xs text-muted">
@@ -409,6 +464,49 @@ export const Subscription = () => {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="rounded-xl surface-soft p-6">
+          <div className="flex items-center gap-3">
+            <Gem className="h-6 w-6 text-accent" />
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Lifetime Membership</h2>
+              <p className="text-sm text-muted">
+                {formatOneTimeCloudPrice(lifetimePlan.priceCents)} for Family-level cloud entitlement without
+                recurring billing.
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-4 text-sm leading-6 text-muted">
+            Lifetime membership is a product entitlement, not an investor path. The cloud keeps issuing finite runtime
+            leases while the entitlement remains active.
+          </p>
+
+          <ul className="mt-4 space-y-2">
+            {lifetimePlan.bullets.map((bullet) => (
+              <li key={bullet} className="flex gap-2 text-sm leading-6 text-muted">
+                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent" />
+                <span>{bullet}</span>
+              </li>
+            ))}
+          </ul>
+
+          {hasLifetimeMembership ? (
+            <p className="mt-4 text-sm text-muted">
+              Lifetime membership is active for this account.
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void startLifetimeMembershipCheckout()}
+              disabled={!user || lifetimeCheckoutPending}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Gem className="h-4 w-4" />
+              {lifetimeCheckoutPending ? 'Opening checkout...' : 'Buy lifetime membership'}
+            </button>
+          )}
         </div>
 
         <div className="rounded-xl surface-soft p-6">

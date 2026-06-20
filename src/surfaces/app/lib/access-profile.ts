@@ -25,6 +25,22 @@ export interface LaunchEntitlementContractSubscription {
 export interface LaunchEntitlementContract {
   version: string;
   subscription: LaunchEntitlementContractSubscription;
+  effectiveEntitlement?: {
+    paidCloudPlan: boolean;
+    source: string;
+    id: string | null;
+    tier: string;
+    planState: string;
+    status: string;
+    startsAt: string | null;
+    endsAt: string | null;
+    updatedAt: string | null;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    stripeCheckoutSessionId: string | null;
+    stripePaymentIntentId: string | null;
+    metadata?: Record<string, unknown>;
+  } | null;
   entitlements?: Record<string, unknown>;
   manualStates?: Record<string, unknown>;
   policies?: Record<string, unknown>;
@@ -71,13 +87,18 @@ export const getAccessProfileSubscriptionState = (
   accessProfile: AccessProfile | null | undefined,
 ): AccessProfileSubscriptionState => {
   const contractSubscription = accessProfile?.launchEntitlementContract?.subscription ?? null;
+  const effectiveEntitlement = accessProfile?.launchEntitlementContract?.effectiveEntitlement ?? null;
   const fallbackSubscription = accessProfile?.subscription ?? null;
-  const tier = contractSubscription?.tier ?? fallbackSubscription?.tier ?? 'free';
+  const tier = effectiveEntitlement?.paidCloudPlan
+    ? effectiveEntitlement.tier
+    : contractSubscription?.tier ?? fallbackSubscription?.tier ?? 'free';
 
   return {
     tier,
-    status: contractSubscription?.billingState ?? fallbackSubscription?.status ?? null,
-    currentPeriodEnd: contractSubscription?.currentPeriodEnd ?? fallbackSubscription?.currentPeriodEnd ?? null,
+    status: effectiveEntitlement?.paidCloudPlan
+      ? effectiveEntitlement.planState
+      : contractSubscription?.billingState ?? fallbackSubscription?.status ?? null,
+    currentPeriodEnd: effectiveEntitlement?.endsAt ?? contractSubscription?.currentPeriodEnd ?? fallbackSubscription?.currentPeriodEnd ?? null,
     billingInterval: normalizeBillingInterval(contractSubscription?.billingInterval),
     billingPortalAvailable: Boolean(contractSubscription?.stripeCustomerId),
   };
