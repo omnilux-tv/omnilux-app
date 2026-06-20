@@ -8,6 +8,8 @@ export { useAuth };
 
 const workosClientId = (import.meta.env.VITE_WORKOS_CLIENT_ID as string | undefined)?.trim() ?? '';
 const workosApiHostname = (import.meta.env.VITE_WORKOS_API_HOSTNAME as string | undefined)?.trim() ?? '';
+const workosDevMode =
+  ((import.meta.env.VITE_WORKOS_DEV_MODE as string | undefined)?.trim().toLowerCase() ?? '') === 'true';
 
 const hasWorkosConfig = workosClientId.length > 0;
 
@@ -286,6 +288,7 @@ export const AuthProvider = ({
     <AuthKitProvider
       clientId={workosClientId}
       apiHostname={workosApiHostname || undefined}
+      devMode={workosDevMode}
       redirectUri={buildAppHref('/auth/callback')}
       onRedirectCallback={({ state }) => {
         const returnTo = typeof state?.returnTo === 'string' ? state.returnTo : '/dashboard';

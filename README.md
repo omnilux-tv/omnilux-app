@@ -62,9 +62,13 @@ Required browser config:
 - `VITE_SUPABASE_ANON_KEY`
 - `VITE_WORKOS_CLIENT_ID`
 
+Required production browser config:
+
+- `VITE_WORKOS_API_HOSTNAME` — WorkOS custom authentication API hostname for production browser-cookie sessions
+
 Optional browser config:
 
-- `VITE_WORKOS_API_HOSTNAME` — optional WorkOS API hostname override for non-default environments
+- `VITE_WORKOS_DEV_MODE` — set to `true` only for local or sandbox AuthKit usage without a custom authentication API hostname
 - `VITE_MARKETING_SITE_URL`
 - `VITE_APP_SITE_URL`
 - `VITE_OPS_SITE_URL`
@@ -74,7 +78,7 @@ Optional browser config:
 - `VITE_SENTRY_DSN`
 - `VITE_WEB_VITALS_ENDPOINT`
 
-WorkOS AuthKit must allow the app origin and the callback URL `${VITE_APP_SITE_URL}/auth/callback`. Supabase remains required for Edge Functions and Postgres-backed control-plane data, but browser function calls send the WorkOS access token when `VITE_WORKOS_CLIENT_ID` is configured.
+WorkOS AuthKit must allow the app origin and the callback URL `${VITE_APP_SITE_URL}/auth/callback`. Production should use a WorkOS custom authentication API hostname through `VITE_WORKOS_API_HOSTNAME`; `VITE_WORKOS_DEV_MODE=true` is only for local or sandbox usage. Supabase remains required for Edge Functions and Postgres-backed control-plane data, but browser function calls send the WorkOS access token when `VITE_WORKOS_CLIENT_ID` is configured.
 
 ## Checks
 
