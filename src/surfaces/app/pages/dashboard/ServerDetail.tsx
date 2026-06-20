@@ -54,6 +54,30 @@ interface InviteRow {
   expires_at: string | null;
 }
 
+interface ServerDetailResponse {
+  server: ServerDetailData;
+  access: ServerAccessRow[];
+  invites: InviteRow[];
+}
+
+const relayFeatureLabels: Record<string, string> = {
+  http_relay: 'Remote browser session',
+  remote_access: 'Remote browser session',
+  web_session: 'Remote browser session',
+  websocket: 'Live relay tunnel',
+  health: 'Health reporting',
+};
+
+const formatRelayFeatureLabel = (key: string) => {
+  const normalized = key.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  return relayFeatureLabels[normalized] ??
+    normalized
+      .split('_')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+};
+
 export const ServerDetail = () => {
   const { serverId } = useParams({ from: '/dashboard/servers_/$serverId' });
   const queryClient = useQueryClient();
@@ -62,44 +86,20 @@ export const ServerDetail = () => {
   const [inviteMaxUses, setInviteMaxUses] = useState(5);
   const [copiedInvite, setCopiedInvite] = useState<string | null>(null);
 
-  const { data: server } = useQuery({
-    queryKey: ['server', serverId],
+  const { data: serverDetail } = useQuery({
+    queryKey: ['server-detail', serverId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('servers')
-        .select('id, name, deployment_profile, public_origin, relay_enabled, relay_status, relay_last_connected_at, relay_protocol_version, relay_region, relay_capabilities, version, last_seen_at')
-        .eq('id', serverId)
-        .single();
-      if (error) throw error;
-      return data as ServerDetailData;
-    },
-  });
-
-  const { data: access } = useQuery({
-    queryKey: ['server-access', serverId],
-    enabled: isSelfHostedDeploymentProfile(server?.deployment_profile),
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_server_access_members', {
-        p_server_id: serverId,
+      const { data, error } = await supabase.functions.invoke<ServerDetailResponse>('get-server-detail', {
+        body: { serverId },
       });
       if (error) throw error;
-      return data as ServerAccessRow[];
+      if (!data?.server) throw new Error('Server detail was not returned');
+      return data;
     },
   });
-
-  const { data: invites } = useQuery({
-    queryKey: ['server-invites', serverId],
-    enabled: isSelfHostedDeploymentProfile(server?.deployment_profile),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('server_invites')
-        .select('*')
-        .eq('server_id', serverId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as InviteRow[];
-    },
-  });
+  const server = serverDetail?.server;
+  const access = isSelfHostedDeploymentProfile(server?.deployment_profile) ? serverDetail?.access : undefined;
+  const invites = isSelfHostedDeploymentProfile(server?.deployment_profile) ? serverDetail?.invites : undefined;
 
   const createInvite = useMutation({
     mutationFn: async () => {
@@ -112,23 +112,27 @@ export const ServerDetail = () => {
       });
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['server-invites', serverId] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['server-detail', serverId] }),
   });
 
   const revokeInvite = useMutation({
     mutationFn: async (inviteId: string) => {
-      const { error } = await supabase.from('server_invites').delete().eq('id', inviteId);
+      const { error } = await supabase.functions.invoke('revoke-server-invite', {
+        body: { inviteId },
+      });
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['server-invites', serverId] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['server-detail', serverId] }),
   });
 
   const removeAccess = useMutation({
     mutationFn: async (accessId: string) => {
-      const { error } = await supabase.from('server_access').delete().eq('id', accessId);
+      const { error } = await supabase.functions.invoke('remove-server-access', {
+        body: { accessId },
+      });
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['server-access', serverId] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['server-detail', serverId] }),
   });
 
   const openRelaySession = useMutation({
@@ -199,7 +203,7 @@ export const ServerDetail = () => {
                 title={
                   canOpenRelaySession
                     ? 'Open this server through OmniLux relay'
-                    : 'Relay remote access requires entitlement, an online tunnel, and an upgraded runtime'
+                    : 'Relay remote access requires an eligible cloud plan, an online tunnel, and an upgraded runtime'
                 }
               >
                 <ExternalLink className="h-4 w-4" />
@@ -235,18 +239,11 @@ export const ServerDetail = () => {
                 )}
               />
               <span className="text-foreground">{getRelayConditionLabel(relayCondition)}</span>
-              <span className="text-xs text-muted">(raw: {server.relay_status})</span>
             </div>
             {server.relay_region && (
               <div>
                 <span className="text-muted">Relay region:</span>{' '}
                 <span className="text-foreground">{server.relay_region}</span>
-              </div>
-            )}
-            {server.relay_protocol_version !== null && (
-              <div>
-                <span className="text-muted">Relay protocol:</span>{' '}
-                <span className="text-foreground">v{server.relay_protocol_version}</span>
               </div>
             )}
             {server.relay_last_connected_at && (
@@ -265,7 +262,7 @@ export const ServerDetail = () => {
             )}
           </div>
           <div className="mt-4 rounded-lg bg-surface/50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <p className="text-xs font-semibold text-muted">
               Runtime model
             </p>
             <p className="mt-2 text-sm text-foreground">
@@ -273,29 +270,36 @@ export const ServerDetail = () => {
             </p>
             {deploymentProfile === 'self-hosted' ? (
               <p className="mt-2 text-sm text-muted">
-                OmniLux Cloud can open a relay browser session when this runtime reports HTTP session
-                bridging, the tunnel is online, and the current account is entitled. Local network, VPN,
-                and user-owned reverse-proxy access remain outside cloud billing. {accessProfile?.relayAccessPolicyDescription ??
-                  'Self-hosted relay access is governed by the cloud subscription policy.'}
+                OmniLux Cloud can open a remote browser session when this runtime is compatible, the tunnel is online,
+                and the current account has access. Local network, VPN, and user-owned reverse-proxy access remain
+                outside cloud billing. {accessProfile?.relayAccessPolicyDescription ??
+                  'Self-hosted remote access follows the cloud plan policy.'}
               </p>
             ) : (
               <p className="mt-2 text-sm text-muted">
-                This is OmniLux-managed media surfaced through the cloud console, not a customer-owned
+                This is OmniLux-managed media surfaced through the hosted account, not a customer-owned
                 self-hosted server. It is expected to be reachable through its OmniLux-managed public
                 origin instead of a user-owned LAN or reverse-proxy path. {accessProfile?.managedMediaPolicy === 'all-authenticated-users'
                   ? 'Managed media is currently included for all authenticated OmniLux Cloud accounts.'
-                  : 'Managed media is currently controlled through operator-managed per-profile overrides.'}
+                  : 'Managed media access is currently managed directly by OmniLux for this account.'}
               </p>
             )}
           </div>
           {server.relay_capabilities && Object.keys(server.relay_capabilities).length > 0 && (
             <div className="mt-4 rounded-lg bg-surface/50 p-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                Relay capabilities
+              <p className="mb-2 text-xs font-semibold text-muted">
+                Remote access features
               </p>
-              <pre className="overflow-x-auto text-xs text-foreground">
-                {JSON.stringify(server.relay_capabilities, null, 2)}
-              </pre>
+              <ul className="space-y-2 text-sm text-foreground">
+                {Object.entries(server.relay_capabilities).map(([key, value]) => (
+                  <li key={key} className="flex items-start justify-between gap-3 rounded-md bg-background/60 px-3 py-2">
+                    <span className="text-muted">{formatRelayFeatureLabel(key)}</span>
+                    <span className="text-right">
+                      {typeof value === 'boolean' ? (value ? 'Available' : 'Unavailable') : String(value)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
@@ -369,7 +373,7 @@ export const ServerDetail = () => {
                   className="inline-flex items-center gap-1 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
                 >
                   <Plus className="h-4 w-4" />
-                  Create Invite
+                  Create invite
                 </button>
               </div>
 
@@ -414,11 +418,11 @@ export const ServerDetail = () => {
           <div className="rounded-xl surface-soft p-6">
             <div className="mb-4 flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-accent" />
-              <h2 className="text-lg font-bold text-foreground">Access Model</h2>
+              <h2 className="text-lg font-bold text-foreground">Access model</h2>
             </div>
             <p className="text-sm text-muted">
-              Managed media access is granted by OmniLux Cloud product entitlement and shared app
-              identity, not by per-server invites or generic ownership rows.
+              Managed media access is granted by OmniLux Cloud product access and shared app
+              identity, not by per-server invites.
             </p>
           </div>
         )}

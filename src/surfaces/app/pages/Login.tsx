@@ -1,139 +1,47 @@
-import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from '@tanstack/react-router';
-import {
-  buildAuthCallbackUrl,
-  getConfiguredOAuthProviders,
-  getRedirectPathFromSearch,
-  type OAuthProvider,
-} from '@/surfaces/app/lib/auth-flow';
-import { buildAppHref, buildSurfaceHrefForPath } from '@/lib/site-surface';
-import { supabase } from '@/lib/supabase';
-
-const configuredOAuthProviders = getConfiguredOAuthProviders();
+import { useEffect, useState } from 'react';
+import { getRedirectPathFromSearch } from '@/surfaces/app/lib/auth-flow';
+import { buildAppHref } from '@/lib/site-surface';
+import { useAuth } from '@/providers/AuthProvider';
 
 export const Login = () => {
-  const navigate = useNavigate();
+  const { signIn, provider } = useAuth();
+  const [error, setError] = useState<string | null>(null);
   const redirectPath =
     typeof window === 'undefined'
       ? '/dashboard'
       : getRedirectPathFromSearch(window.location.search, '/dashboard');
-  const registerHref = buildAppHref(`/register?redirect=${encodeURIComponent(redirectPath)}`);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
-    if (err) {
-      setError(err.message);
-      setLoading(false);
+  useEffect(() => {
+    if (provider !== 'workos') {
       return;
     }
 
-    if (redirectPath === '/dashboard') {
-      navigate({ to: '/dashboard' });
-      return;
-    }
-
-    window.location.assign(buildSurfaceHrefForPath(redirectPath));
-  };
-
-  const handleOAuth = async (provider: OAuthProvider) => {
-    await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: buildAuthCallbackUrl(redirectPath) },
+    void signIn({ returnTo: redirectPath }).catch((caughtError) => {
+      setError(caughtError instanceof Error ? caughtError.message : 'Sign-in could not be started.');
     });
-  };
+  }, [provider, redirectPath, signIn]);
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-16">
-      <div className="w-full max-w-sm">
-        <h1 className="mb-8 text-center font-display text-2xl font-bold text-foreground">Sign in to your OmniLux account</h1>
+      <div className="w-full max-w-sm text-center">
+        <h1 className="font-display text-2xl font-bold text-foreground">Sign in to OmniLux Cloud</h1>
+        <p className="mt-3 text-sm text-muted">
+          {provider === 'workos'
+            ? 'Redirecting to secure OmniLux Cloud sign-in.'
+            : 'Continuing through the account sign-in flow configured for this environment.'}
+        </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-lg bg-danger/10 p-3 text-sm text-danger">{error}</div>
-          )}
-
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-foreground">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-11 w-full rounded-xl border border-border bg-input px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-foreground">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="h-11 w-full rounded-xl border border-border bg-input px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus-ring"
-              placeholder="Enter your password"
-            />
-          </div>
-
-          <div className="flex justify-end">
-            <Link to="/forgot-password" className="inline-flex min-h-11 items-center text-xs text-accent hover:underline">
-              Forgot password?
-            </Link>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="min-h-11 w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-50"
-          >
-            {loading ? 'Signing in...' : 'Sign in'}
-          </button>
-        </form>
-
-        {configuredOAuthProviders.length > 0 && (
-          <>
-            <div className="my-6 flex items-center gap-3">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground">or continue with</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              {configuredOAuthProviders.map((provider) => (
-                <button
-                  key={provider}
-                  type="button"
-                  onClick={() => handleOAuth(provider)}
-                  className="min-h-11 rounded-xl border border-border px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface capitalize"
-                >
-                  {provider}
-                </button>
-              ))}
-            </div>
-          </>
+        {error ? (
+          <div className="mt-6 rounded-lg bg-danger/10 p-3 text-sm text-danger">{error}</div>
+        ) : (
+          <div className="mx-auto mt-6 h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-accent" />
         )}
 
-        <p className="mt-6 text-center text-sm text-muted">
-          Need a cloud account?{' '}
-          <a href={registerHref} className="inline-flex min-h-11 items-center text-accent hover:underline">Register</a>
-        </p>
+        {provider !== 'workos' ? (
+          <a href={buildAppHref('/dashboard')} className="mt-6 inline-flex min-h-11 items-center text-sm text-accent hover:underline">
+            Continue to dashboard
+          </a>
+        ) : null}
       </div>
     </div>
   );

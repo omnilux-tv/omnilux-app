@@ -65,6 +65,8 @@ jobs:
             VITE_OPS_SITE_URL=${{ vars.VITE_OPS_SITE_URL || 'https://ops.omnilux.tv' }}
             VITE_SUPABASE_URL=${{ vars.VITE_SUPABASE_URL || 'https://api.omnilux.tv' }}
             VITE_SUPABASE_BROWSER_VALUE=${{ vars.VITE_SUPABASE_ANON_KEY }}
+            VITE_WORKOS_CLIENT_ID=${{ vars.VITE_WORKOS_CLIENT_ID }}
+            VITE_WORKOS_API_HOSTNAME=${{ vars.VITE_WORKOS_API_HOSTNAME }}
             VITE_OAUTH_PROVIDERS=${{ vars.VITE_OAUTH_PROVIDERS }}
             VITE_SENTRY_DSN=${{ vars.VITE_SENTRY_DSN }}
             VITE_WEB_VITALS_ENDPOINT=${{ vars.VITE_WEB_VITALS_ENDPOINT }}
@@ -93,6 +95,8 @@ jobs:
             VITE_OPS_SITE_URL=${{ vars.VITE_OPS_SITE_URL || 'https://ops.omnilux.tv' }}
             VITE_SUPABASE_URL=${{ vars.VITE_SUPABASE_URL || 'https://api.omnilux.tv' }}
             VITE_SUPABASE_BROWSER_VALUE=${{ vars.VITE_SUPABASE_ANON_KEY }}
+            VITE_WORKOS_CLIENT_ID=${{ vars.VITE_WORKOS_CLIENT_ID }}
+            VITE_WORKOS_API_HOSTNAME=${{ vars.VITE_WORKOS_API_HOSTNAME }}
             VITE_OAUTH_PROVIDERS=${{ vars.VITE_OAUTH_PROVIDERS }}
             VITE_SENTRY_DSN=${{ vars.VITE_SENTRY_DSN }}
             VITE_WEB_VITALS_ENDPOINT=${{ vars.VITE_WEB_VITALS_ENDPOINT }}

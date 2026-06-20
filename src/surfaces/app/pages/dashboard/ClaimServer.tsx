@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/providers/AuthProvider';
 
 const CODE_LENGTH = 6;
 
@@ -16,6 +17,7 @@ interface ClaimServerResponse {
 export const ClaimServer = ({ initialCode }: ClaimServerProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { session } = useAuth();
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(''));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -69,8 +71,7 @@ export const ClaimServer = ({ initialCode }: ClaimServerProps) => {
     setError(null);
     setLoading(true);
 
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !sessionData.session) {
+    if (!session) {
       setError('Sign in again before attaching a server.');
       setLoading(false);
       return;
@@ -103,7 +104,7 @@ export const ClaimServer = ({ initialCode }: ClaimServerProps) => {
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-sm">
         <h1 className="mb-2 text-center font-display text-2xl font-bold text-foreground">
-          Attach a Self-Hosted Server
+          Attach a self-hosted server
         </h1>
         <p className="mb-8 text-center text-sm text-muted">
           Enter the 6-character code shown during OmniLux setup to attach that self-hosted server
@@ -125,7 +126,7 @@ export const ClaimServer = ({ initialCode }: ClaimServerProps) => {
                 value={char}
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
-                className="h-14 w-12 rounded-lg border border-border bg-input text-center text-xl font-bold text-foreground uppercase focus-ring"
+                className="h-14 w-12 rounded-lg border border-border bg-input text-center text-xl font-bold text-foreground focus-ring"
               />
             ))}
           </div>

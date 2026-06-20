@@ -32,6 +32,9 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.168.8
         version: 1.168.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@workos-inc/authkit-react':
+        specifier: ^0.16.1
+        version: 0.16.1(react@19.2.4)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -760,6 +763,14 @@ packages:
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+
+  '@workos-inc/authkit-js@0.20.0':
+    resolution: {integrity: sha512-8+sw8eH1+XCt3NDoIB2bKKbHvq1N7CVFJeyq1uVrUWG83GCIbNNrFwWrocVNfeQJyhKsVVuDpRcp03iSVsK5Gg==}
+
+  '@workos-inc/authkit-react@0.16.1':
+    resolution: {integrity: sha512-u8IJsAAyZFFM02+3JhvvNTopSNQoJk/hjOoBlmOkh6j+AnVYrR8hjzJn8j3m9Vi5tRE0il7mpsEDT9fI2xRNjg==}
+    peerDependencies:
+      react: '>=17'
 
   acorn@8.16.0:
     resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
@@ -1860,6 +1871,13 @@ snapshots:
       vite: 7.3.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(tsx@4.21.0)
     transitivePeerDependencies:
       - supports-color
+
+  '@workos-inc/authkit-js@0.20.0': {}
+
+  '@workos-inc/authkit-react@0.16.1(react@19.2.4)':
+    dependencies:
+      '@workos-inc/authkit-js': 0.20.0
+      react: 19.2.4
 
   acorn@8.16.0: {}
 

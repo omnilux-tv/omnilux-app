@@ -60,17 +60,21 @@ Required browser config:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+- `VITE_WORKOS_CLIENT_ID`
 
 Optional browser config:
 
+- `VITE_WORKOS_API_HOSTNAME` — optional WorkOS API hostname override for non-default environments
 - `VITE_MARKETING_SITE_URL`
 - `VITE_APP_SITE_URL`
 - `VITE_OPS_SITE_URL`
 - `VITE_DOCS_SITE_URL`
 - `VITE_RELAY_SITE_URL`
-- `VITE_OAUTH_PROVIDERS` — comma-separated OAuth buttons to show on login, for example `google,github`. Only set providers that are enabled in Supabase Auth; leave empty to hide the SSO section.
+- `VITE_OAUTH_PROVIDERS` — legacy Supabase Auth fallback only
 - `VITE_SENTRY_DSN`
 - `VITE_WEB_VITALS_ENDPOINT`
+
+WorkOS AuthKit must allow the app origin and the callback URL `${VITE_APP_SITE_URL}/auth/callback`. Supabase remains required for Edge Functions and Postgres-backed control-plane data, but browser function calls send the WorkOS access token when `VITE_WORKOS_CLIENT_ID` is configured.
 
 ## Checks
 

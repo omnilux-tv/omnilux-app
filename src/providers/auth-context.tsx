@@ -1,10 +1,33 @@
 import { createContext, useContext } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
+
+export interface CloudUser {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    display_name?: string | null;
+    full_name?: string | null;
+    avatar_url?: string | null;
+    picture?: string | null;
+    workos_user_id?: string | null;
+  };
+}
+
+export interface CloudSession {
+  access_token: string;
+  provider: 'workos' | 'supabase_auth';
+  user: CloudUser & {
+    last_sign_in_at?: string | null;
+  };
+}
 
 export interface AuthContextValue {
-  user: User | null;
-  session: Session | null;
+  user: CloudUser | null;
+  session: CloudSession | null;
   loading: boolean;
+  provider: 'workos' | 'supabase_auth' | 'unconfigured';
+  getAccessToken: () => Promise<string | null>;
+  signIn: (options?: { returnTo?: string; loginHint?: string }) => Promise<void>;
+  signUp: (options?: { returnTo?: string; loginHint?: string }) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -12,6 +35,10 @@ export const AuthContext = createContext<AuthContextValue>({
   user: null,
   session: null,
   loading: false,
+  provider: 'unconfigured',
+  getAccessToken: async () => null,
+  signIn: async () => {},
+  signUp: async () => {},
   signOut: async () => {},
 });
 

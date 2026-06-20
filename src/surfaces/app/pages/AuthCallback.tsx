@@ -5,9 +5,11 @@ import {
   normalizeHostedRedirectPath,
 } from '@/surfaces/app/lib/auth-flow';
 import { buildAppHref, buildSurfaceHrefForPath } from '@/lib/site-surface';
+import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
 
 export const AuthCallback = () => {
+  const { loading, provider, session } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -16,12 +18,22 @@ export const AuthCallback = () => {
     const completeAuthFlow = async () => {
       try {
         const currentUrl = new URL(window.location.href);
-        const code = currentUrl.searchParams.get('code');
         const next = normalizeHostedRedirectPath(
           'app',
           currentUrl.searchParams.get('next') ?? getDefaultAuthRedirect('app'),
         );
 
+        if (provider === 'workos') {
+          if (loading || !session) {
+            return;
+          }
+
+          clearPendingSignup();
+          window.location.replace(buildSurfaceHrefForPath(next));
+          return;
+        }
+
+        const code = currentUrl.searchParams.get('code');
         if (code) {
           const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
@@ -58,7 +70,7 @@ export const AuthCallback = () => {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [loading, provider, session]);
 
   if (!error) {
     return (

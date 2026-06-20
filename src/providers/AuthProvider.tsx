@@ -1,18 +1,153 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
-import { AuthContext, useAuth } from './auth-context';
+import { AuthKitProvider, useAuth as useWorkosAuth } from '@workos-inc/authkit-react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { buildAppHref } from '@/lib/site-surface';
+import { setCloudAccessTokenProvider } from '@/lib/supabase';
+import { AuthContext, useAuth, type AuthContextValue, type CloudSession, type CloudUser } from './auth-context';
 
 export { useAuth };
 
-export const AuthProvider = ({
+const workosClientId = (import.meta.env.VITE_WORKOS_CLIENT_ID as string | undefined)?.trim() ?? '';
+const workosApiHostname = (import.meta.env.VITE_WORKOS_API_HOSTNAME as string | undefined)?.trim() ?? '';
+
+const hasWorkosConfig = workosClientId.length > 0;
+
+const getReturnTo = () => {
+  if (typeof window === 'undefined') {
+    return '/dashboard';
+  }
+
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+};
+
+const getDisplayName = (user: {
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+}) => {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+  return fullName || user.email || 'OmniLux user';
+};
+
+const toCloudUser = (user: NonNullable<ReturnType<typeof useWorkosAuth>['user']>): CloudUser => {
+  const displayName = getDisplayName(user);
+
+  return {
+    id: user.id,
+    email: user.email,
+    user_metadata: {
+      display_name: displayName,
+      full_name: displayName,
+      avatar_url: user.profilePictureUrl,
+      picture: user.profilePictureUrl,
+      workos_user_id: user.id,
+    },
+  };
+};
+
+const WorkosAuthBridge = ({
   children,
-  enabled = true,
+  enabled,
 }: {
   children: ReactNode;
-  enabled?: boolean;
+  enabled: boolean;
 }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const {
+    isLoading,
+    user: workosUser,
+    getAccessToken: getWorkosAccessToken,
+    signIn: workosSignIn,
+    signUp: workosSignUp,
+    signOut: workosSignOut,
+  } = useWorkosAuth();
+  const [session, setSession] = useState<CloudSession | null>(null);
+  const user = useMemo(() => (workosUser ? toCloudUser(workosUser) : null), [workosUser]);
+
+  const getAccessToken = useCallback(async () => {
+    if (!workosUser) {
+      return null;
+    }
+
+    return await getWorkosAccessToken();
+  }, [getWorkosAccessToken, workosUser]);
+
+  useEffect(() => {
+    if (!enabled || !workosUser) {
+      setCloudAccessTokenProvider(null);
+      setSession(null);
+      return;
+    }
+
+    setCloudAccessTokenProvider(getAccessToken);
+
+    let active = true;
+    void getAccessToken().then((accessToken) => {
+      if (!active || !accessToken) {
+        return;
+      }
+
+      setSession({
+        access_token: accessToken,
+        provider: 'workos',
+        user: {
+          ...toCloudUser(workosUser),
+          last_sign_in_at: workosUser.lastSignInAt,
+        },
+      });
+    });
+
+    return () => {
+      active = false;
+      setCloudAccessTokenProvider(null);
+    };
+  }, [enabled, getAccessToken, workosUser]);
+
+  const signIn = useCallback<AuthContextValue['signIn']>(async (options) => {
+    await workosSignIn({
+      state: { returnTo: options?.returnTo ?? getReturnTo() },
+      loginHint: options?.loginHint,
+    });
+  }, [workosSignIn]);
+
+  const signUp = useCallback<AuthContextValue['signUp']>(async (options) => {
+    await workosSignUp({
+      state: { returnTo: options?.returnTo ?? getReturnTo() },
+      loginHint: options?.loginHint,
+    });
+  }, [workosSignUp]);
+
+  const signOut = useCallback(async () => {
+    setCloudAccessTokenProvider(null);
+    setSession(null);
+    await workosSignOut({ returnTo: buildAppHref('/login') });
+  }, [workosSignOut]);
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading: enabled ? isLoading : false,
+        provider: 'workos',
+        getAccessToken,
+        signIn,
+        signUp,
+        signOut,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+const LegacySupabaseAuthBridge = ({
+  children,
+  enabled,
+}: {
+  children: ReactNode;
+  enabled: boolean;
+}) => {
+  const [user, setUser] = useState<CloudUser | null>(null);
+  const [session, setSession] = useState<CloudSession | null>(null);
   const [loading, setLoading] = useState(enabled);
 
   useEffect(() => {
@@ -20,6 +155,7 @@ export const AuthProvider = ({
       setLoading(false);
       setUser(null);
       setSession(null);
+      setCloudAccessTokenProvider(null);
       return;
     }
 
@@ -36,8 +172,25 @@ export const AuthProvider = ({
           return;
         }
 
-        setSession(s);
-        setUser(s?.user ?? null);
+        setSession(s
+          ? {
+            access_token: s.access_token,
+            provider: 'supabase_auth',
+            user: {
+              id: s.user.id,
+              email: s.user.email,
+              user_metadata: s.user.user_metadata,
+              last_sign_in_at: s.user.last_sign_in_at,
+            },
+          }
+          : null);
+        setUser(s
+          ? {
+            id: s.user.id,
+            email: s.user.email,
+            user_metadata: s.user.user_metadata,
+          }
+          : null);
         setLoading(false);
       });
 
@@ -46,8 +199,25 @@ export const AuthProvider = ({
           return;
         }
 
-        setSession(s);
-        setUser(s?.user ?? null);
+        setSession(s
+          ? {
+            access_token: s.access_token,
+            provider: 'supabase_auth',
+            user: {
+              id: s.user.id,
+              email: s.user.email,
+              user_metadata: s.user.user_metadata,
+              last_sign_in_at: s.user.last_sign_in_at,
+            },
+          }
+          : null);
+        setUser(s
+          ? {
+            id: s.user.id,
+            email: s.user.email,
+            user_metadata: s.user.user_metadata,
+          }
+          : null);
         setLoading(false);
       });
 
@@ -57,19 +227,72 @@ export const AuthProvider = ({
     return () => {
       active = false;
       unsubscribe?.();
+      setCloudAccessTokenProvider(null);
     };
   }, [enabled]);
+
+  const getAccessToken = useCallback(async () => session?.access_token ?? null, [session?.access_token]);
+
+  const signIn = useCallback<AuthContextValue['signIn']>(async (options) => {
+    const { supabase } = await import('@/lib/supabase');
+    await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: { redirectTo: buildAppHref(`/auth/callback?next=${encodeURIComponent(options?.returnTo ?? '/dashboard')}`) },
+    });
+  }, []);
+
+  const signUp = useCallback<AuthContextValue['signUp']>(async (options) => {
+    await signIn(options);
+  }, [signIn]);
 
   const signOut = useCallback(async () => {
     const { supabase } = await import('@/lib/supabase');
     await supabase.auth.signOut();
+    setCloudAccessTokenProvider(null);
     setUser(null);
     setSession(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        provider: 'supabase_auth',
+        getAccessToken,
+        signIn,
+        signUp,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
+  );
+};
+
+export const AuthProvider = ({
+  children,
+  enabled = true,
+}: {
+  children: ReactNode;
+  enabled?: boolean;
+}) => {
+  if (!hasWorkosConfig) {
+    return <LegacySupabaseAuthBridge enabled={enabled}>{children}</LegacySupabaseAuthBridge>;
+  }
+
+  return (
+    <AuthKitProvider
+      clientId={workosClientId}
+      apiHostname={workosApiHostname || undefined}
+      redirectUri={buildAppHref('/auth/callback')}
+      onRedirectCallback={({ state }) => {
+        const returnTo = typeof state?.returnTo === 'string' ? state.returnTo : '/dashboard';
+        window.location.replace(returnTo);
+      }}
+    >
+      <WorkosAuthBridge enabled={enabled}>{children}</WorkosAuthBridge>
+    </AuthKitProvider>
   );
 };
