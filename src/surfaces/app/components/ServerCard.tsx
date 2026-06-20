@@ -65,7 +65,7 @@ export const ServerCard = ({
       <div className="min-w-0 flex-1">
         <h3 className="truncate font-semibold text-foreground">{name}</h3>
         <p className="text-xs text-muted">
-          {profileLabel} &middot; v{version} &middot; {recentlySeen ? 'Runtime recently seen' : 'Runtime not recently seen'}
+          {profileLabel} &middot; v{version} &middot; {recentlySeen ? 'Server recently seen' : 'Server not recently seen'}
         </p>
         <p className="mt-1 text-xs text-muted">
           Relay: <span className="text-foreground">{getRelayConditionLabel(condition)}</span>

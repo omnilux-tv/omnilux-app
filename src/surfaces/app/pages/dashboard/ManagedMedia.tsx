@@ -50,7 +50,7 @@ export const ManagedMedia = () => {
                   {isLoading
                     ? 'Checking managed media status for this account.'
                     : managedMediaAvailable
-                    ? 'This account can open the managed OmniLux media runtime right now.'
+                    ? 'This account can open OmniLux Media right now.'
                     : 'Managed media is not currently available to this account.'}
                 </p>
               </div>
@@ -141,7 +141,7 @@ export const ManagedMedia = () => {
               </dl>
             ) : (
               <p className="mt-4 text-sm text-muted">
-                The first-party managed runtime is not reporting status to OmniLux Cloud yet.
+                OmniLux Media is not reporting status to OmniLux Cloud yet.
               </p>
             )}
           </div>
@@ -152,7 +152,7 @@ export const ManagedMedia = () => {
             {
               icon: Waves,
               title: 'What it is',
-              body: 'Managed media is OmniLux-owned content and runtime infrastructure surfaced through your cloud account.',
+              body: 'Managed media is OmniLux-owned content and service infrastructure surfaced through your cloud account.',
             },
             {
               icon: ShieldCheck,
@@ -162,7 +162,7 @@ export const ManagedMedia = () => {
             {
               icon: Sparkles,
               title: 'Where to go next',
-              body: 'Use the customer dashboard for billing and claiming, then use the media runtime for first-party channels and curated experiences.',
+              body: 'Use the customer dashboard for billing and claiming, then open OmniLux Media for first-party channels and curated experiences.',
             },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} className="rounded-xl border border-border bg-background p-5">
@@ -176,7 +176,7 @@ export const ManagedMedia = () => {
         <div className="rounded-xl border border-border bg-background p-6">
           <h2 className="font-semibold text-foreground">Self-hosted servers still matter</h2>
           <p className="mt-2 text-sm text-muted">
-            Managed media gives every cloud account a first-party OmniLux experience, but your self-hosted runtime is still
+            Managed media gives every cloud account a first-party OmniLux experience, but your OmniLux server is still
             where your own libraries, direct access, and server-level control live.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">

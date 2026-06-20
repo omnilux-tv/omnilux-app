@@ -203,7 +203,7 @@ export const ServerDetail = () => {
                 title={
                   canOpenRelaySession
                     ? 'Open this server through OmniLux relay'
-                    : 'Relay remote access requires an eligible cloud plan, an online tunnel, and an upgraded runtime'
+                    : 'Relay remote access requires an eligible cloud plan, an online tunnel, and an upgraded OmniLux server'
                 }
               >
                 <ExternalLink className="h-4 w-4" />
@@ -263,14 +263,14 @@ export const ServerDetail = () => {
           </div>
           <div className="mt-4 rounded-lg bg-surface/50 p-4">
             <p className="text-xs font-semibold text-muted">
-              Runtime model
+              Server model
             </p>
             <p className="mt-2 text-sm text-foreground">
               {getRelayConditionSummary(relayCondition)}
             </p>
             {deploymentProfile === 'self-hosted' ? (
               <p className="mt-2 text-sm text-muted">
-                OmniLux Cloud can open a remote browser session when this runtime is compatible, the tunnel is online,
+                OmniLux Cloud can open a remote browser session when this server is compatible, the tunnel is online,
                 and the current account has access. Local network, VPN, and user-owned reverse-proxy access remain
                 outside cloud billing. {accessProfile?.relayAccessPolicyDescription ??
                   'Self-hosted remote access follows the cloud plan policy.'}

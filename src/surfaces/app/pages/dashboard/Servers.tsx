@@ -46,7 +46,7 @@ export const Servers = () => {
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground">Linked servers</h1>
             <p className="mt-1 text-sm text-muted">
-              The OmniLux runtimes connected to this account, with self-hosted servers and OmniLux Media kept clearly separated.
+              The OmniLux servers connected to this account, with self-hosted servers and OmniLux Media kept clearly separated.
             </p>
           </div>
           <Link
@@ -116,7 +116,7 @@ export const Servers = () => {
                       OmniLux Media
                     </h2>
                     <p className="mt-1 text-sm text-muted">
-                      First-party managed runtimes available through OmniLux Cloud access, not customer-owned server sharing.
+                      First-party managed media services available through OmniLux Cloud access, not customer-owned server sharing.
                     </p>
                     <div className="mt-3 rounded-lg bg-surface/60 p-4 text-sm text-muted">
                       <p className="font-medium text-foreground">Managed media access</p>

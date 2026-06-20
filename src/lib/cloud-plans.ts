@@ -27,7 +27,7 @@ export const lifetimePlan = {
   description: 'One-time OmniPass access with Family-level cloud benefits while active.',
   bullets: [
     'Family-level cloud access without recurring billing',
-    'Self-hosted relay access through renewable runtime leases',
+    'Self-hosted relay access through renewable server leases',
     'Account-managed lifetime access separate from monthly subscriptions',
   ],
   priceCents: 49999,

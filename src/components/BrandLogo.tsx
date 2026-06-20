@@ -15,8 +15,8 @@ type BrandLogoProps = {
 
 export const BrandMark = ({ className }: BrandMarkProps) => {
   const id = useId();
-  const prismId = `${id}-runtime-prism`;
-  const ringId = `${id}-runtime-ring`;
+  const prismId = `${id}-omnilux-home-prism`;
+  const ringId = `${id}-omnilux-home-ring`;
 
   return (
     <span
@@ -54,7 +54,7 @@ export const BrandLogo = ({
   className,
   markClassName,
   wordmarkClassName,
-  subtitle = 'Self-hosted media',
+  subtitle = 'OmniLux Home',
   showSubtitle = false,
 }: BrandLogoProps) => (
   <span className={cn('inline-flex min-w-0 items-center gap-3', className)}>

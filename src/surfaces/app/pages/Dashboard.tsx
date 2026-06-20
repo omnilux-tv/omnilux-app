@@ -83,7 +83,7 @@ export const Dashboard = () => {
             </p>
             <p className="mt-2 text-muted">
               {customerOverview?.platform.managedMediaIncidentMessage ||
-                'OmniLux has published a service notice for the first-party media runtime.'}
+                'OmniLux has published a service notice for OmniLux Media.'}
             </p>
           </div>
         ) : null}
@@ -140,7 +140,7 @@ export const Dashboard = () => {
                     value: String(customerOverview?.metrics.selfHostedServersTotal ?? 0),
                     detail:
                       (customerOverview?.metrics.selfHostedServersTotal ?? 0) > 0
-                        ? 'Your cloud account is already linked to one or more self-hosted runtimes.'
+                        ? 'Your cloud account is already linked to one or more OmniLux servers.'
                         : 'Claim a server when you want private libraries, cloud continuity, and relay access.',
                   },
                   {
@@ -148,7 +148,7 @@ export const Dashboard = () => {
                     value: customerOverview?.access.relayRemoteAccessEntitled ? 'Included' : 'Plan required',
                     detail:
                       customerOverview?.platform.relayAccessPolicyDescription ??
-                      'Relay sessions require an eligible account, an online tunnel, and a compatible runtime.',
+                      'Relay sessions require an eligible account, an online tunnel, and a compatible OmniLux server.',
                   },
                 ].map(({ title, value, detail }) => (
                   <div key={title} className="rounded-xl border border-border bg-background p-5">
@@ -178,7 +178,7 @@ export const Dashboard = () => {
                         label: 'Claim a self-hosted server when you want your own libraries',
                         body:
                           (customerOverview?.metrics.selfHostedServersTotal ?? 0) > 0
-                            ? 'At least one self-hosted runtime is already linked to this cloud account.'
+                            ? 'At least one OmniLux server is already linked to this cloud account.'
                             : 'Claiming a server adds your private libraries, cloud continuity, and relay access.',
                         actionHref: '/dashboard/claim',
                         actionLabel:

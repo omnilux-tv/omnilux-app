@@ -418,7 +418,7 @@ export const Subscription = () => {
             <p className="mt-2 text-sm text-muted">
               Self-hosted relay access follows the current platform rule, while local and user-owned direct
               access stay outside cloud billing. Browser remote sessions require an eligible account, an online
-              tunnel, and a compatible runtime.
+              tunnel, and a compatible OmniLux server.
             </p>
             <div className="mt-4 rounded-lg bg-surface/60 p-4">
               <p className="text-xs font-semibold text-muted">Self-hosted remote access</p>
@@ -455,7 +455,7 @@ export const Subscription = () => {
               },
               {
                 title: 'Paid when needed',
-                body: 'Self-hosted relay access and higher-tier cloud services around your private runtime.',
+                body: 'Self-hosted relay access and higher-tier cloud services around your private OmniLux server.',
               },
             ].map(({ title, body }) => (
               <div key={title} className="rounded-xl bg-surface/60 p-4">
@@ -479,7 +479,7 @@ export const Subscription = () => {
           </div>
 
           <p className="mt-4 text-sm leading-6 text-muted">
-            Lifetime membership is a product purchase, not an investor path. OmniLux keeps issuing time-limited runtime
+            Lifetime membership is a product purchase, not an investor path. OmniLux keeps issuing time-limited server
             access while the membership remains active.
           </p>
 
