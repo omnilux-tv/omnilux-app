@@ -24,10 +24,10 @@ export const annualDiscountPercent = cloudBillingAnnualDiscountPercent;
 export const lifetimePlan = {
   tier: 'family',
   name: 'Lifetime',
-  description: 'One-time OmniPass access with Family-level cloud entitlement while active.',
+  description: 'One-time OmniPass access with Family-level cloud benefits while active.',
   bullets: [
-    'Family-level cloud entitlement without recurring billing',
-    'Self-hosted relay entitlement through renewable runtime leases',
+    'Family-level cloud access without recurring billing',
+    'Self-hosted relay access through renewable runtime leases',
     'Account-managed lifetime access separate from monthly subscriptions',
   ],
   priceCents: 49999,

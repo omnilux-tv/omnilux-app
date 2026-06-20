@@ -66,7 +66,7 @@ export const buildRootHead = () => ({
     { title: 'OmniLux Account' },
     { charSet: 'utf-8' },
     { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
-    { name: 'theme-color', content: '#eef1ec' },
+    { name: 'theme-color', content: '#10181f' },
     { name: 'author', content: 'OmniLux' },
     {
       name: 'keywords',

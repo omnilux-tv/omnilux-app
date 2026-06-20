@@ -5,9 +5,9 @@ export const NotFound = () => (
   <div className="flex min-h-[70vh] items-center px-4 py-16 sm:px-6 lg:px-8">
     <div className="mx-auto grid w-full max-w-5xl gap-8 rounded-[2rem] border border-border/50 bg-card/35 p-8 backdrop-blur-sm lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:p-12">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">Error 404</p>
+        <p className="text-xs font-semibold text-accent">Page not found</p>
         <h1 className="mt-4 font-display text-4xl font-extrabold text-foreground sm:text-5xl">
-          The page you requested isn&apos;t part of the current OmniLux surface.
+          The page you requested isn&apos;t part of the OmniLux app.
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-7 text-muted">
           The route may have moved, the link may be outdated, or the path may never have existed. Use the main navigation
@@ -35,17 +35,17 @@ export const NotFound = () => (
         {[
           {
             title: 'Explore the product',
-            body: 'Review the feature direction, SDK positioning, and current product narrative.',
+            body: 'Return to the product overview, pricing, and download paths.',
             to: '/features',
           },
           {
             title: 'See access paths',
-            body: 'Read the current early-access, investor, and developer entry points.',
+            body: 'Compare account, plan, and download options from one clear starting point.',
             to: '/pricing',
           },
           {
-            title: 'Open the SDK page',
-            body: 'Inspect the plugin model, developer path, and partner entry points.',
+            title: 'Open the marketplace',
+            body: 'Explore trusted additions, plugin publishing, and partner opportunities.',
             to: '/marketplace',
           },
           {

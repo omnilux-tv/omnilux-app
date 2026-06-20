@@ -44,9 +44,9 @@ export const Servers = () => {
       <div className="mx-auto max-w-4xl">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">Cloud-Linked Servers</h1>
+            <h1 className="font-display text-2xl font-bold text-foreground">Linked servers</h1>
             <p className="mt-1 text-sm text-muted">
-              OmniLux runtimes visible to this account. Self-hosted servers and OmniLux-managed media follow different cloud access rules.
+              The OmniLux runtimes connected to this account, with self-hosted servers and OmniLux Media kept clearly separated.
             </p>
           </div>
           <Link
@@ -55,7 +55,7 @@ export const Servers = () => {
             className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
           >
             <Plus className="h-4 w-4" />
-            Claim a Server
+            Claim a server
           </Link>
         </div>
 
@@ -75,17 +75,17 @@ export const Servers = () => {
               {selfHostedServers.length > 0 ? (
                 <section className="space-y-3">
                   <div>
-                    <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted">
+                    <h2 className="text-sm font-semibold text-muted">
                       Self-hosted
                     </h2>
                     <p className="mt-1 text-sm text-muted">
                       Customer-owned OmniLux servers attached for relay, invites, and cloud-linked features.
                     </p>
                     <div className="mt-3 rounded-lg bg-surface/60 p-4 text-sm text-muted">
-                      <p className="font-medium text-foreground">Relay entitlement policy</p>
+                      <p className="font-medium text-foreground">Remote access policy</p>
                       <p className="mt-2">
                         {accessProfile?.relayAccessPolicyDescription ??
-                          'Relay entitlement for self-hosted servers requires an active OmniLux Cloud subscription for remote relay sessions.'}
+                          'Remote relay for self-hosted servers requires an active OmniLux Cloud plan.'}
                       </p>
                       <p className="mt-2 text-xs">
                         Direct LAN, VPN, and user-owned reverse-proxy access stay outside OmniLux cloud billing.
@@ -112,18 +112,18 @@ export const Servers = () => {
               {managedMediaServers.length > 0 ? (
                 <section className="space-y-3">
                   <div>
-                    <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted">
+                    <h2 className="text-sm font-semibold text-muted">
                       OmniLux Media
                     </h2>
                     <p className="mt-1 text-sm text-muted">
-                      First-party managed runtimes available through OmniLux Cloud entitlement, not customer-owned server sharing.
+                      First-party managed runtimes available through OmniLux Cloud access, not customer-owned server sharing.
                     </p>
                     <div className="mt-3 rounded-lg bg-surface/60 p-4 text-sm text-muted">
-                      <p className="font-medium text-foreground">Managed media entitlement</p>
+                      <p className="font-medium text-foreground">Managed media access</p>
                       <p className="mt-2">
                         {accessProfile?.managedMediaPolicy === 'all-authenticated-users'
                           ? 'Managed media is currently included for every authenticated OmniLux Cloud account.'
-                          : 'Managed media is currently controlled per profile through operator-managed overrides.'}
+                          : 'Managed media access is currently managed directly by OmniLux for this account.'}
                       </p>
                       <div className="mt-3">
                         <Link
@@ -165,7 +165,7 @@ export const Servers = () => {
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground"
               >
                 <Plus className="h-4 w-4" />
-                Claim a Server
+                Claim a server
               </Link>
             </div>
           )}

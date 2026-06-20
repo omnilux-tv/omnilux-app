@@ -21,7 +21,7 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
       role="group"
       aria-label="Theme"
       className={cn(
-        'inline-flex items-center gap-1 rounded-full border border-border bg-surface p-1 shadow-[0_10px_30px_rgba(20,36,87,0.08)] backdrop-blur-xl',
+        'inline-flex items-center gap-1 rounded-full border border-border bg-surface p-1 shadow-[0_10px_30px_rgba(19,32,43,0.08)] backdrop-blur-xl',
         className,
       )}
     >
@@ -39,7 +39,7 @@ export const ThemeToggle = ({ className }: { className?: string }) => {
             className={cn(
               'inline-flex h-11 w-11 items-center justify-center rounded-full text-muted transition-colors lg:h-9 lg:w-9',
               active
-                ? 'bg-primary text-primary-foreground shadow-[0_10px_28px_rgba(20,36,87,0.18)]'
+                ? 'bg-primary text-primary-foreground shadow-[0_10px_28px_rgba(47,107,94,0.2)]'
                 : 'hover:bg-card hover:text-foreground',
             )}
           >

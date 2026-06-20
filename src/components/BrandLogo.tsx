@@ -60,12 +60,12 @@ export const BrandLogo = ({
   <span className={cn('inline-flex min-w-0 items-center gap-3', className)}>
     <BrandMark className={cn('h-11 w-11 shrink-0', markClassName)} />
     <span className="flex min-w-0 flex-col">
-      <span className={cn('font-display text-lg font-black tracking-[-0.04em] text-foreground', wordmarkClassName)}>
+      <span className={cn('font-display text-lg font-black text-foreground', wordmarkClassName)}>
         <span>Omni</span>
         <span className="text-accent">Lux</span>
       </span>
       {showSubtitle ? (
-        <span className="truncate text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">{subtitle}</span>
+        <span className="truncate text-[11px] font-semibold text-muted">{subtitle}</span>
       ) : null}
     </span>
   </span>

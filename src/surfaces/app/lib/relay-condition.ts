@@ -53,7 +53,7 @@ export function getRelayConditionLabel(condition: RelayConditionState): string {
     case 'unlinked':
       return 'Unlinked';
     case 'not_entitled':
-      return 'Not entitled';
+      return 'Plan required';
     case 'connecting':
       return 'Connecting';
     case 'ready':
@@ -93,7 +93,7 @@ export function getRelayConditionSummary(condition: RelayConditionState): string
     case 'unlinked':
       return 'This server is not linked to OmniLux Cloud.';
     case 'not_entitled':
-      return 'The current account is not entitled to relay service.';
+      return 'The current account needs an eligible cloud plan before relay service can be used.';
     case 'connecting':
       return 'Relay tunnel is being established.';
     case 'ready':

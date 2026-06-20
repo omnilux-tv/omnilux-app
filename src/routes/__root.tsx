@@ -1,8 +1,8 @@
 import {
   HeadContent,
   Outlet,
-  ScrollRestoration,
   createRootRoute,
+  useRouterState,
 } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 import { AuthProvider } from '@/providers/AuthProvider';
@@ -17,17 +17,23 @@ export const Route = createRootRoute({
 });
 
 function RootLayout() {
-  const hasNavigated = useRef(false);
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const previousPathRef = useRef<string | null>(null);
   const mainRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!hasNavigated.current) {
-      hasNavigated.current = true;
+    if (previousPathRef.current === null) {
+      previousPathRef.current = pathname;
       return;
     }
 
-    mainRef.current?.focus();
-  });
+    if (previousPathRef.current === pathname) {
+      return;
+    }
+
+    previousPathRef.current = pathname;
+    mainRef.current?.focus({ preventScroll: true });
+  }, [pathname]);
 
   return (
     <AuthProvider enabled>
@@ -42,7 +48,6 @@ function RootLayout() {
       <main id="main-content" ref={mainRef} className="flex-1" tabIndex={-1}>
         <Outlet />
       </main>
-      <ScrollRestoration />
     </AuthProvider>
   );
 }

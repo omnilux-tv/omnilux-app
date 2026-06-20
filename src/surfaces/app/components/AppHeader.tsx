@@ -19,11 +19,11 @@ export const AppHeader = () => {
   const isAuthenticated = Boolean(user);
   const normalizedPathname = pathname === '/dashboard/' ? '/dashboard' : pathname;
   const sectionItemClassName =
-    'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-semibold tracking-[0.01em] transition-all';
+    'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-semibold transition-all';
   const inactiveSectionItemClassName =
     'border-border bg-surface text-foreground/72 hover:border-border-hover hover:bg-card-hover hover:text-foreground';
   const activeSectionItemClassName =
-    'border-transparent bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(255,225,63,0.14)]';
+    'border-transparent bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(47,107,94,0.18)]';
   const utilityItemClassName =
     'inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground/74 transition-all hover:border-border-hover hover:bg-card-hover hover:text-foreground';
   const iconUtilityItemClassName =
@@ -69,11 +69,11 @@ export const AppHeader = () => {
                 </Link>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-display text-lg font-black tracking-[-0.02em] text-foreground">
+                    <span className="font-display text-lg font-black text-foreground">
                       OmniLux Cloud
                     </span>
-                    <span className="rounded-full border border-border bg-surface px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">
-                      app
+                    <span className="rounded-full border border-border bg-surface px-2.5 py-1 text-[10px] font-semibold text-muted">
+                      Account hub
                     </span>
                   </div>
                 </div>
@@ -122,7 +122,7 @@ export const AppHeader = () => {
                       href={buildAppHref('/register')}
                       className={cn(
                         utilityItemClassName,
-                        'bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(255,225,63,0.14)] hover:opacity-95',
+                        'bg-primary text-primary-foreground shadow-[0_16px_40px_rgba(47,107,94,0.18)] hover:opacity-95',
                       )}
                     >
                       Create account

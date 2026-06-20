@@ -32,6 +32,8 @@ export default defineConfig({
           VITE_MARKETING_SITE_URL: process.env.VITE_MARKETING_SITE_URL ?? 'http://127.0.0.1:4174',
           VITE_APP_SITE_URL: process.env.VITE_APP_SITE_URL ?? baseURL,
           VITE_OPS_SITE_URL: process.env.VITE_OPS_SITE_URL ?? 'http://127.0.0.1:4176',
+          VITE_WORKOS_CLIENT_ID: process.env.PLAYWRIGHT_WORKOS_CLIENT_ID ?? '',
+          VITE_WORKOS_API_HOSTNAME: process.env.PLAYWRIGHT_WORKOS_API_HOSTNAME ?? '',
           CI: process.env.CI ?? '1',
         },
       },

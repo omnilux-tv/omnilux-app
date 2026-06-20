@@ -55,9 +55,9 @@ export const SubmitPlugin = () => {
     return (
       <div className="flex min-h-[50vh] items-center justify-center px-4">
         <div className="text-center">
-          <h1 className="font-display text-2xl font-bold text-foreground">Plugin Submitted!</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">Plugin submitted</h1>
           <p className="mt-2 text-sm text-muted">
-            Your plugin is pending review. We&apos;ll notify you when it&apos;s approved.
+            Your listing is in review. We&apos;ll notify you when it is ready for the ecosystem.
           </p>
         </div>
       </div>
@@ -67,10 +67,10 @@ export const SubmitPlugin = () => {
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl">
-        <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted">Developer Area</p>
-        <h1 className="mb-3 mt-2 font-display text-2xl font-bold text-foreground">Submit a Plugin</h1>
+        <p className="text-sm font-medium text-muted">Ecosystem</p>
+        <h1 className="mb-3 mt-2 font-display text-2xl font-bold text-foreground">Submit a plugin</h1>
         <p className="mb-8 text-sm text-muted">
-          Plugin publishing is part of your cloud account tooling, but it stays outside the primary account navigation so the main app remains focused on servers, billing, and cloud continuity.
+          Publish trusted additions from the same account that manages billing, servers, and cloud continuity.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4 rounded-xl surface-soft p-6">
@@ -90,9 +90,9 @@ export const SubmitPlugin = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground font-mono focus-ring"
-              placeholder="@you/plugin-example"
+              placeholder="@studio/lastfm-sync"
             />
-            <p className="mt-1 text-xs text-muted">Use the canonical package identity that OmniLux should install, for example `@you/plugin-example`.</p>
+            <p className="mt-1 text-xs text-muted">Use the package identity customers will recognize, for example `@studio/lastfm-sync`.</p>
           </div>
 
           <div>
@@ -106,7 +106,7 @@ export const SubmitPlugin = () => {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground focus-ring"
-              placeholder="My Plugin"
+              placeholder="Last.fm Sync"
             />
           </div>
 
@@ -121,7 +121,7 @@ export const SubmitPlugin = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground focus-ring"
-              placeholder="Describe what your plugin does..."
+              placeholder="Describe the customer benefit, supported services, and setup requirements."
             />
           </div>
 
@@ -152,7 +152,7 @@ export const SubmitPlugin = () => {
               value={githubUrl}
               onChange={(e) => setGithubUrl(e.target.value)}
               className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground focus-ring"
-              placeholder="https://github.com/you/plugin"
+              placeholder="https://github.com/studio/lastfm-sync"
             />
           </div>
 
@@ -161,7 +161,7 @@ export const SubmitPlugin = () => {
             disabled={loading}
             className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
           >
-            {loading ? 'Submitting...' : 'Submit for Review'}
+            {loading ? 'Submitting...' : 'Submit for review'}
           </button>
         </form>
       </div>

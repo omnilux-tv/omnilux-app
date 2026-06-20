@@ -28,7 +28,7 @@ const dashboardLinks = [
     to: '/dashboard/subscription',
     icon: CreditCard,
     label: 'Billing',
-    description: 'Plan status for relay entitlement, cloud continuity, and paid cloud features.',
+    description: 'Plan status for remote access, cloud continuity, and paid cloud features.',
   },
   {
     to: '/dashboard/account',
@@ -42,7 +42,7 @@ const secondaryLinks = [
   {
     to: '/dashboard/submit-plugin',
     icon: Puzzle,
-    label: 'Developer Tools',
+    label: 'Plugin publishing',
     description: 'Submit marketplace plugins and manage account-linked publishing metadata.',
   },
 ] as const;
@@ -68,7 +68,7 @@ export const Dashboard = () => {
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
-        <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted">Account</p>
+        <p className="text-sm font-medium text-muted">Account</p>
         <h1 className="mt-2 font-display text-3xl font-bold text-foreground">Overview</h1>
         <p className="mt-2 max-w-2xl text-muted">
           {displayName}, this is your OmniLux account hub. Your libraries and playback stay on your server, while this space handles identity, billing, and connected experiences around it.
@@ -77,13 +77,13 @@ export const Dashboard = () => {
         {customerOverview?.platform.managedMediaOperatingMode !== 'normal' ||
         customerOverview?.platform.managedMediaIncidentMessage ? (
           <div className="mt-8 rounded-xl border border-warning/30 bg-warning/10 p-5 text-sm text-foreground">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-warning">Managed Media Status</p>
+            <p className="text-xs font-semibold text-warning">Managed media status</p>
             <p className="mt-2 text-lg font-semibold">
               {customerOverview?.platform.managedMediaOperatingModeLabel ?? 'Managed media status updated'}
             </p>
             <p className="mt-2 text-muted">
               {customerOverview?.platform.managedMediaIncidentMessage ||
-                'Operators have published a non-normal operating state for the first-party media runtime.'}
+                'OmniLux has published a service notice for the first-party media runtime.'}
             </p>
           </div>
         ) : null}
@@ -100,10 +100,10 @@ export const Dashboard = () => {
 
         <section className="mt-12">
           <div className="max-w-2xl">
-            <h2 className="font-display text-xl font-bold text-foreground">Core Journey</h2>
+            <h2 className="font-display text-xl font-bold text-foreground">Core journey</h2>
             <p className="mt-2 text-sm text-muted">
-              The hosted app has one job: make the cloud side of OmniLux obvious. Use this checklist to move from
-              account creation to first-party media, then into self-hosted and relay workflows only when you need them.
+              Move from account setup to managed media, then add self-hosted servers and relay access when they improve
+              the way your household uses OmniLux.
             </p>
           </div>
 
@@ -145,14 +145,14 @@ export const Dashboard = () => {
                   },
                   {
                     title: 'Remote relay',
-                    value: customerOverview?.access.relayRemoteAccessEntitled ? 'Entitled' : 'Policy-gated',
+                    value: customerOverview?.access.relayRemoteAccessEntitled ? 'Included' : 'Plan required',
                     detail:
                       customerOverview?.platform.relayAccessPolicyDescription ??
-                      'Relay sessions require an entitled account, an online tunnel, and a runtime that supports HTTP session bridging.',
+                      'Relay sessions require an eligible account, an online tunnel, and a compatible runtime.',
                   },
                 ].map(({ title, value, detail }) => (
                   <div key={title} className="rounded-xl border border-border bg-background p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">{title}</p>
+                    <p className="text-xs font-semibold text-muted">{title}</p>
                     <p className="mt-3 font-display text-3xl font-bold text-foreground">{value}</p>
                     <p className="mt-3 text-sm text-muted">{detail}</p>
                   </div>
@@ -169,7 +169,7 @@ export const Dashboard = () => {
                         label: 'Use managed media from your cloud account',
                         body: customerOverview?.access.managedMediaEntitled
                           ? 'You can open OmniLux Media immediately from the hosted app.'
-                          : 'This account is not currently entitled to managed media.',
+                          : 'Managed media is not currently available to this account.',
                         actionHref: '/dashboard/media',
                         actionLabel: 'Open media',
                       },
@@ -190,17 +190,17 @@ export const Dashboard = () => {
                         complete: customerOverview?.access.relayRemoteAccessEntitled ?? false,
                         label: 'Upgrade only when a cloud feature needs it',
                         body: customerOverview?.access.relayRemoteAccessEntitled
-                          ? 'This account already satisfies the current relay entitlement rule.'
+                          ? 'This account already has remote relay access.'
                           : customerOverview?.platform.relayAccessPolicyDescription ??
-                            'Relay entitlement for self-hosted servers is currently policy-gated.',
+                            'Remote relay for self-hosted servers requires an eligible cloud plan.',
                         actionHref: '/dashboard/subscription',
                         actionLabel: 'Review billing',
                       },
                       {
                         complete: false,
-                        label: 'Bring devices and native clients in after the web flow feels solid',
+                        label: 'Add companion devices when your account is ready',
                         body:
-                          'Use the client-readiness contract before pushing Android, iOS, TV, or other companion surfaces forward.',
+                          'Use the client-readiness guide before adding Android, iOS, TV, or other companion surfaces.',
                         actionHref: buildDocsHref('/guide/client-readiness'),
                         actionLabel: 'Read client readiness',
                         external: true,
@@ -211,7 +211,7 @@ export const Dashboard = () => {
                           <div className="max-w-2xl">
                             <p className="text-sm font-semibold text-foreground">
                               {label}{' '}
-                              <span className="ml-2 text-xs uppercase tracking-[0.16em] text-muted">
+                              <span className="ml-2 text-xs text-muted">
                                 {complete ? 'complete' : 'next'}
                               </span>
                             </p>
@@ -239,16 +239,16 @@ export const Dashboard = () => {
                 </div>
 
                 <div className="rounded-xl border border-border bg-background p-6">
-                  <h3 className="font-semibold text-foreground">Product contract</h3>
+                  <h3 className="font-semibold text-foreground">What stays clear</h3>
                   <p className="mt-2 text-sm text-muted">
-                    OmniLux now has an explicit hosted product model. Keep the customer-facing promise consistent across
-                    billing, media, self-hosting, and future native clients.
+                    OmniLux separates cloud convenience from local ownership, so billing, media access, and server control
+                    stay understandable.
                   </p>
                   <ul className="mt-4 space-y-2 text-sm text-muted">
                     {[
-                      'Cloud accounts get first-party managed media according to the current platform policy.',
+                      'Cloud accounts can use first-party managed media according to the current platform policy.',
                       'Self-hosted servers remain directly reachable by their owners outside OmniLux edge.',
-                      'Relay billing applies only to OmniLux-managed relay entitlement for self-hosted servers.',
+                      'Relay billing applies to OmniLux-managed remote access for self-hosted servers.',
                     ].map((item) => (
                       <li key={item} className="flex gap-2">
                         <span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent" />
@@ -261,7 +261,7 @@ export const Dashboard = () => {
                       href={buildDocsHref('/guide/cloud-product-contract')}
                       className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90"
                     >
-                      Review contract
+                      Read the guide
                     </a>
                     <a
                       href={buildDocsHref('/guide/managed-media')}
@@ -278,10 +278,9 @@ export const Dashboard = () => {
 
         <section className="mt-12">
           <div className="max-w-2xl">
-            <h2 className="font-display text-xl font-bold text-foreground">Developer Area</h2>
+            <h2 className="font-display text-xl font-bold text-foreground">Ecosystem tools</h2>
             <p className="mt-2 text-sm text-muted">
-              Secondary cloud workflows live here so the main navigation stays focused on account management, servers,
-              billing, and cloud continuity.
+              Plugin publishing and operator-only links stay separate from the main household account flow.
             </p>
           </div>
 

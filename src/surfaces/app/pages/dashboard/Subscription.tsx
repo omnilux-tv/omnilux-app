@@ -241,10 +241,10 @@ export const Subscription = () => {
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl space-y-8">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Cloud Plan & Billing</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">Cloud plan and billing</h1>
           <p className="mt-1 text-sm text-muted">
             Local playback and hosting stay free. Managed OmniLux media is included with your cloud account, while
-            paid billing applies to self-hosted relay entitlement and premium cloud services around it.
+            paid billing applies to self-hosted remote access and premium cloud services around it.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <a
@@ -295,7 +295,7 @@ export const Subscription = () => {
 
         {lifetimeState === 'success' ? (
           <div className="rounded-xl border border-success/30 bg-success/10 p-4 text-sm text-foreground">
-            Lifetime checkout completed. Your paid entitlement is syncing now.
+            Lifetime checkout completed. Your paid access is syncing now.
           </div>
         ) : null}
 
@@ -350,7 +350,7 @@ export const Subscription = () => {
 
             {effectiveEntitlement?.paidCloudPlan ? (
               <p className="mt-2 text-sm text-muted">
-                Entitlement source: {effectiveEntitlement.source.replaceAll('_', ' ')}
+                Access source: {effectiveEntitlement.source.replaceAll('_', ' ')}
               </p>
             ) : null}
 
@@ -363,7 +363,7 @@ export const Subscription = () => {
                   className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
-                  {portalAction === 'manage' ? 'Opening Billing Portal...' : 'Manage Billing'}
+                  {portalAction === 'manage' ? 'Opening billing...' : 'Manage billing'}
                 </button>
                 {subscriptionState.status && subscriptionState.status !== 'canceled' && (
                   <button
@@ -372,7 +372,7 @@ export const Subscription = () => {
                     disabled={!billingPortalAvailable || portalAction !== null}
                     className="rounded-lg px-4 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {portalAction === 'cancel' ? 'Opening Cancellation...' : 'Cancel Plan'}
+                    {portalAction === 'cancel' ? 'Opening cancellation...' : 'Cancel plan'}
                   </button>
                 )}
               </div>
@@ -389,7 +389,7 @@ export const Subscription = () => {
 
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-xl surface-soft p-6">
-            <h2 className="text-lg font-bold text-foreground">Included With OmniLux Cloud</h2>
+            <h2 className="text-lg font-bold text-foreground">Included with OmniLux Cloud</h2>
             <p className="mt-2 text-sm text-muted">
               Your cloud account covers identity, hosted account services, and first-party OmniLux media access.
             </p>
@@ -414,25 +414,25 @@ export const Subscription = () => {
           </div>
 
           <div className="rounded-xl surface-soft p-6">
-            <h2 className="text-lg font-bold text-foreground">Paid Cloud Policy</h2>
+            <h2 className="text-lg font-bold text-foreground">Paid cloud access</h2>
             <p className="mt-2 text-sm text-muted">
-              Self-hosted relay entitlement follows the current platform rule, while local and user-owned direct
-              access stay outside cloud billing. Browser remote sessions require an entitled account, an online
-              tunnel, and a runtime that supports HTTP relay session bridging.
+              Self-hosted relay access follows the current platform rule, while local and user-owned direct
+              access stay outside cloud billing. Browser remote sessions require an eligible account, an online
+              tunnel, and a compatible runtime.
             </p>
             <div className="mt-4 rounded-lg bg-surface/60 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Self-Hosted Relay Access</p>
+              <p className="text-xs font-semibold text-muted">Self-hosted remote access</p>
               <p className="mt-2 text-foreground">
-                {accessProfile?.relayAccessPolicyLabel ?? 'Paid cloud subscription required'}
+                {accessProfile?.relayAccessPolicyLabel ?? 'Paid cloud plan required'}
               </p>
               <p className="mt-2 text-sm text-muted">
                 {accessProfile?.relayAccessPolicyDescription ??
-                  'Self-hosted relay entitlement requires an active OmniLux Cloud subscription for remote relay sessions.'}
+                  'Self-hosted relay access requires an active OmniLux Cloud plan for remote browser sessions.'}
               </p>
               <p className="mt-3 text-xs text-muted">
                 {accessProfile?.hasPaidCloudPlan
-                  ? 'This account currently has an active paid cloud entitlement.'
-                  : 'This account does not currently have an active paid cloud entitlement.'}
+                  ? 'This account currently has active paid cloud access.'
+                  : 'This account does not currently have active paid cloud access.'}
               </p>
             </div>
             <p className="mt-4 text-xs text-muted">
@@ -455,7 +455,7 @@ export const Subscription = () => {
               },
               {
                 title: 'Paid when needed',
-                body: 'Self-hosted relay entitlement and higher-tier cloud services around your private runtime.',
+                body: 'Self-hosted relay access and higher-tier cloud services around your private runtime.',
               },
             ].map(({ title, body }) => (
               <div key={title} className="rounded-xl bg-surface/60 p-4">
@@ -470,17 +470,17 @@ export const Subscription = () => {
           <div className="flex items-center gap-3">
             <Gem className="h-6 w-6 text-accent" />
             <div>
-              <h2 className="text-lg font-bold text-foreground">Lifetime Membership</h2>
+              <h2 className="text-lg font-bold text-foreground">Lifetime membership</h2>
               <p className="text-sm text-muted">
-                {formatOneTimeCloudPrice(lifetimePlan.priceCents)} for Family-level cloud entitlement without
+                {formatOneTimeCloudPrice(lifetimePlan.priceCents)} for Family-level cloud access without
                 recurring billing.
               </p>
             </div>
           </div>
 
           <p className="mt-4 text-sm leading-6 text-muted">
-            Lifetime membership is a product entitlement, not an investor path. The cloud keeps issuing finite runtime
-            leases while the entitlement remains active.
+            Lifetime membership is a product purchase, not an investor path. OmniLux keeps issuing time-limited runtime
+            access while the membership remains active.
           </p>
 
           <ul className="mt-4 space-y-2">
@@ -513,7 +513,7 @@ export const Subscription = () => {
           <div className="flex items-center gap-3">
             <Gem className="h-6 w-6 text-accent" />
             <div>
-              <h2 className="text-lg font-bold text-foreground">Founding Member</h2>
+              <h2 className="text-lg font-bold text-foreground">Founding member</h2>
               <p className="text-sm text-muted">
                 $499.99 one-time supporter purchase that stays separate from monthly and annual cloud billing.
               </p>
@@ -559,14 +559,14 @@ export const Subscription = () => {
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Gem className="h-4 w-4" />
-              {foundingCheckoutPending ? 'Opening Founding Checkout...' : 'Become a Founding Member'}
+              {foundingCheckoutPending ? 'Opening checkout...' : 'Become a Founding Member'}
             </button>
           )}
         </div>
 
         {currentTier === 'free' && (
           <div>
-            <h2 className="mb-4 text-lg font-bold text-foreground">Unlock Cloud Features</h2>
+            <h2 className="mb-4 text-lg font-bold text-foreground">Unlock cloud features</h2>
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div className="inline-flex rounded-xl border border-border/50 bg-background/40 p-1">
                 {(['monthly', 'annual'] as const).map((interval) => (
@@ -584,7 +584,7 @@ export const Subscription = () => {
                   </button>
                 ))}
               </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">
+              <p className="text-xs font-semibold text-accent">
                 Annual saves {annualDiscountPercent}%
               </p>
             </div>
@@ -615,7 +615,7 @@ export const Subscription = () => {
                     disabled={!user || checkoutTier !== null}
                     className="mt-3 w-full rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {checkoutTier === tier ? 'Opening Checkout...' : `Start ${plan.name}`}
+                    {checkoutTier === tier ? 'Opening checkout...' : `Start ${plan.name}`}
                   </button>
                 </div>
               )})}
