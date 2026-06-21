@@ -160,6 +160,29 @@ test('WorkOS token resolution keeps a settled session usable through transient t
   expect(calls).toBe(8);
 });
 
+test('WorkOS token resolution does not reuse an expired settled session token', async () => {
+  let calls = 0;
+  const expiredPayload = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) - 60 }))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  const expiredAccessToken = `header.${expiredPayload}.signature`;
+  const accessToken = await resolveWorkosAccessToken(
+    async () => {
+      calls += 1;
+      throw new Error('No access token available');
+    },
+    {
+      fallbackAccessToken: expiredAccessToken,
+      retryDelayMs: 1,
+      wait: async () => {},
+    },
+  );
+
+  expect(accessToken).toBeNull();
+  expect(calls).toBe(8);
+});
+
 test('WorkOS callback reports a failed session instead of spinning forever', () => {
   expect(getMissingWorkosSessionMessage({
     loading: false,
