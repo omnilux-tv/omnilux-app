@@ -4,8 +4,13 @@ interface EstablishManagedMediaSessionInput {
   fetch?: typeof fetch;
 }
 
+const TRUSTED_MANAGED_MEDIA_ORIGIN = 'https://media.omnilux.tv';
+
 const normalizeMediaOrigin = (mediaOrigin: string): string => {
   const url = new URL(mediaOrigin);
+  if (url.origin !== TRUSTED_MANAGED_MEDIA_ORIGIN) {
+    throw new Error('OmniLux Media can only be opened through media.omnilux.tv.');
+  }
   return new URL('/', url.origin).toString();
 };
 

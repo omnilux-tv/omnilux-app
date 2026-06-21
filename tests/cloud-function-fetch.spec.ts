@@ -200,3 +200,23 @@ test('managed media launch exchanges the cloud token for a runtime session befor
   expect(requestedCredentials).toBe('include');
   expect(requestedBody).toEqual({ deviceType: 'browser', deviceName: 'OmniLux Cloud App' });
 });
+
+test('managed media launch rejects untrusted origins before reading the cloud token', async () => {
+  let readToken = false;
+  let calledFetch = false;
+
+  await expect(establishManagedMediaSession({
+    mediaOrigin: 'https://media.attacker.example/',
+    getAccessToken: async () => {
+      readToken = true;
+      return 'workos-access-token';
+    },
+    fetch: async () => {
+      calledFetch = true;
+      return new Response('{}');
+    },
+  })).rejects.toThrow('OmniLux Media can only be opened through media.omnilux.tv.');
+
+  expect(readToken).toBe(false);
+  expect(calledFetch).toBe(false);
+});
