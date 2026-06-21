@@ -81,13 +81,20 @@ export const ManagedMedia = () => {
             )}
 
             <div className="mt-5 flex flex-wrap gap-3">
-              <a
-                href={managedMediaOrigin}
-                className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Open OmniLux Media
-              </a>
+              {managedMediaAvailable ? (
+                <a
+                  href={managedMediaOrigin}
+                  className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open OmniLux Media
+                </a>
+              ) : (
+                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm font-semibold text-muted">
+                  <ExternalLink className="h-4 w-4" />
+                  Access restricted
+                </span>
+              )}
               <a
                 href={buildDocsHref('/guide/managed-media')}
                 className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface"

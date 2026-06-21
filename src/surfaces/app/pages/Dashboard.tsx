@@ -254,7 +254,7 @@ export const Dashboard = () => {
                   </p>
                   <ul className="mt-4 space-y-2 text-sm text-muted">
                     {[
-                      'Cloud accounts can use first-party managed media according to the current platform policy.',
+                      'Cloud accounts can use managed partner and studio media only when platform policy allows it.',
                       'Self-hosted servers remain directly reachable by their owners outside OmniLux edge.',
                       'Relay billing applies to OmniLux-managed remote access for self-hosted servers.',
                     ].map((item) => (

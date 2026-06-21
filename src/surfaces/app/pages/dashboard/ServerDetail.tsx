@@ -280,8 +280,8 @@ export const ServerDetail = () => {
                 This is OmniLux-managed media surfaced through the hosted account, not a customer-owned
                 self-hosted server. It is expected to be reachable through its OmniLux-managed public
                 origin instead of a user-owned LAN or reverse-proxy path. {accessProfile?.managedMediaPolicy === 'all-authenticated-users'
-                  ? 'Managed media is currently included for all authenticated OmniLux Cloud accounts.'
-                  : 'Managed media access is currently managed directly by OmniLux for this account.'}
+                  ? 'Managed media is currently in a broad authenticated preview mode.'
+                  : 'Managed media access is gated directly by OmniLux for this account.'}
               </p>
             )}
           </div>

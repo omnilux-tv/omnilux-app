@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { buildAppHref } from '@/lib/site-surface';
 import { setCloudAccessTokenProvider } from '@/lib/supabase';
 import { AuthContext, useAuth, type AuthContextValue, type CloudSession, type CloudUser } from './auth-context';
+import { resolveWorkosAccessToken } from './workos-token';
 
 export { useAuth };
 
@@ -70,15 +71,7 @@ const WorkosAuthBridge = ({
       return null;
     }
 
-    try {
-      return await getWorkosAccessToken();
-    } catch {
-      try {
-        return await getWorkosAccessToken({ forceRefresh: true });
-      } catch {
-        return null;
-      }
-    }
+    return resolveWorkosAccessToken(getWorkosAccessToken);
   }, [getWorkosAccessToken, workosUser]);
 
   useEffect(() => {

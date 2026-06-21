@@ -116,14 +116,14 @@ export const Servers = () => {
                       OmniLux Media
                     </h2>
                     <p className="mt-1 text-sm text-muted">
-                      First-party managed media services available through OmniLux Cloud access, not customer-owned server sharing.
+                      Partner and studio media services available through OmniLux Cloud policy, not customer-owned server sharing.
                     </p>
                     <div className="mt-3 rounded-lg bg-surface/60 p-4 text-sm text-muted">
                       <p className="font-medium text-foreground">Managed media access</p>
                       <p className="mt-2">
                         {accessProfile?.managedMediaPolicy === 'all-authenticated-users'
-                          ? 'Managed media is currently included for every authenticated OmniLux Cloud account.'
-                          : 'Managed media access is currently managed directly by OmniLux for this account.'}
+                          ? 'Managed media is currently in a broad authenticated preview mode.'
+                          : 'Managed media access is gated directly by OmniLux for this account.'}
                       </p>
                       <div className="mt-3">
                         <Link

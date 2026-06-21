@@ -100,7 +100,9 @@ The canonical edge-consumed app artifact is the published OCI image `ghcr.io/omn
 
 - self-hosted servers remain directly reachable by their owners without traversing OmniLux edge
 - cloud-mediated remote access should rely on relay state
-- `managed-media` visibility is entitlement driven
+- `managed-media` visibility is entitlement driven and should be shown only to accounts allowed by cloud policy
 - `get-customer-overview` is the hosted-app contract for customer onboarding state, managed media runtime status, and relay policy
-- the current official managed-media rule is that every OmniLux Cloud account, including free accounts, can access first-party managed media unless operators intentionally switch the platform policy to explicit access
+- managed media is for OmniLux-operated partner/studio media and should not be treated as a public catalog for every signed-in account by default
+- broad access for all authenticated accounts is a controlled preview/demo policy, not the intended production posture
+- provider or studio management belongs behind provider-scoped/operator-gated access, not ordinary customer dashboard authority
 - server listings in this app should only model `self-hosted` and `managed-media`; operator access belongs to the separate ops console, not the server registry

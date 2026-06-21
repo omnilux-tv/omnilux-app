@@ -59,10 +59,10 @@ export interface CustomerOverview {
 }
 
 export const useCustomerOverview = () => {
-  const { user } = useAuth();
+  const { session } = useAuth();
 
   return useQuery({
-    queryKey: ['customer-overview', user?.id],
+    queryKey: ['customer-overview', session?.user.id],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke<CustomerOverview>('get-customer-overview');
       if (error) {
@@ -70,6 +70,6 @@ export const useCustomerOverview = () => {
       }
       return data as CustomerOverview;
     },
-    enabled: Boolean(user),
+    enabled: Boolean(session?.access_token),
   });
 };
