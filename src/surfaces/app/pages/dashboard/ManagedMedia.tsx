@@ -1,16 +1,42 @@
 import { Link } from '@tanstack/react-router';
 import { ExternalLink, RadioTower, ShieldCheck, Sparkles, Waves } from 'lucide-react';
+import { useState } from 'react';
 import { buildDocsHref } from '@/lib/site-surface';
+import { useAuth } from '@/providers/AuthProvider';
 import { useCustomerOverview } from '@/surfaces/app/lib/customer-overview';
+import { establishManagedMediaSession } from '@/surfaces/app/lib/managed-media-launch';
 import { getRelayConditionLabel } from '@/surfaces/app/lib/relay-condition';
 
 const fallbackMediaOrigin = 'https://media.omnilux.tv';
 
 export const ManagedMedia = () => {
+  const { getAccessToken } = useAuth();
   const { data: overview, error, isLoading } = useCustomerOverview();
+  const [launching, setLaunching] = useState(false);
+  const [launchError, setLaunchError] = useState<string | null>(null);
   const managedMediaOrigin = overview?.managedMediaRuntime?.publicOrigin ?? fallbackMediaOrigin;
   const managedMediaAvailable = Boolean(overview?.access.managedMediaEntitled && overview?.managedMediaRuntime);
   const operatingMode = overview?.platform.managedMediaOperatingMode ?? 'normal';
+
+  const openManagedMedia = async () => {
+    setLaunching(true);
+    setLaunchError(null);
+    try {
+      const destination = await establishManagedMediaSession({
+        mediaOrigin: managedMediaOrigin,
+        getAccessToken,
+      });
+      window.location.assign(destination);
+    } catch (caughtError) {
+      setLaunchError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'OmniLux Media could not start a session for this account.',
+      );
+    } finally {
+      setLaunching(false);
+    }
+  };
 
   return (
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
@@ -37,6 +63,12 @@ export const ManagedMedia = () => {
         {error ? (
           <div className="rounded-xl border border-danger/30 bg-danger/10 p-5 text-sm text-foreground">
             {error instanceof Error ? error.message : 'Managed media status could not be loaded.'}
+          </div>
+        ) : null}
+
+        {launchError ? (
+          <div className="rounded-xl border border-danger/30 bg-danger/10 p-5 text-sm text-foreground">
+            {launchError}
           </div>
         ) : null}
 
@@ -82,13 +114,17 @@ export const ManagedMedia = () => {
 
             <div className="mt-5 flex flex-wrap gap-3">
               {managedMediaAvailable ? (
-                <a
-                  href={managedMediaOrigin}
+                <button
+                  type="button"
+                  onClick={() => {
+                    void openManagedMedia();
+                  }}
+                  disabled={launching}
                   className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
                 >
                   <ExternalLink className="h-4 w-4" />
-                  Open OmniLux Media
-                </a>
+                  {launching ? 'Opening...' : 'Open OmniLux Media'}
+                </button>
               ) : (
                 <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm font-semibold text-muted">
                   <ExternalLink className="h-4 w-4" />

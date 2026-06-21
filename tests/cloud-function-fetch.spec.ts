@@ -3,6 +3,7 @@ import { createCloudFunctionFetch } from '../src/lib/cloud-function-fetch';
 import { resolveWorkosAccessToken } from '../src/providers/workos-token';
 import { getMissingWorkosSessionMessage } from '../src/surfaces/app/lib/auth-callback';
 import { getWorkosRedirectCallbackHref } from '../src/surfaces/app/lib/auth-flow';
+import { establishManagedMediaSession } from '../src/surfaces/app/lib/managed-media-launch';
 
 test('cloud function fetch fails closed when the WorkOS token is not ready', async () => {
   let calledOrigin = false;
@@ -170,4 +171,32 @@ test('WorkOS redirect callback stays on the app surface', () => {
       port: '',
     },
   )).toBe('https://app.omnilux.tv/dashboard');
+});
+
+test('managed media launch exchanges the cloud token for a runtime session before navigation', async () => {
+  let requestedUrl = '';
+  let requestedAuthorization: string | null = null;
+  let requestedCredentials: RequestCredentials | undefined;
+  let requestedBody: unknown = null;
+
+  const destination = await establishManagedMediaSession({
+    mediaOrigin: 'https://media.omnilux.tv/',
+    getAccessToken: async () => 'workos-access-token',
+    fetch: async (input, init) => {
+      requestedUrl = String(input);
+      requestedAuthorization = new Headers(init?.headers).get('Authorization');
+      requestedCredentials = init?.credentials;
+      requestedBody = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    },
+  });
+
+  expect(destination).toBe('https://media.omnilux.tv/');
+  expect(requestedUrl).toBe('https://media.omnilux.tv/api/auth/cloud-login');
+  expect(requestedAuthorization).toBe('Bearer workos-access-token');
+  expect(requestedCredentials).toBe('include');
+  expect(requestedBody).toEqual({ deviceType: 'browser', deviceName: 'OmniLux Cloud App' });
 });
