@@ -4,6 +4,7 @@ import {
   getDefaultAuthRedirect,
   normalizeHostedRedirectPath,
 } from '@/surfaces/app/lib/auth-flow';
+import { getMissingWorkosSessionMessage } from '@/surfaces/app/lib/auth-callback';
 import { buildAppHref, buildSurfaceHrefForPath } from '@/lib/site-surface';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
@@ -24,8 +25,17 @@ export const AuthCallback = () => {
         );
 
         if (provider === 'workos') {
-          if (loading || !session) {
+          if (loading) {
             return;
+          }
+
+          const missingSessionMessage = getMissingWorkosSessionMessage({
+            loading,
+            provider,
+            hasSession: !!session,
+          });
+          if (missingSessionMessage) {
+            throw new Error(missingSessionMessage);
           }
 
           clearPendingSignup();

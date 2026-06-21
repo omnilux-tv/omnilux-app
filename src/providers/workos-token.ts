@@ -11,8 +11,8 @@ const defaultWait = (delayMs: number) => new Promise<void>((resolve) => window.s
 export const resolveWorkosAccessToken = async (
   getAccessToken: WorkosAccessTokenReader,
   {
-    attempts = 4,
-    retryDelayMs = 150,
+    attempts = 8,
+    retryDelayMs = 250,
     wait = defaultWait,
   }: ResolveWorkosAccessTokenOptions = {},
 ): Promise<string | null> => {

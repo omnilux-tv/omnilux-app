@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createCloudFunctionFetch } from '../src/lib/cloud-function-fetch';
 import { resolveWorkosAccessToken } from '../src/providers/workos-token';
+import { getMissingWorkosSessionMessage } from '../src/surfaces/app/lib/auth-callback';
 
 test('cloud function fetch fails closed when the WorkOS token is not ready', async () => {
   let calledOrigin = false;
@@ -57,4 +58,46 @@ test('WorkOS token resolution retries transient callback token misses', async ()
     { forceRefresh: true },
     { forceRefresh: true },
   ]);
+});
+
+test('WorkOS token resolution keeps retrying through the callback handoff window', async () => {
+  const calls: Array<{ forceRefresh?: boolean } | undefined> = [];
+  const accessToken = await resolveWorkosAccessToken(
+    async (options) => {
+      calls.push(options);
+      if (calls.length < 8) {
+        throw new Error('No access token available');
+      }
+      return 'workos-token';
+    },
+    {
+      retryDelayMs: 1,
+      wait: async () => {},
+    },
+  );
+
+  expect(accessToken).toBe('workos-token');
+  expect(calls).toHaveLength(8);
+  expect(calls[0]).toBeUndefined();
+  expect(calls.slice(1)).toEqual(Array.from({ length: 7 }, () => ({ forceRefresh: true })));
+});
+
+test('WorkOS callback reports a failed session instead of spinning forever', () => {
+  expect(getMissingWorkosSessionMessage({
+    loading: false,
+    provider: 'workos',
+    hasSession: false,
+  })).toBe('Authentication session could not be established. Request a new sign-in link and try again.');
+
+  expect(getMissingWorkosSessionMessage({
+    loading: true,
+    provider: 'workos',
+    hasSession: false,
+  })).toBeNull();
+
+  expect(getMissingWorkosSessionMessage({
+    loading: false,
+    provider: 'supabase_auth',
+    hasSession: false,
+  })).toBeNull();
 });
