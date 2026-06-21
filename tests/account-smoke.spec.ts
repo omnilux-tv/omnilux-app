@@ -1,6 +1,20 @@
 import { expect, test } from '@playwright/test';
 
+const appSiteUrl = process.env.APP_SITE_URL?.trim() ?? '';
+const workosHostedAuthUrlPattern = /(?:auth|login)\.omnilux\.tv/;
+
 test.describe('account smoke', () => {
+  test('production login starts the WorkOS AuthKit flow', async ({ page }) => {
+    test.skip(!appSiteUrl.includes('app.omnilux.tv'), 'Production WorkOS handoff smoke only runs against app.omnilux.tv');
+
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+
+    await expect(page).toHaveURL(workosHostedAuthUrlPattern, { timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('textbox', { name: /email/i })).toBeVisible();
+    expect(page.url()).toContain(encodeURIComponent('https://app.omnilux.tv/auth/callback'));
+  });
+
   test('root route enters the account flow instead of rendering not found', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
     await page.waitForURL((url) => url.pathname === '/login' && url.searchParams.get('redirect') === '/dashboard');
