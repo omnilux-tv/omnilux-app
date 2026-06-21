@@ -15,6 +15,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     fetch: createCloudFunctionFetch({
       fetch,
       getCloudAccessTokenProvider: () => cloudAccessTokenProvider,
+      fallbackAuthorizationHeader: `Bearer ${supabaseAnonKey}`,
     }),
   },
 });

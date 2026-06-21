@@ -20,6 +20,43 @@ test('cloud function fetch fails closed when the WorkOS token is not ready', asy
   expect(calledOrigin).toBe(false);
 });
 
+test('cloud function fetch fails closed when WorkOS token provider is not registered yet', async () => {
+  let calledOrigin = false;
+  const fetchWithCloudAuth = createCloudFunctionFetch({
+    fetch: async () => {
+      calledOrigin = true;
+      return new Response('{}');
+    },
+    getCloudAccessTokenProvider: () => null,
+    fallbackAuthorizationHeader: 'Bearer anon-token',
+  });
+
+  await expect(
+    fetchWithCloudAuth('https://api.omnilux.tv/functions/v1/get-access-profile', {
+      headers: { Authorization: 'Bearer anon-token' },
+    }),
+  ).rejects.toThrow('Cloud access token is not available yet.');
+  expect(calledOrigin).toBe(false);
+});
+
+test('cloud function fetch preserves legacy Supabase user authorization when no WorkOS provider is registered', async () => {
+  let authorization: string | null = null;
+  const fetchWithCloudAuth = createCloudFunctionFetch({
+    fetch: async (_input, init) => {
+      authorization = new Headers(init?.headers).get('Authorization');
+      return new Response('{}');
+    },
+    getCloudAccessTokenProvider: () => null,
+    fallbackAuthorizationHeader: 'Bearer anon-token',
+  });
+
+  await fetchWithCloudAuth('https://api.omnilux.tv/functions/v1/get-access-profile', {
+    headers: { Authorization: 'Bearer supabase-user-token' },
+  });
+
+  expect(authorization).toBe('Bearer supabase-user-token');
+});
+
 test('cloud function fetch sends the WorkOS bearer token when it is ready', async () => {
   let authorization: string | null = null;
   const fetchWithCloudAuth = createCloudFunctionFetch({
