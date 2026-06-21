@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import type { CloudBillingInterval } from '@/lib/cloud-plans';
+import { shouldRetryAccessProfileQuery } from '@/surfaces/app/lib/access-profile-retry';
 
 export interface AccessProfileSubscription {
   tier: string;
@@ -116,6 +117,7 @@ export const useAccessProfile = () => {
       }
       return data as AccessProfile;
     },
+    retry: shouldRetryAccessProfileQuery,
     enabled: !!session?.access_token,
   });
 };

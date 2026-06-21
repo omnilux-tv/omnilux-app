@@ -3,6 +3,7 @@ import { createCloudFunctionFetch } from '../src/lib/cloud-function-fetch';
 import { resolveWorkosAccessToken } from '../src/providers/workos-token';
 import { getMissingWorkosSessionMessage } from '../src/surfaces/app/lib/auth-callback';
 import { getWorkosRedirectCallbackHref } from '../src/surfaces/app/lib/auth-flow';
+import { shouldRetryAccessProfileQuery } from '../src/surfaces/app/lib/access-profile-retry';
 import { establishManagedMediaSession } from '../src/surfaces/app/lib/managed-media-launch';
 
 test('cloud function fetch fails closed when the WorkOS token is not ready', async () => {
@@ -219,4 +220,11 @@ test('managed media launch rejects untrusted origins before reading the cloud to
 
   expect(readToken).toBe(false);
   expect(calledFetch).toBe(false);
+});
+
+test('access profile query does not retry authorization failures', () => {
+  expect(shouldRetryAccessProfileQuery(0, { status: 401 })).toBe(false);
+  expect(shouldRetryAccessProfileQuery(0, { context: { status: 403 } })).toBe(false);
+  expect(shouldRetryAccessProfileQuery(0, new Error('temporary outage'))).toBe(true);
+  expect(shouldRetryAccessProfileQuery(1, new Error('temporary outage'))).toBe(false);
 });
