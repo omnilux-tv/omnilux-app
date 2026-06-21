@@ -1,5 +1,5 @@
 import { AuthKitProvider, useAuth as useWorkosAuth } from '@workos-inc/authkit-react';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { buildAppHref } from '@/lib/site-surface';
 import { setCloudAccessTokenProvider } from '@/lib/supabase';
 import { AuthContext, useAuth, type AuthContextValue, type CloudSession, type CloudUser } from './auth-context';
@@ -62,40 +62,63 @@ const WorkosAuthBridge = ({
     signOut: workosSignOut,
   } = useWorkosAuth();
   const [session, setSession] = useState<CloudSession | null>(null);
-  const user = useMemo(() => (workosUser ? toCloudUser(workosUser) : null), [workosUser]);
+  const [tokenLoading, setTokenLoading] = useState(false);
+  const user = session?.user ?? null;
 
   const getAccessToken = useCallback(async () => {
     if (!workosUser) {
       return null;
     }
 
-    return await getWorkosAccessToken();
+    try {
+      return await getWorkosAccessToken();
+    } catch {
+      try {
+        return await getWorkosAccessToken({ forceRefresh: true });
+      } catch {
+        return null;
+      }
+    }
   }, [getWorkosAccessToken, workosUser]);
 
   useEffect(() => {
     if (!enabled || !workosUser) {
       setCloudAccessTokenProvider(null);
       setSession(null);
+      setTokenLoading(false);
       return;
     }
 
     setCloudAccessTokenProvider(getAccessToken);
 
     let active = true;
-    void getAccessToken().then((accessToken) => {
-      if (!active || !accessToken) {
-        return;
-      }
+    setTokenLoading(true);
+    void getAccessToken()
+      .then((accessToken) => {
+        if (!active) {
+          return;
+        }
 
-      setSession({
-        access_token: accessToken,
-        provider: 'workos',
-        user: {
-          ...toCloudUser(workosUser),
-          last_sign_in_at: workosUser.lastSignInAt,
-        },
+        if (!accessToken) {
+          setSession(null);
+          setCloudAccessTokenProvider(null);
+          return;
+        }
+
+        setSession({
+          access_token: accessToken,
+          provider: 'workos',
+          user: {
+            ...toCloudUser(workosUser),
+            last_sign_in_at: workosUser.lastSignInAt,
+          },
+        });
+      })
+      .finally(() => {
+        if (active) {
+          setTokenLoading(false);
+        }
       });
-    });
 
     return () => {
       active = false;
@@ -128,7 +151,7 @@ const WorkosAuthBridge = ({
       value={{
         user,
         session,
-        loading: enabled ? isLoading : false,
+        loading: enabled ? isLoading || tokenLoading : false,
         provider: 'workos',
         getAccessToken,
         signIn,

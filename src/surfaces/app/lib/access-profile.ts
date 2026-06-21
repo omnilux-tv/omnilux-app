@@ -105,10 +105,10 @@ export const getAccessProfileSubscriptionState = (
 };
 
 export const useAccessProfile = () => {
-  const { user } = useAuth();
+  const { session } = useAuth();
 
   return useQuery({
-    queryKey: ['access-profile', user?.id],
+    queryKey: ['access-profile', session?.user.id],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke<AccessProfile>('get-access-profile');
       if (error) {
@@ -116,6 +116,6 @@ export const useAccessProfile = () => {
       }
       return data as AccessProfile;
     },
-    enabled: !!user,
+    enabled: !!session?.access_token,
   });
 };
