@@ -70,7 +70,7 @@ test.describe('account smoke', () => {
   });
 
   test('billing route redirects unauthenticated users back to login with the destination preserved', async ({ page }) => {
-    await page.goto('/dashboard/subscription', { waitUntil: 'networkidle' });
+    await page.goto('/dashboard/subscription', { waitUntil: authEntryWaitUntil });
 
     if (isProductionApp) {
       await expectWorkosAuthFlow(page, { returnTo: '/dashboard/subscription' });
@@ -84,7 +84,7 @@ test.describe('account smoke', () => {
   });
 
   test('claim flow redirects unauthenticated users back to login with the full claim target preserved', async ({ page }) => {
-    await page.goto('/dashboard/claim?code=abc123', { waitUntil: 'networkidle' });
+    await page.goto('/dashboard/claim?code=abc123', { waitUntil: authEntryWaitUntil });
 
     if (isProductionApp) {
       await expectWorkosAuthFlow(page, { returnTo: '/dashboard/claim?code=abc123' });
