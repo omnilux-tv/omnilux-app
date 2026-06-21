@@ -29,7 +29,7 @@ export const sanitizeRedirectPath = (
   value: string | null | undefined,
   fallback = getDefaultAuthRedirect(),
 ): string => {
-  if (!value || !value.startsWith('/')) {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) {
     return fallback;
   }
 

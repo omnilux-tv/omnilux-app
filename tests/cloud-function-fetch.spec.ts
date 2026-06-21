@@ -123,4 +123,14 @@ test('WorkOS redirect callback stays on the app surface', () => {
       port: '',
     },
   )).toBe('https://app.omnilux.tv/dashboard');
+
+  expect(getWorkosRedirectCallbackHref(
+    { returnTo: '//evil.example/phish' },
+    {
+      hostname: 'app.omnilux.tv',
+      origin: 'https://app.omnilux.tv',
+      protocol: 'https:',
+      port: '',
+    },
+  )).toBe('https://app.omnilux.tv/dashboard');
 });
