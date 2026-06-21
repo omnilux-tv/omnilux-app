@@ -35,7 +35,7 @@ test.describe('account smoke', () => {
   });
 
   test('root route enters the account flow instead of rendering not found', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/', { waitUntil: authEntryWaitUntil });
 
     if (isProductionApp) {
       await expectWorkosAuthFlow(page, { returnTo: '/dashboard' });

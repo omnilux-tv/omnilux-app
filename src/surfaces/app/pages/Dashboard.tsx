@@ -5,6 +5,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { buildDocsHref, buildOpsHref } from '@/lib/site-surface';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
 import { useCustomerOverview } from '@/surfaces/app/lib/customer-overview';
+import { getCustomerDashboardRedirect } from '@/surfaces/app/lib/dashboard-routing';
 
 const dashboardLinks = [
   {
@@ -52,9 +53,11 @@ export const Dashboard = () => {
   const { user } = useAuth();
   const { data: accessProfile } = useAccessProfile();
   const displayName = user?.user_metadata?.display_name ?? user?.email ?? 'User';
-  const operatorLink = accessProfile?.isOperator
+  const opsDashboardHref = buildOpsHref('/dashboard');
+  const operatorRedirectHref = getCustomerDashboardRedirect(accessProfile, opsDashboardHref);
+  const operatorLink = operatorRedirectHref
     ? {
-        href: buildOpsHref('/dashboard'),
+        href: operatorRedirectHref,
         icon: ShieldCheck,
         label: 'Ops Console',
         description: 'Open the separate operator workspace for support, policy, logs, and service health.',
@@ -62,10 +65,10 @@ export const Dashboard = () => {
     : null;
 
   useEffect(() => {
-    if (accessProfile?.isOperator) {
-      window.location.replace(buildOpsHref('/dashboard'));
+    if (operatorRedirectHref) {
+      window.location.replace(operatorRedirectHref);
     }
-  }, [accessProfile?.isOperator]);
+  }, [operatorRedirectHref]);
 
   const {
     data: customerOverview,

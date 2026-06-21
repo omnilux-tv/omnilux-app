@@ -4,6 +4,7 @@ import { isWorkosSessionPending } from '../src/providers/workos-session-state';
 import { resolveWorkosAccessToken } from '../src/providers/workos-token';
 import { getMissingWorkosSessionMessage } from '../src/surfaces/app/lib/auth-callback';
 import { getWorkosRedirectCallbackHref } from '../src/surfaces/app/lib/auth-flow';
+import { getCustomerDashboardRedirect } from '../src/surfaces/app/lib/dashboard-routing';
 import { shouldRetryAccessProfileQuery } from '../src/surfaces/app/lib/access-profile-retry';
 import { establishManagedMediaSession } from '../src/surfaces/app/lib/managed-media-launch';
 
@@ -191,6 +192,13 @@ test('WorkOS redirect callback stays on the app surface', () => {
       port: '',
     },
   )).toBe('https://app.omnilux.tv/dashboard');
+});
+
+test('customer dashboard routes operator profiles to the ops console', () => {
+  expect(getCustomerDashboardRedirect(undefined, 'https://ops.omnilux.tv/dashboard')).toBeNull();
+  expect(getCustomerDashboardRedirect({ isOperator: false }, 'https://ops.omnilux.tv/dashboard')).toBeNull();
+  expect(getCustomerDashboardRedirect({ isOperator: true }, 'https://ops.omnilux.tv/dashboard'))
+    .toBe('https://ops.omnilux.tv/dashboard');
 });
 
 test('managed media launch exchanges the cloud token for a runtime session before navigation', async () => {
