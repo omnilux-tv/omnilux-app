@@ -43,6 +43,24 @@ test('cloud function fetch fails closed when WorkOS token provider is not regist
   expect(calledOrigin).toBe(false);
 });
 
+test('cloud function fetch fails closed when WorkOS token provider rejects', async () => {
+  let calledOrigin = false;
+  const fetchWithCloudAuth = createCloudFunctionFetch({
+    fetch: async () => {
+      calledOrigin = true;
+      return new Response('{}');
+    },
+    getCloudAccessTokenProvider: () => async () => {
+      throw new Error('No access token available');
+    },
+  });
+
+  await expect(
+    fetchWithCloudAuth('https://api.omnilux.tv/functions/v1/get-access-profile'),
+  ).rejects.toThrow('Cloud access token is not available yet.');
+  expect(calledOrigin).toBe(false);
+});
+
 test('cloud function fetch preserves legacy Supabase user authorization when no WorkOS provider is registered', async () => {
   let authorization: string | null = null;
   const fetchWithCloudAuth = createCloudFunctionFetch({
@@ -122,6 +140,24 @@ test('WorkOS token resolution keeps retrying through the callback handoff window
   expect(calls).toHaveLength(8);
   expect(calls[0]).toBeUndefined();
   expect(calls.slice(1)).toEqual(Array.from({ length: 7 }, () => ({ forceRefresh: true })));
+});
+
+test('WorkOS token resolution keeps a settled session usable through transient token misses', async () => {
+  let calls = 0;
+  const accessToken = await resolveWorkosAccessToken(
+    async () => {
+      calls += 1;
+      throw new Error('No access token available');
+    },
+    {
+      fallbackAccessToken: 'settled-workos-token',
+      retryDelayMs: 1,
+      wait: async () => {},
+    },
+  );
+
+  expect(accessToken).toBe('settled-workos-token');
+  expect(calls).toBe(8);
 });
 
 test('WorkOS callback reports a failed session instead of spinning forever', () => {

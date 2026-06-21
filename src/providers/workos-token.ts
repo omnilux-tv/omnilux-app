@@ -2,6 +2,7 @@ export type WorkosAccessTokenReader = (options?: { forceRefresh?: boolean }) => 
 
 interface ResolveWorkosAccessTokenOptions {
   attempts?: number;
+  fallbackAccessToken?: string | null;
   retryDelayMs?: number;
   wait?: (delayMs: number) => Promise<void>;
 }
@@ -12,6 +13,7 @@ export const resolveWorkosAccessToken = async (
   getAccessToken: WorkosAccessTokenReader,
   {
     attempts = 8,
+    fallbackAccessToken = null,
     retryDelayMs = 250,
     wait = defaultWait,
   }: ResolveWorkosAccessTokenOptions = {},
@@ -33,5 +35,5 @@ export const resolveWorkosAccessToken = async (
     }
   }
 
-  return null;
+  return fallbackAccessToken;
 };

@@ -75,8 +75,10 @@ const WorkosAuthBridge = ({
       return null;
     }
 
-    return resolveWorkosAccessToken(getWorkosAccessToken);
-  }, [getWorkosAccessToken, workosUser]);
+    return resolveWorkosAccessToken(getWorkosAccessToken, {
+      fallbackAccessToken: session?.access_token ?? null,
+    });
+  }, [getWorkosAccessToken, session?.access_token, workosUser]);
 
   useEffect(() => {
     if (!enabled || !workosUser) {

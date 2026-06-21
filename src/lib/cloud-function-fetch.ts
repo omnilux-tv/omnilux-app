@@ -26,7 +26,14 @@ export const createCloudFunctionFetch = ({
 }: CloudFunctionFetchOptions): typeof fetch => async (input, init) => {
   const needsCloudAuth = requestUrlFor(input).includes('/functions/v1/');
   const provider = needsCloudAuth ? getCloudAccessTokenProvider() : null;
-  const accessToken = provider ? await provider() : null;
+  let accessToken: string | null = null;
+  if (provider) {
+    try {
+      accessToken = await provider();
+    } catch {
+      accessToken = null;
+    }
+  }
   const headers = requestHeadersFor(input, init);
   const authorization = headers.get('Authorization');
   const hasNonFallbackAuthorization = !!authorization && authorization !== fallbackAuthorizationHeader;
