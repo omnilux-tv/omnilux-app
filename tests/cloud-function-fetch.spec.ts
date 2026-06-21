@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { createCloudFunctionFetch } from '../src/lib/cloud-function-fetch';
+import { isWorkosSessionPending } from '../src/providers/workos-session-state';
 import { resolveWorkosAccessToken } from '../src/providers/workos-token';
 import { getMissingWorkosSessionMessage } from '../src/surfaces/app/lib/auth-callback';
 import { getWorkosRedirectCallbackHref } from '../src/surfaces/app/lib/auth-flow';
@@ -140,6 +141,24 @@ test('WorkOS callback reports a failed session instead of spinning forever', () 
     provider: 'supabase_auth',
     hasSession: false,
   })).toBeNull();
+});
+
+test('WorkOS auth stays loading while a user is waiting on a token-backed session', () => {
+  expect(isWorkosSessionPending({
+    isAuthKitLoading: false,
+    tokenLoading: false,
+    hasWorkosUser: true,
+    hasSession: false,
+    tokenAttemptSettled: false,
+  })).toBe(true);
+
+  expect(isWorkosSessionPending({
+    isAuthKitLoading: false,
+    tokenLoading: false,
+    hasWorkosUser: true,
+    hasSession: false,
+    tokenAttemptSettled: true,
+  })).toBe(false);
 });
 
 test('WorkOS redirect callback stays on the app surface', () => {

@@ -4,6 +4,7 @@ import { buildAppHref } from '@/lib/site-surface';
 import { getWorkosRedirectCallbackHref } from '@/surfaces/app/lib/auth-flow';
 import { setCloudAccessTokenProvider } from '@/lib/supabase';
 import { AuthContext, useAuth, type AuthContextValue, type CloudSession, type CloudUser } from './auth-context';
+import { isWorkosSessionPending } from './workos-session-state';
 import { resolveWorkosAccessToken } from './workos-token';
 
 export { useAuth };
@@ -65,7 +66,9 @@ const WorkosAuthBridge = ({
   } = useWorkosAuth();
   const [session, setSession] = useState<CloudSession | null>(null);
   const [tokenLoading, setTokenLoading] = useState(false);
+  const [tokenAttemptSettledForUserId, setTokenAttemptSettledForUserId] = useState<string | null>(null);
   const user = session?.user ?? null;
+  const tokenAttemptSettled = !!workosUser && tokenAttemptSettledForUserId === workosUser.id;
 
   const getAccessToken = useCallback(async () => {
     if (!workosUser) {
@@ -80,6 +83,7 @@ const WorkosAuthBridge = ({
       setCloudAccessTokenProvider(null);
       setSession(null);
       setTokenLoading(false);
+      setTokenAttemptSettledForUserId(null);
       return;
     }
 
@@ -87,6 +91,7 @@ const WorkosAuthBridge = ({
 
     let active = true;
     setTokenLoading(true);
+    setTokenAttemptSettledForUserId(null);
     void getAccessToken()
       .then((accessToken) => {
         if (!active) {
@@ -111,6 +116,7 @@ const WorkosAuthBridge = ({
       .finally(() => {
         if (active) {
           setTokenLoading(false);
+          setTokenAttemptSettledForUserId(workosUser.id);
         }
       });
 
@@ -145,7 +151,15 @@ const WorkosAuthBridge = ({
       value={{
         user,
         session,
-        loading: enabled ? isLoading || tokenLoading : false,
+        loading: enabled
+          ? isWorkosSessionPending({
+            isAuthKitLoading: isLoading,
+            tokenLoading,
+            hasWorkosUser: !!workosUser,
+            hasSession: !!session,
+            tokenAttemptSettled,
+          })
+          : false,
         provider: 'workos',
         getAccessToken,
         signIn,
