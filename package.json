@@ -10,6 +10,7 @@
     "build:artifact": "vite build && tsc --noEmit",
     "preview": "vite preview",
     "lint": "tsc --noEmit --pretty false",
+    "test:auth": "APP_SITE_URL=http://127.0.0.1 pnpm exec playwright test tests/cloud-function-fetch.spec.ts --reporter=line",
     "test:smoke": "playwright test tests/account-smoke.spec.ts"
   },
   "dependencies": {

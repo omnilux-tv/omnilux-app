@@ -53,5 +53,8 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Auth tests
+        run: pnpm test:auth
+
       - name: Build
         run: pnpm build
