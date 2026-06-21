@@ -60,6 +60,17 @@ export const buildAuthCallbackUrl = (next = getDefaultAuthRedirect()): string =>
   return url.toString();
 };
 
+export const getWorkosRedirectCallbackHref = (
+  state: { returnTo?: unknown } | null | undefined,
+  locationLike?: Pick<Location, 'hostname' | 'origin' | 'protocol' | 'port'>,
+): string => {
+  const returnTo = typeof state?.returnTo === 'string' ? state.returnTo : getDefaultAuthRedirect('app');
+  const origin =
+    locationLike?.origin ??
+    (typeof window === 'undefined' ? 'https://app.omnilux.tv' : window.location.origin);
+  return new URL(normalizeHostedRedirectPath('app', returnTo), origin).toString();
+};
+
 export const setPendingSignup = (pendingSignup: PendingSignupContext) => {
   if (typeof window === 'undefined') {
     return;

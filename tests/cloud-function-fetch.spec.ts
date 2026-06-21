@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { createCloudFunctionFetch } from '../src/lib/cloud-function-fetch';
 import { resolveWorkosAccessToken } from '../src/providers/workos-token';
 import { getMissingWorkosSessionMessage } from '../src/surfaces/app/lib/auth-callback';
+import { getWorkosRedirectCallbackHref } from '../src/surfaces/app/lib/auth-flow';
 
 test('cloud function fetch fails closed when the WorkOS token is not ready', async () => {
   let calledOrigin = false;
@@ -100,4 +101,26 @@ test('WorkOS callback reports a failed session instead of spinning forever', () 
     provider: 'supabase_auth',
     hasSession: false,
   })).toBeNull();
+});
+
+test('WorkOS redirect callback stays on the app surface', () => {
+  expect(getWorkosRedirectCallbackHref(
+    { returnTo: '/dashboard/billing?tab=plan' },
+    {
+      hostname: 'app.omnilux.tv',
+      origin: 'https://app.omnilux.tv',
+      protocol: 'https:',
+      port: '',
+    },
+  )).toBe('https://app.omnilux.tv/dashboard/billing?tab=plan');
+
+  expect(getWorkosRedirectCallbackHref(
+    { returnTo: 'https://evil.example/phish' },
+    {
+      hostname: 'app.omnilux.tv',
+      origin: 'https://app.omnilux.tv',
+      protocol: 'https:',
+      port: '',
+    },
+  )).toBe('https://app.omnilux.tv/dashboard');
 });

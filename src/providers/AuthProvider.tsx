@@ -1,6 +1,7 @@
 import { AuthKitProvider, useAuth as useWorkosAuth } from '@workos-inc/authkit-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { buildAppHref } from '@/lib/site-surface';
+import { getWorkosRedirectCallbackHref } from '@/surfaces/app/lib/auth-flow';
 import { setCloudAccessTokenProvider } from '@/lib/supabase';
 import { AuthContext, useAuth, type AuthContextValue, type CloudSession, type CloudUser } from './auth-context';
 import { resolveWorkosAccessToken } from './workos-token';
@@ -307,8 +308,7 @@ export const AuthProvider = ({
       devMode={workosDevMode}
       redirectUri={buildAppHref('/auth/callback')}
       onRedirectCallback={({ state }) => {
-        const returnTo = typeof state?.returnTo === 'string' ? state.returnTo : '/dashboard';
-        window.location.replace(returnTo);
+        window.location.replace(getWorkosRedirectCallbackHref(state));
       }}
     >
       <WorkosAuthBridge enabled={enabled}>{children}</WorkosAuthBridge>
