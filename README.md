@@ -16,6 +16,7 @@ This repo owns the hosted OmniLux customer cloud app:
 - billing and subscription management
 - self-hosted server claim and invite management
 - managed runtime visibility for `media.omnilux.tv`
+- signed-in managed-media discovery and provider workspaces, including delegated provider unit visibility and read-only contract operational term counts for invited provider members
 - plugin submission and other authenticated cloud surfaces
 
 Approved boundary:
@@ -102,7 +103,18 @@ The canonical edge-consumed app artifact is the published OCI image `ghcr.io/omn
 - cloud-mediated remote access should rely on relay state
 - `managed-media` visibility is entitlement driven and should be shown only to accounts allowed by cloud policy
 - `get-customer-overview` is the hosted-app contract for customer onboarding state, managed media runtime status, and relay policy
+- managed-media playback launch should use `src/surfaces/app/lib/managed-media-launch.ts` so the app requests a cloud-issued playback grant and then asks `media.omnilux.tv` for grant-bound launch instructions
+- cloud-backed discovery launch cards should request playback grants with the
+  release-backed target shape (`releaseVersionId` plus `assetId`) so
+  `omnilux-cloud` resolves catalog, rights, and asset policy from cloud state;
+  full client-submitted policy fields are only for fixture fallback cards
+- grant-backed managed-media launches should mark the cloud grant consumed after `media.omnilux.tv` accepts the launch and record best-effort runtime usage events through `src/surfaces/app/lib/managed-media-launch.ts`; usage reporting must not bypass `media.omnilux.tv`
+- signed-in managed-media discovery should use `list-managed-media-discovery`
+  from `omnilux-cloud` first; fixture cards are only a safe fallback for empty
+  early environments or temporary cloud catalog failures
+- discovery cards in `src/surfaces/app/pages/dashboard/ManagedMedia.tsx` may render a launch action only when the shared discovery item includes an explicit playback target; preview-only and locked items must remain non-launchable
 - managed media is for OmniLux-operated partner/studio media and should not be treated as a public catalog for every signed-in account by default
 - broad access for all authenticated accounts is a controlled preview/demo policy, not the intended production posture
 - provider or studio management belongs behind provider-scoped/operator-gated access, not ordinary customer dashboard authority
+- provider-facing reporting, settlement statement visibility, catalog draft, release draft, rights draft, asset-delivery intake, and request UI in `src/surfaces/app/pages/dashboard/ManagedMedia.tsx` must remain conditional on active provider workspaces from `list-my-managed-media-provider-workspaces`; provider requests can link item/release/rights context, reporting and approved/exported settlement statements are aggregate/read-only, release drafts cannot publish or become current releases, and ingestion processing, publish, approval, takedown, analytics, payout, and settlement authority stay in operator/cloud workflows
 - server listings in this app should only model `self-hosted` and `managed-media`; operator access belongs to the separate ops console, not the server registry

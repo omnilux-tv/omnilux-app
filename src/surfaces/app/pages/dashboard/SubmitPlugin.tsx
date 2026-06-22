@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
+import { invokeCloudFunction } from '@/surfaces/app/lib/cloud-functions';
 
 const pluginCategories = [
   'Integrations',
@@ -28,26 +28,27 @@ export const SubmitPlugin = () => {
     setError(null);
     setLoading(true);
 
-    const { error: err } = await supabase.functions.invoke<{
-      pluginId: string;
-      slug: string;
-      submissionStatus: string;
-    }>('submit-plugin', {
-      body: {
-        name: name.trim(),
-        displayName: displayName.trim(),
-        description: description.trim(),
-        category,
-        githubUrl: githubUrl.trim() || null,
-      },
-    });
-
-    setLoading(false);
-    if (err) {
-      setError(err.message);
+    try {
+      await invokeCloudFunction<{
+        pluginId: string;
+        slug: string;
+        submissionStatus: string;
+      }>('submit-plugin', {
+        body: {
+          name: name.trim(),
+          displayName: displayName.trim(),
+          description: description.trim(),
+          category,
+          githubUrl: githubUrl.trim() || null,
+        },
+      });
+    } catch (err) {
+      setLoading(false);
+      setError(err instanceof Error ? err.message : 'Plugin submission failed.');
       return;
     }
 
+    setLoading(false);
     setSubmitted(true);
   };
 

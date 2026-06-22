@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
+import { invokeCloudFunction } from '@/surfaces/app/lib/cloud-functions';
 
 const CODE_LENGTH = 6;
 
@@ -77,12 +77,13 @@ export const ClaimServer = ({ initialCode }: ClaimServerProps) => {
       return;
     }
 
-    const { data, error: invokeError } = await supabase.functions.invoke<ClaimServerResponse>('claim-server', {
-      body: { code: claimCode },
-    });
-
-    if (invokeError) {
-      setError(invokeError.message || 'Invalid or expired claim code.');
+    let data: ClaimServerResponse;
+    try {
+      data = await invokeCloudFunction<ClaimServerResponse>('claim-server', {
+        body: { code: claimCode },
+      });
+    } catch (invokeError) {
+      setError(invokeError instanceof Error ? invokeError.message : 'Invalid or expired claim code.');
       setLoading(false);
       return;
     }

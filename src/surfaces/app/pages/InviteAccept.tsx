@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from '@tanstack/react-router';
 import { buildAppHref } from '@/lib/site-surface';
 import { useAuth } from '@/providers/AuthProvider';
-import { supabase } from '@/lib/supabase';
+import { invokeCloudAction } from '@/surfaces/app/lib/cloud-functions';
 
 export const InviteAccept = () => {
   const { code } = useParams({ from: '/invite_/$code' });
@@ -20,11 +20,12 @@ export const InviteAccept = () => {
     }
 
     const accept = async () => {
-      const { error } = await supabase.functions.invoke('accept-invite', {
-        body: { code },
-      });
-      if (error) {
-        setErrorMessage(error.message);
+      try {
+        await invokeCloudAction('accept-invite', {
+          body: { code },
+        });
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : 'Invite could not be accepted.');
         setStatus('error');
         return;
       }

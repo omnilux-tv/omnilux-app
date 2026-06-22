@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
+import { invokeCloudFunction } from '@/surfaces/app/lib/cloud-functions';
 import type {
   ManagedMediaOperatingMode,
   ManagedMediaPolicy,
@@ -56,6 +56,15 @@ export interface CustomerOverview {
     lastSeenAt: string | null;
     version: string | null;
   } | null;
+  managedMediaSummary: {
+    windowStart: string;
+    windowEnd: string;
+    discoveryItemsTotal: number;
+    playableItemsTotal: number;
+    providerWorkspacesTotal: number;
+    recentGrantsIssued: number;
+    recentGrantsConsumed: number;
+  };
 }
 
 export const useCustomerOverview = () => {
@@ -63,13 +72,7 @@ export const useCustomerOverview = () => {
 
   return useQuery({
     queryKey: ['customer-overview', session?.user.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke<CustomerOverview>('get-customer-overview');
-      if (error) {
-        throw error;
-      }
-      return data as CustomerOverview;
-    },
+    queryFn: () => invokeCloudFunction<CustomerOverview>('get-customer-overview'),
     enabled: Boolean(session?.access_token),
   });
 };

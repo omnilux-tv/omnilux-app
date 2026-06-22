@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import type { CloudBillingInterval } from '@/lib/cloud-plans';
 import { shouldRetryAccessProfileQuery } from '@/surfaces/app/lib/access-profile-retry';
+import { invokeCloudFunction } from '@/surfaces/app/lib/cloud-functions';
 
 export interface AccessProfileSubscription {
   tier: string;
@@ -110,13 +110,7 @@ export const useAccessProfile = () => {
 
   return useQuery({
     queryKey: ['access-profile', session?.user.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke<AccessProfile>('get-access-profile');
-      if (error) {
-        throw error;
-      }
-      return data as AccessProfile;
-    },
+    queryFn: () => invokeCloudFunction<AccessProfile>('get-access-profile'),
     retry: shouldRetryAccessProfileQuery,
     enabled: !!session?.access_token,
   });

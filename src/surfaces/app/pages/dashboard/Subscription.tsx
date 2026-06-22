@@ -3,9 +3,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CreditCard, ExternalLink, Gem } from 'lucide-react';
 import {
   annualDiscountPercent,
+  foundingMemberOffer,
   formatCloudPrice,
   formatOneTimeCloudPrice,
+  isCloudOneTimeOfferIntent,
   lifetimePlan,
+  lifetimeMembershipOffer,
   paidCloudPlans,
   paidCloudTierOrder,
   type CloudBillingInterval,
@@ -18,6 +21,7 @@ import {
   getAccessProfileSubscriptionState,
   useAccessProfile,
 } from '@/surfaces/app/lib/access-profile';
+import { invokeCloudFunction } from '@/surfaces/app/lib/cloud-functions';
 
 interface FoundingMembershipData {
   id: string;
@@ -100,13 +104,14 @@ export const Subscription = () => {
     setBillingError(null);
     setCheckoutTier(tier);
 
-    const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-      body: { tier, interval: selectedInterval },
-    });
-
-    if (error) {
+    let data: { url?: unknown };
+    try {
+      data = await invokeCloudFunction<{ url?: unknown }>('create-checkout-session', {
+        body: { tier, interval: selectedInterval },
+      });
+    } catch (error) {
       setCheckoutTier(null);
-      setBillingError(error.message);
+      setBillingError(error instanceof Error ? error.message : 'Unable to start checkout.');
       return;
     }
 
@@ -124,13 +129,14 @@ export const Subscription = () => {
     setBillingError(null);
     setPortalAction(action);
 
-    const { data, error } = await supabase.functions.invoke('create-billing-portal-session', {
-      body: { action },
-    });
-
-    if (error) {
+    let data: { url?: unknown };
+    try {
+      data = await invokeCloudFunction<{ url?: unknown }>('create-billing-portal-session', {
+        body: { action },
+      });
+    } catch (error) {
       setPortalAction(null);
-      setBillingError(error.message);
+      setBillingError(error instanceof Error ? error.message : 'Unable to open billing portal.');
       return;
     }
 
@@ -160,11 +166,12 @@ export const Subscription = () => {
     setBillingError(null);
     setFoundingCheckoutPending(true);
 
-    const { data, error } = await supabase.functions.invoke('create-founding-member-session');
-
-    if (error) {
+    let data: { url?: unknown };
+    try {
+      data = await invokeCloudFunction<{ url?: unknown }>(foundingMemberOffer.checkoutFunctionName);
+    } catch (error) {
       setFoundingCheckoutPending(false);
-      setBillingError(error.message);
+      setBillingError(error instanceof Error ? error.message : 'Unable to start founding member checkout.');
       return;
     }
 
@@ -182,11 +189,12 @@ export const Subscription = () => {
     setBillingError(null);
     setLifetimeCheckoutPending(true);
 
-    const { data, error } = await supabase.functions.invoke('create-lifetime-membership-session');
-
-    if (error) {
+    let data: { url?: unknown };
+    try {
+      data = await invokeCloudFunction<{ url?: unknown }>(lifetimeMembershipOffer.checkoutFunctionName);
+    } catch (error) {
       setLifetimeCheckoutPending(false);
-      setBillingError(error.message);
+      setBillingError(error instanceof Error ? error.message : 'Unable to start lifetime checkout.');
       return;
     }
 
@@ -213,19 +221,19 @@ export const Subscription = () => {
     const isCloudTier = tier === 'personal' || tier === 'duo' || tier === 'family';
     const isBillingInterval = interval === 'monthly' || interval === 'annual';
 
-    if (intent !== 'founding-member' && intent !== 'lifetime-membership' && !isCloudTier) {
+    if (!isCloudOneTimeOfferIntent(intent) && !isCloudTier) {
       return;
     }
 
     autoCheckoutHandledRef.current = true;
     clearAutoCheckoutParams();
 
-    if (intent === 'founding-member') {
+    if (intent === foundingMemberOffer.intent) {
       void startFoundingMemberCheckout();
       return;
     }
 
-    if (intent === 'lifetime-membership') {
+    if (intent === lifetimeMembershipOffer.intent) {
       void startLifetimeMembershipCheckout();
       return;
     }
@@ -470,10 +478,9 @@ export const Subscription = () => {
           <div className="flex items-center gap-3">
             <Gem className="h-6 w-6 text-accent" />
             <div>
-              <h2 className="text-lg font-bold text-foreground">Lifetime membership</h2>
+              <h2 className="text-lg font-bold text-foreground">{lifetimePlan.name} membership</h2>
               <p className="text-sm text-muted">
-                {formatOneTimeCloudPrice(lifetimePlan.priceCents)} for Family-level cloud access without
-                recurring billing.
+                {formatOneTimeCloudPrice(lifetimePlan.priceCents)}. {lifetimePlan.description}
               </p>
             </div>
           </div>
@@ -504,7 +511,7 @@ export const Subscription = () => {
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Gem className="h-4 w-4" />
-              {lifetimeCheckoutPending ? 'Opening checkout...' : 'Buy lifetime membership'}
+              {lifetimeCheckoutPending ? 'Opening checkout...' : lifetimeMembershipOffer.copy.ctaLabel}
             </button>
           )}
         </div>
@@ -513,9 +520,9 @@ export const Subscription = () => {
           <div className="flex items-center gap-3">
             <Gem className="h-6 w-6 text-accent" />
             <div>
-              <h2 className="text-lg font-bold text-foreground">Founding member</h2>
+              <h2 className="text-lg font-bold text-foreground">{foundingMemberOffer.copy.name}</h2>
               <p className="text-sm text-muted">
-                $499.99 one-time supporter purchase that stays separate from monthly and annual cloud billing.
+                {formatOneTimeCloudPrice(foundingMemberOffer.priceCents)}. {foundingMemberOffer.copy.description}
               </p>
             </div>
           </div>
@@ -526,11 +533,7 @@ export const Subscription = () => {
           </p>
 
           <ul className="mt-4 space-y-2">
-            {[
-              '$499.99 one-time purchase, not a recurring plan',
-              'Member updates and private launch briefings',
-              'Launch-era recognition and supporter status',
-            ].map((bullet) => (
+            {foundingMemberOffer.copy.bullets.map((bullet) => (
               <li key={bullet} className="flex gap-2 text-sm leading-6 text-muted">
                 <span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent" />
                 <span>{bullet}</span>
@@ -559,7 +562,7 @@ export const Subscription = () => {
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Gem className="h-4 w-4" />
-              {foundingCheckoutPending ? 'Opening checkout...' : 'Become a Founding Member'}
+              {foundingCheckoutPending ? 'Opening checkout...' : foundingMemberOffer.copy.ctaLabel}
             </button>
           )}
         </div>

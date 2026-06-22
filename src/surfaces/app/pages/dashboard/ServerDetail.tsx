@@ -19,7 +19,7 @@ import {
   hasRemoteHttpRelaySupport,
   type CreateRelaySessionResponse,
 } from '@/surfaces/app/lib/relay-session';
-import { supabase } from '@/lib/supabase';
+import { invokeCloudAction, invokeCloudFunction } from '@/surfaces/app/lib/cloud-functions';
 import { cn } from '@/lib/utils';
 
 interface ServerDetailData {
@@ -89,10 +89,9 @@ export const ServerDetail = () => {
   const { data: serverDetail } = useQuery({
     queryKey: ['server-detail', serverId],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke<ServerDetailResponse>('get-server-detail', {
+      const data = await invokeCloudFunction<ServerDetailResponse>('get-server-detail', {
         body: { serverId },
       });
-      if (error) throw error;
       if (!data?.server) throw new Error('Server detail was not returned');
       return data;
     },
@@ -102,42 +101,39 @@ export const ServerDetail = () => {
   const invites = isSelfHostedDeploymentProfile(server?.deployment_profile) ? serverDetail?.invites : undefined;
 
   const createInvite = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.functions.invoke('create-invite', {
+    mutationFn: () => (
+      invokeCloudAction('create-invite', {
         body: {
           serverId,
           role: inviteRole,
           maxUses: inviteMaxUses,
         },
-      });
-      if (error) throw error;
-    },
+      })
+    ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['server-detail', serverId] }),
   });
 
   const revokeInvite = useMutation({
-    mutationFn: async (inviteId: string) => {
-      const { error } = await supabase.functions.invoke('revoke-server-invite', {
+    mutationFn: (inviteId: string) => (
+      invokeCloudAction('revoke-server-invite', {
         body: { inviteId },
-      });
-      if (error) throw error;
-    },
+      })
+    ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['server-detail', serverId] }),
   });
 
   const removeAccess = useMutation({
-    mutationFn: async (accessId: string) => {
-      const { error } = await supabase.functions.invoke('remove-server-access', {
+    mutationFn: (accessId: string) => (
+      invokeCloudAction('remove-server-access', {
         body: { accessId },
-      });
-      if (error) throw error;
-    },
+      })
+    ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['server-detail', serverId] }),
   });
 
   const openRelaySession = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke<CreateRelaySessionResponse>('create-relay-session', {
+      const data = await invokeCloudFunction<CreateRelaySessionResponse>('create-relay-session', {
         body: {
           serverId,
           sessionType: 'remote-access',
@@ -146,7 +142,6 @@ export const ServerDetail = () => {
           },
         },
       });
-      if (error) throw error;
       if (!data?.token) throw new Error('Relay session token was not returned');
       return data;
     },

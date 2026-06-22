@@ -1,10 +1,10 @@
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Server } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { ServerCard } from '@/surfaces/app/components/ServerCard';
 import { useAccessProfile } from '@/surfaces/app/lib/access-profile';
+import { invokeCloudFunction } from '@/surfaces/app/lib/cloud-functions';
 import {
   isManagedMediaDeploymentProfile,
   isSelfHostedDeploymentProfile,
@@ -29,11 +29,7 @@ export const Servers = () => {
 
   const { data: servers, error, isLoading } = useQuery({
     queryKey: ['servers', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke<ServerRow[]>('list-servers');
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: () => invokeCloudFunction<ServerRow[]>('list-servers'),
     enabled: !!user,
   });
   const selfHostedServers = (servers ?? []).filter((server) => isSelfHostedDeploymentProfile(server.deployment_profile));

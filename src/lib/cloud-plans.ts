@@ -1,14 +1,23 @@
 import {
   cloudBillingAnnualDiscountPercent,
   cloudBillingPlanCopy,
+  cloudOfferPriceFormatter,
+  foundingMemberOffer,
   getCloudBillingPriceCents,
+  isCloudOneTimeOfferIntent,
+  lifetimeMembershipOffer,
   paidCloudTierOrder,
   type CloudBillingInterval,
   type CloudBillingPlanCopy,
   type PaidCloudTier,
 } from '@omnilux/types';
 
-export type { CloudBillingInterval, PaidCloudTier } from '@omnilux/types';
+export type {
+  CloudBillingInterval,
+  CloudOneTimeOfferCatalogEntry,
+  CloudOneTimeOfferIntent,
+  PaidCloudTier,
+} from '@omnilux/types';
 export { paidCloudTierOrder } from '@omnilux/types';
 
 type PaidCloudPlan = {
@@ -22,16 +31,16 @@ type PaidCloudPlan = {
 
 export const annualDiscountPercent = cloudBillingAnnualDiscountPercent;
 export const lifetimePlan = {
-  tier: 'family',
-  name: 'Lifetime',
-  description: 'One-time OmniPass access with Family-level cloud benefits while active.',
-  bullets: [
-    'Family-level cloud access without recurring billing',
-    'Self-hosted relay access through renewable server leases',
-    'Account-managed lifetime access separate from monthly subscriptions',
-  ],
-  priceCents: 49999,
+  tier: lifetimeMembershipOffer.tier,
+  ...lifetimeMembershipOffer.copy,
+  priceCents: lifetimeMembershipOffer.priceCents,
 } as const satisfies CloudBillingPlanCopy & { tier: PaidCloudTier; priceCents: number };
+export const foundingMemberPlan = {
+  ...foundingMemberOffer.copy,
+  priceCents: foundingMemberOffer.priceCents,
+} as const;
+export const oneTimeCloudOffers = [lifetimeMembershipOffer, foundingMemberOffer] as const;
+export { foundingMemberOffer, isCloudOneTimeOfferIntent, lifetimeMembershipOffer };
 
 export const paidCloudPlans: readonly PaidCloudPlan[] = paidCloudTierOrder.map((tier) => ({
   tier,
@@ -40,11 +49,11 @@ export const paidCloudPlans: readonly PaidCloudPlan[] = paidCloudTierOrder.map((
   annualCents: getCloudBillingPriceCents(tier, 'annual'),
 }));
 
-const currencyFormatter = new Intl.NumberFormat('en-US', {
+const currencyFormatter = new Intl.NumberFormat(cloudOfferPriceFormatter.locale, {
   style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
+  currency: cloudOfferPriceFormatter.currency,
+  minimumFractionDigits: cloudOfferPriceFormatter.minimumFractionDigits,
+  maximumFractionDigits: cloudOfferPriceFormatter.maximumFractionDigits,
 });
 
 export const formatCloudPrice = (cents: number, interval: CloudBillingInterval) => (
