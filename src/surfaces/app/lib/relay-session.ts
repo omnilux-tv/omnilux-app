@@ -22,7 +22,7 @@ export interface CreateRelaySessionResponse {
   };
 }
 
-export const RELAY_SITE_ORIGIN = normalizeOrigin(
+const RELAY_SITE_ORIGIN = normalizeOrigin(
   import.meta.env.VITE_RELAY_SITE_URL,
   DEFAULT_RELAY_SITE_URL,
 );
