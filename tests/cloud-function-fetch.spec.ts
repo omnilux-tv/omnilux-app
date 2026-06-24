@@ -308,6 +308,23 @@ test('managed media launch rejects untrusted origins before reading the cloud to
   expect(calledFetch).toBe(false);
 });
 
+test('managed media launch maps runtime session failures to media wording', async () => {
+  await expect(establishManagedMediaSession({
+    mediaOrigin: 'https://media.omnilux.tv/',
+    getAccessToken: async () => 'workos-access-token',
+    fetch: async () => new Response(JSON.stringify({ error: 'session rejected' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    }),
+  })).rejects.toThrow('session rejected');
+
+  await expect(establishManagedMediaSession({
+    mediaOrigin: 'https://media.omnilux.tv/',
+    getAccessToken: async () => 'workos-access-token',
+    fetch: async () => new Response('{}', { status: 500 }),
+  })).rejects.toThrow('OmniLux Media could not start a session for this account.');
+});
+
 test('access profile query does not retry authorization failures', () => {
   expect(shouldRetryAccessProfileQuery(0, { status: 401 })).toBe(false);
   expect(shouldRetryAccessProfileQuery(0, { context: { status: 403 } })).toBe(false);

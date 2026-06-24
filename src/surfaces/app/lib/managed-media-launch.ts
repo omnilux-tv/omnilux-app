@@ -1,4 +1,3 @@
-import { invokeCloudFunction } from '@/surfaces/app/lib/cloud-functions';
 import {
   establishCloudRuntimeSession,
   postRuntimeJson,
@@ -13,6 +12,9 @@ import type {
   ManagedMediaPlaybackGrantIssueResponse,
   ManagedMediaPlaybackLaunchResponse,
 } from '@omnilux/types';
+
+type CloudFunctionInvokeOptions = Parameters<typeof import('@/surfaces/app/lib/cloud-functions').invokeCloudFunction>[1];
+type CloudFunctionBody = NonNullable<CloudFunctionInvokeOptions>['body'];
 
 interface EstablishManagedMediaSessionInput {
   mediaOrigin: string;
@@ -29,6 +31,32 @@ interface RecordManagedMediaUsageEventInput extends EstablishManagedMediaSession
 }
 
 const TRUSTED_MANAGED_MEDIA_ORIGIN = 'https://media.omnilux.tv';
+const GENERIC_RUNTIME_ORIGIN_ERROR = 'This runtime can only be opened through media.omnilux.tv.';
+const GENERIC_RUNTIME_SESSION_ERROR = 'OmniLux could not start a runtime session for this account.';
+
+const translateManagedMediaSessionError = (error: unknown): Error => {
+  if (!(error instanceof Error)) {
+    return new Error('OmniLux Media could not start a session for this account.');
+  }
+
+  if (error.message === GENERIC_RUNTIME_ORIGIN_ERROR) {
+    return new Error('OmniLux Media can only be opened through media.omnilux.tv.');
+  }
+
+  if (error.message === GENERIC_RUNTIME_SESSION_ERROR) {
+    return new Error('OmniLux Media could not start a session for this account.');
+  }
+
+  return error;
+};
+
+const invokeManagedMediaCloudFunction = async <TResponse>(
+  functionName: string,
+  body: CloudFunctionBody,
+): Promise<TResponse> => {
+  const { invokeCloudFunction } = await import('@/surfaces/app/lib/cloud-functions');
+  return invokeCloudFunction<TResponse>(functionName, { body });
+};
 
 export const establishManagedMediaSession = async ({
   mediaOrigin,
@@ -56,30 +84,16 @@ const establishManagedMediaBridge = async ({
       fetch: fetchImpl,
     });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === 'This runtime can only be opened through media.omnilux.tv.'
-    ) {
-      throw new Error('OmniLux Media can only be opened through media.omnilux.tv.');
-    }
-    if (
-      error instanceof Error &&
-      error.message === 'OmniLux could not start a runtime session for this account.'
-    ) {
-      throw new Error('OmniLux Media could not start a session for this account.');
-    }
-    throw error;
+    throw translateManagedMediaSessionError(error);
   }
 };
 
 export const issueManagedMediaPlaybackGrant = async (
   grantRequest: ManagedMediaPlaybackGrantIssueRequest,
 ): Promise<ManagedMediaPlaybackGrantIssueResponse> => {
-  const data = await invokeCloudFunction<ManagedMediaPlaybackGrantIssueResponse>(
+  const data = await invokeManagedMediaCloudFunction<ManagedMediaPlaybackGrantIssueResponse>(
     'issue-managed-media-playback-grant',
-    {
-      body: grantRequest,
-    },
+    grantRequest,
   );
 
   if (!data?.token) {
@@ -92,11 +106,9 @@ export const issueManagedMediaPlaybackGrant = async (
 export const consumeManagedMediaPlaybackGrant = async (
   consumeRequest: ManagedMediaPlaybackGrantConsumeRequest,
 ): Promise<ManagedMediaPlaybackGrantConsumeResponse> => {
-  const data = await invokeCloudFunction<ManagedMediaPlaybackGrantConsumeResponse>(
+  const data = await invokeManagedMediaCloudFunction<ManagedMediaPlaybackGrantConsumeResponse>(
     'consume-managed-media-playback-grant',
-    {
-      body: consumeRequest,
-    },
+    consumeRequest,
   );
 
   if (data?.status !== 'consumed') {
