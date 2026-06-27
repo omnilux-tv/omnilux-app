@@ -30,6 +30,8 @@ export const ServerOverviewCard = ({ vm }: ServerOverviewCardProps) => {
             title={
               vm.canOpenRelaySession
                 ? 'Open this server through OmniLux relay'
+                : !vm.relayRemoteSessionsEnabled
+                  ? 'Relay remote sessions are disabled by the current platform rollout setting'
                 : 'Relay remote access requires an eligible cloud plan, an online tunnel, and an upgraded OmniLux server'
             }
           >

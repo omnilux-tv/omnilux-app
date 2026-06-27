@@ -107,7 +107,14 @@ export const useServerDetail = () => {
   const relayTone = relayCondition ? getRelayConditionTone(relayCondition) : 'muted';
   const remoteRelaySupported = server ? hasRemoteHttpRelaySupport(server.relay_capabilities) : false;
   const relayEntitled = accessProfile?.relayRemoteAccessEntitled === true;
-  const canOpenRelaySession = Boolean(isSelfHosted && relayCondition === 'ready' && relayEntitled && remoteRelaySupported);
+  const relayRemoteSessionsEnabled = accessProfile?.relayRemoteSessionsEnabled === true;
+  const canOpenRelaySession = Boolean(
+    isSelfHosted &&
+    relayCondition === 'ready' &&
+    relayEntitled &&
+    relayRemoteSessionsEnabled &&
+    remoteRelaySupported,
+  );
   const isOnline = server?.last_seen_at ? Date.now() - new Date(server.last_seen_at).getTime() < 5 * 60 * 1000 : false;
   const invalidate = () => queryClient.invalidateQueries({ queryKey });
 
@@ -152,6 +159,7 @@ export const useServerDetail = () => {
     isOnline,
     relayCondition,
     relayTone,
+    relayRemoteSessionsEnabled,
     canOpenRelaySession,
     inviteRole,
     setInviteRole,

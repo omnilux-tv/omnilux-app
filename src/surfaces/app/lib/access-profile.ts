@@ -69,6 +69,7 @@ export interface AccessProfile {
   relayAccessPolicyDescription: string;
   hasPaidCloudPlan: boolean;
   relayRemoteAccessEntitled: boolean;
+  relayRemoteSessionsEnabled: boolean;
   isOperator: boolean;
   createdAt: string;
   updatedAt: string;
