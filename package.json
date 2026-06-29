@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit --pretty false",
     "test:auth": "APP_SITE_URL=http://127.0.0.1 pnpm exec playwright test tests/cloud-function-fetch.spec.ts --reporter=line",
-    "test:smoke": "playwright test tests/account-smoke.spec.ts"
+    "test:smoke": "playwright test tests/account-smoke.spec.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@omnilux/types": "file:../omnilux-packages/packages/types",
@@ -39,6 +40,9 @@
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
+    "prettier": "^3.9.1",
     "typescript": "^5.8.2",
     "vite": "^7.3.1"
   }
