@@ -30,7 +30,7 @@ export const ResetPassword = () => {
 
     const { error: err } = await supabase.auth.updateUser({ password });
     if (err) {
-      setError(err.message);
+      setError('Password could not be updated. Request a new reset link and try again.');
       setLoading(false);
       return;
     }

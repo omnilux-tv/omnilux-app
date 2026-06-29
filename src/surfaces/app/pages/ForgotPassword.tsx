@@ -26,7 +26,7 @@ export const ForgotPassword = () => {
     });
 
     if (err) {
-      setError(err.message);
+      setError('Password reset could not be requested. Try again.');
       setLoading(false);
       return;
     }

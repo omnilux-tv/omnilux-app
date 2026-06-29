@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
+import { TurnstileChallenge, turnstileIsConfigured } from '@/surfaces/app/components/TurnstileChallenge';
 import { invokeCloudFunction } from '@/surfaces/app/lib/cloud-functions';
 
 const pluginCategories = [
@@ -21,11 +22,27 @@ export const SubmitPlugin = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+
+  const resetTurnstile = useCallback(() => {
+    setTurnstileToken(null);
+    setTurnstileResetKey((value) => value + 1);
+  }, []);
+  const handleTurnstileError = useCallback(() => {
+    setError('Security check could not be loaded.');
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
     setError(null);
+
+    if (turnstileIsConfigured && !turnstileToken) {
+      setError('Complete the security check and try again.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -40,11 +57,13 @@ export const SubmitPlugin = () => {
           description: description.trim(),
           category,
           githubUrl: githubUrl.trim() || null,
+          turnstileToken,
         },
       });
     } catch (err) {
       setLoading(false);
       setError(err instanceof Error ? err.message : 'Plugin submission failed.');
+      resetTurnstile();
       return;
     }
 
@@ -157,9 +176,16 @@ export const SubmitPlugin = () => {
             />
           </div>
 
+          <TurnstileChallenge
+            action="submit_plugin"
+            onToken={setTurnstileToken}
+            onError={handleTurnstileError}
+            resetKey={turnstileResetKey}
+          />
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (turnstileIsConfigured && !turnstileToken)}
             className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
           >
             {loading ? 'Submitting...' : 'Submit for review'}

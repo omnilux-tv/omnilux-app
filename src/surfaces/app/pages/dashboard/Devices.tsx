@@ -14,7 +14,7 @@ export const Devices = () => {
   const { session } = useAuth();
   const sessions: DeviceSession[] = session
     ? [{
-        id: session.access_token,
+        id: 'current-browser-session',
         device_name: 'Current browser session',
         device_type: 'Web',
         ip_address: 'Managed by Supabase Auth',
