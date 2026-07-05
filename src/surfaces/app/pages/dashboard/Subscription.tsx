@@ -15,8 +15,8 @@ export const Subscription = () => {
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Cloud plan and billing</h1>
           <p className="mt-1 text-sm text-muted">
-            Local playback and hosting stay free. Managed OmniLux media is included with your cloud account, while paid
-            billing applies to self-hosted remote access and premium cloud services around it.
+            Local playback and hosting stay free. Lifetime and founding-member purchases are open during beta; recurring
+            cloud plans are visible for comparison and waitlist interest before checkout opens.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <a

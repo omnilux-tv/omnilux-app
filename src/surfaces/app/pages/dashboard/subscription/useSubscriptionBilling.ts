@@ -39,7 +39,8 @@ export const useSubscriptionBilling = () => {
   const { user } = useAuth();
   const accessProfileQuery = useAccessProfile();
   const [billingError, setBillingError] = useState<string | null>(null);
-  const [checkoutTier, setCheckoutTier] = useState<string | null>(null);
+  const [waitlistTier, setWaitlistTier] = useState<string | null>(null);
+  const [waitlistMessage, setWaitlistMessage] = useState<string | null>(null);
   const [portalAction, setPortalAction] = useState<'manage' | 'cancel' | null>(null);
   const [billingInterval, setBillingInterval] = useState<CloudBillingInterval>('monthly');
   const [foundingCheckoutPending, setFoundingCheckoutPending] = useState(false);
@@ -67,6 +68,7 @@ export const useSubscriptionBilling = () => {
   const hasLifetimeMembership = Boolean(effectiveEntitlement?.source === 'lifetime_purchase' && effectiveEntitlement.paidCloudPlan);
   const hasFoundingMembership = foundingMembershipQuery.data?.status === 'paid';
   const checkoutState = useMemo(() => readSearchParam('checkout'), []);
+  const waitlistState = useMemo(() => readSearchParam('waitlist'), []);
   const portalState = useMemo(() => readSearchParam('portal'), []);
   const foundingState = useMemo(() => readSearchParam('founding'), []);
   const lifetimeState = useMemo(() => readSearchParam('lifetime'), []);
@@ -93,24 +95,20 @@ export const useSubscriptionBilling = () => {
     }
   };
 
-  const startCheckout = async (tier: PaidCloudTier, intervalOverride?: CloudBillingInterval) => {
+  const joinCloudPlanWaitlist = async (tier: PaidCloudTier, intervalOverride?: CloudBillingInterval) => {
     const selectedInterval = intervalOverride ?? billingInterval;
     setBillingError(null);
-    setCheckoutTier(tier);
+    setWaitlistMessage(null);
+    setWaitlistTier(tier);
     try {
-      const data = await invokeCloudFunction<{ url?: unknown }>('create-checkout-session', {
-        body: { tier, interval: selectedInterval },
+      await invokeCloudFunction<{ message?: unknown }>('join-cloud-plan-waitlist', {
+        body: { tier, interval: selectedInterval, source: 'dashboard' },
       });
-      const url = typeof data?.url === 'string' ? data.url : null;
-      if (!url) {
-        setCheckoutTier(null);
-        setBillingError('Stripe checkout URL was not returned.');
-        return;
-      }
-      window.location.assign(url);
+      setWaitlistMessage(`You are on the ${tierNames[tier]} ${selectedInterval} cloud plan waitlist.`);
     } catch (error) {
-      setCheckoutTier(null);
-      setBillingError(error instanceof Error ? error.message : 'Unable to start checkout.');
+      setBillingError(error instanceof Error ? error.message : 'Unable to join the cloud plan waitlist.');
+    } finally {
+      setWaitlistTier(null);
     }
   };
 
@@ -138,6 +136,7 @@ export const useSubscriptionBilling = () => {
     params.delete('intent');
     params.delete('tier');
     params.delete('interval');
+    params.delete('waitlist');
     const query = params.toString();
     window.history.replaceState({}, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`);
   };
@@ -179,7 +178,7 @@ export const useSubscriptionBilling = () => {
     if (isCloudTier) {
       const selectedInterval: CloudBillingInterval = isBillingInterval ? interval : 'monthly';
       setBillingInterval(selectedInterval);
-      void startCheckout(tier, selectedInterval);
+      void joinCloudPlanWaitlist(tier, selectedInterval);
     }
   }, [user]);
 
@@ -190,7 +189,8 @@ export const useSubscriptionBilling = () => {
     foundingMembership: foundingMembershipQuery.data,
     foundingMembershipQuery,
     billingError,
-    checkoutTier,
+    waitlistTier,
+    waitlistMessage,
     portalAction,
     billingInterval,
     setBillingInterval,
@@ -201,8 +201,8 @@ export const useSubscriptionBilling = () => {
     currentTier,
     hasLifetimeMembership,
     hasFoundingMembership,
-    states: { checkoutState, portalState, foundingState, lifetimeState },
-    actions: { startCheckout, openBillingPortal, startFoundingMemberCheckout, startLifetimeMembershipCheckout },
+    states: { checkoutState, waitlistState, portalState, foundingState, lifetimeState },
+    actions: { joinCloudPlanWaitlist, openBillingPortal, startFoundingMemberCheckout, startLifetimeMembershipCheckout },
   };
 };
 
