@@ -71,16 +71,17 @@ Required production browser config:
 Optional browser config:
 
 - `VITE_WORKOS_DEV_MODE` — set to `true` only for local or sandbox AuthKit usage without a custom authentication API hostname
+- `VITE_ENABLE_LEGACY_SUPABASE_AUTH` — dev-only escape hatch for the legacy Supabase Auth bridge; ignored in production and should remain `false` unless intentionally testing the old local fallback
 - `VITE_MARKETING_SITE_URL`
 - `VITE_APP_SITE_URL`
 - `VITE_OPS_SITE_URL`
 - `VITE_DOCS_SITE_URL`
 - `VITE_RELAY_SITE_URL`
-- `VITE_OAUTH_PROVIDERS` — legacy Supabase Auth fallback only
+- `VITE_OAUTH_PROVIDERS` — OAuth providers exposed by the dev-only legacy Supabase Auth bridge when `VITE_ENABLE_LEGACY_SUPABASE_AUTH=true`
 - `VITE_SENTRY_DSN`
 - `VITE_WEB_VITALS_ENDPOINT`
 
-WorkOS AuthKit must allow the app origin and the callback URL `${VITE_APP_SITE_URL}/auth/callback`. Production should use a WorkOS custom authentication API hostname through `VITE_WORKOS_API_HOSTNAME`; `VITE_WORKOS_DEV_MODE=true` is only for local or sandbox usage. Supabase remains required for Edge Functions and Postgres-backed control-plane data, but browser function calls send the WorkOS access token when `VITE_WORKOS_CLIENT_ID` is configured.
+WorkOS AuthKit must allow the app origin and the callback URL `${VITE_APP_SITE_URL}/auth/callback`. Production should use a WorkOS custom authentication API hostname through `VITE_WORKOS_API_HOSTNAME`; `VITE_WORKOS_DEV_MODE=true` is only for local or sandbox usage. Supabase remains required for Edge Functions and Postgres-backed control-plane data, but browser function calls send the WorkOS access token when `VITE_WORKOS_CLIENT_ID` is configured. Missing WorkOS config renders an authentication configuration error unless the dev-only legacy Supabase bridge is explicitly enabled with `VITE_ENABLE_LEGACY_SUPABASE_AUTH=true` in a local Vite dev session.
 
 ## Checks
 

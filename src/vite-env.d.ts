@@ -6,6 +6,10 @@ interface ImportMetaEnv {
   readonly VITE_RELAY_SITE_URL?: string;
   readonly VITE_SUPABASE_URL: string;
   readonly VITE_SUPABASE_ANON_KEY: string;
+  readonly VITE_WORKOS_CLIENT_ID?: string;
+  readonly VITE_WORKOS_API_HOSTNAME?: string;
+  readonly VITE_WORKOS_DEV_MODE?: string;
+  readonly VITE_ENABLE_LEGACY_SUPABASE_AUTH?: string;
   readonly VITE_OAUTH_PROVIDERS?: string;
   readonly VITE_TURNSTILE_SITE_KEY?: string;
   readonly VITE_PLAUSIBLE_DOMAIN?: string;
