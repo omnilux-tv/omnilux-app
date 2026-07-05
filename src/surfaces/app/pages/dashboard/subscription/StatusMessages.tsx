@@ -20,6 +20,10 @@ export const StatusMessages = ({ vm }: StatusMessagesProps) => (
     {vm.states.checkoutState === 'canceled' ? (
       <div className={messageClass.warning}>Checkout was canceled before payment completed. You can try again whenever you are ready.</div>
     ) : null}
+    {vm.waitlistMessage ? <div className={messageClass.success}>{vm.waitlistMessage}</div> : null}
+    {vm.states.waitlistState === 'cloud-plan' && !vm.waitlistMessage ? (
+      <div className={messageClass.warning}>Cloud plan checkout is not open during beta. Your selected plan can be joined from the waitlist cards below.</div>
+    ) : null}
     {vm.states.portalState === 'canceled' ? (
       <div className={messageClass.success}>
         Cancellation was submitted in Stripe. Subscription events are syncing now, so the plan status may take a few moments to update.

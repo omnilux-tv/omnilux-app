@@ -7,7 +7,10 @@ import {
 import { isWorkosSessionPending } from "../src/providers/workos-session-state";
 import { resolveWorkosAccessToken } from "../src/providers/workos-token";
 import { getMissingWorkosSessionMessage } from "../src/surfaces/app/lib/auth-callback";
-import { getWorkosRedirectCallbackHref } from "../src/surfaces/app/lib/auth-flow";
+import {
+  getRedirectPathFromSearch,
+  getWorkosRedirectCallbackHref,
+} from "../src/surfaces/app/lib/auth-flow";
 import { getCustomerDashboardRedirect } from "../src/surfaces/app/lib/dashboard-routing";
 import { shouldRetryAccessProfileQuery } from "../src/surfaces/app/lib/access-profile-retry";
 import { establishManagedMediaSession } from "../src/surfaces/app/lib/managed-media-launch";
@@ -236,6 +239,14 @@ test("WorkOS token resolution keeps a settled session usable through transient t
 
   expect(accessToken).toBe("settled-workos-token");
   expect(calls).toBe(8);
+});
+
+test("auth redirect preserves cloud plan waitlist intent after sign-up", () => {
+  expect(
+    getRedirectPathFromSearch(
+      "?redirect=%2Fdashboard%2Fsubscription%3Ftier%3Dfamily%26interval%3Dannual%26waitlist%3Dcloud-plan"
+    )
+  ).toBe("/dashboard/subscription?tier=family&interval=annual&waitlist=cloud-plan");
 });
 
 test("WorkOS token resolution does not reuse an expired settled session token", async () => {
