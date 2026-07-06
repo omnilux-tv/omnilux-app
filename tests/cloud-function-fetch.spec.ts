@@ -249,6 +249,26 @@ test("auth redirect preserves cloud plan waitlist intent after sign-up", () => {
   ).toBe("/dashboard/subscription?tier=family&interval=annual&waitlist=cloud-plan");
 });
 
+test("auth redirect preserves private beta request intent after sign-up", () => {
+  expect(
+    getRedirectPathFromSearch(
+      "?redirect=%2Fdashboard%3Fintent%3Dprivate-beta-request"
+    )
+  ).toBe("/dashboard?intent=private-beta-request");
+
+  expect(
+    getWorkosRedirectCallbackHref(
+      { returnTo: "/dashboard?intent=private-beta-request" },
+      {
+        hostname: "app.omnilux.tv",
+        origin: "https://app.omnilux.tv",
+        protocol: "https:",
+        port: "",
+      }
+    )
+  ).toBe("https://app.omnilux.tv/dashboard?intent=private-beta-request");
+});
+
 test("WorkOS token resolution does not reuse an expired settled session token", async () => {
   let calls = 0;
   const expiredPayload = btoa(
