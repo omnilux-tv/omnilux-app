@@ -49,9 +49,22 @@ RUN pnpm build:artifact
 
 FROM caddy:2.10-alpine AS runtime
 
+ARG OMNILUX_BUILD_REPOSITORY=unknown
+ARG OMNILUX_BUILD_REF=unknown
+ARG OMNILUX_BUILD_SHA=unknown
+ARG OMNILUX_BUILD_CREATED=unknown
+
 WORKDIR /srv
 
 COPY --from=builder /app/dist ./
+
+RUN mkdir -p /srv/.well-known && \
+    printf '{\n  "repository": "%s",\n  "ref": "%s",\n  "sha": "%s",\n  "created": "%s"\n}\n' \
+      "${OMNILUX_BUILD_REPOSITORY}" \
+      "${OMNILUX_BUILD_REF}" \
+      "${OMNILUX_BUILD_SHA}" \
+      "${OMNILUX_BUILD_CREATED}" \
+      > /srv/.well-known/omnilux-build.json
 
 RUN cat <<'EOF' > /etc/caddy/Caddyfile
 {
@@ -62,11 +75,18 @@ RUN cat <<'EOF' > /etc/caddy/Caddyfile
 :8080 {
   root * /srv
   encode zstd gzip
-  try_files {path} {path}/ /index.html
-  file_server
 
   @immutableAssets path /assets/*
   header @immutableAssets Cache-Control "public, max-age=31536000, immutable"
+
+  handle @immutableAssets {
+    file_server
+  }
+
+  handle {
+    try_files {path} {path}/ /index.html
+    file_server
+  }
 
   header {
     -Server
