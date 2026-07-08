@@ -19,6 +19,12 @@ import {
 import { getCustomerDashboardRedirect } from "../src/surfaces/app/lib/dashboard-routing";
 import { shouldRetryAccessProfileQuery } from "../src/surfaces/app/lib/access-profile-retry";
 import { establishManagedMediaSession } from "../src/surfaces/app/lib/managed-media-launch";
+import {
+  getInviteExpiryLabel,
+  getInviteStatusLabel,
+  getInviteUsageLabel,
+  isInviteInactive,
+} from "../src/surfaces/app/pages/dashboard/server-detail/server-invites";
 
 test("missing WorkOS config stays unconfigured unless legacy Supabase auth is explicitly enabled in dev", () => {
   expect(
@@ -274,6 +280,35 @@ test("auth redirect preserves private beta request intent after sign-up", () => 
       }
     )
   ).toBe("https://app.omnilux.tv/dashboard?intent=private-beta-request");
+});
+
+test("server invite labels expose usage, expiry, and inactive state", () => {
+  const now = new Date("2026-07-08T12:00:00Z");
+  const activeInvite = {
+    uses: 2,
+    max_uses: 5,
+    expires_at: "2026-07-09T12:00:00Z",
+  };
+  const expiredInvite = {
+    uses: 0,
+    max_uses: 1,
+    expires_at: "2026-07-07T12:00:00Z",
+  };
+  const usedUpInvite = {
+    uses: 3,
+    max_uses: 3,
+    expires_at: null,
+  };
+
+  expect(getInviteUsageLabel(activeInvite)).toBe("2/5 used · 3 uses remaining");
+  expect(getInviteExpiryLabel(activeInvite, now)).toContain("Expires");
+  expect(getInviteStatusLabel(activeInvite, now)).toBe("Active");
+  expect(isInviteInactive(activeInvite, now)).toBe(false);
+
+  expect(getInviteStatusLabel(expiredInvite, now)).toBe("Expired");
+  expect(isInviteInactive(expiredInvite, now)).toBe(true);
+  expect(getInviteStatusLabel(usedUpInvite, now)).toBe("Used up");
+  expect(isInviteInactive(usedUpInvite, now)).toBe(true);
 });
 
 test("claim code entry accepts full-code paste from any field", () => {
