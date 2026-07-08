@@ -8,6 +8,11 @@ import { isWorkosSessionPending } from "../src/providers/workos-session-state";
 import { resolveWorkosAccessToken } from "../src/providers/workos-token";
 import { getMissingWorkosSessionMessage } from "../src/surfaces/app/lib/auth-callback";
 import {
+  applyClaimCodeInput,
+  normalizeClaimCodeInput,
+} from "../src/surfaces/app/lib/claim-code";
+import {
+  getAuthEntryContext,
   getRedirectPathFromSearch,
   getWorkosRedirectCallbackHref,
 } from "../src/surfaces/app/lib/auth-flow";
@@ -246,7 +251,9 @@ test("auth redirect preserves cloud plan waitlist intent after sign-up", () => {
     getRedirectPathFromSearch(
       "?redirect=%2Fdashboard%2Fsubscription%3Ftier%3Dfamily%26interval%3Dannual%26waitlist%3Dcloud-plan"
     )
-  ).toBe("/dashboard/subscription?tier=family&interval=annual&waitlist=cloud-plan");
+  ).toBe(
+    "/dashboard/subscription?tier=family&interval=annual&waitlist=cloud-plan"
+  );
 });
 
 test("auth redirect preserves private beta request intent after sign-up", () => {
@@ -267,6 +274,58 @@ test("auth redirect preserves private beta request intent after sign-up", () => 
       }
     )
   ).toBe("https://app.omnilux.tv/dashboard?intent=private-beta-request");
+});
+
+test("claim code entry accepts full-code paste from any field", () => {
+  expect(normalizeClaimCodeInput(" ab-12 c3 ")).toEqual([
+    "A",
+    "B",
+    "1",
+    "2",
+    "C",
+    "3",
+  ]);
+
+  expect(applyClaimCodeInput(["", "", "", "", "", ""], 0, "ab12c3")).toEqual([
+    "A",
+    "B",
+    "1",
+    "2",
+    "C",
+    "3",
+  ]);
+  expect(applyClaimCodeInput(["A", "B", "", "", "", ""], 2, "12c3")).toEqual([
+    "A",
+    "B",
+    "1",
+    "2",
+    "C",
+    "3",
+  ]);
+});
+
+test("AuthKit entry copy is contextual for claim and invite returns", () => {
+  expect(
+    getAuthEntryContext("/dashboard/claim?code=abc123", "sign-in")
+  ).toMatchObject({
+    eyebrow: "Server claim",
+    title: "Sign in to attach this server",
+  });
+  expect(getAuthEntryContext("/invite/abc123", "sign-up")).toMatchObject({
+    eyebrow: "Server invite",
+    title: "Create your account to accept this invite",
+  });
+  expect(
+    getWorkosRedirectCallbackHref(
+      { returnTo: "/invite/abc123" },
+      {
+        hostname: "app.omnilux.tv",
+        origin: "https://app.omnilux.tv",
+        protocol: "https:",
+        port: "",
+      }
+    )
+  ).toBe("https://app.omnilux.tv/invite/abc123");
 });
 
 test("WorkOS token resolution does not reuse an expired settled session token", async () => {
