@@ -10,6 +10,7 @@ test("launch account state calls out an active lifetime purchase as the paid acc
       foundingMembershipPurchasedAt: null,
       waitlistMessage: null,
       waitlistState: null,
+      cloudPlanWaitlist: null,
     })
   ).toEqual({
     tone: "success",
@@ -32,6 +33,7 @@ test("launch account state keeps founding member confirmation visible when lifet
       foundingMembershipPurchasedAt: "2026-07-09T02:00:00.000Z",
       waitlistMessage: null,
       waitlistState: null,
+      cloudPlanWaitlist: null,
     })
   ).toEqual({
     tone: "success",
@@ -55,6 +57,7 @@ test("launch account state calls out a confirmed founding member purchase", () =
       foundingMembershipPurchasedAt: "2026-07-09T02:00:00.000Z",
       waitlistMessage: null,
       waitlistState: null,
+      cloudPlanWaitlist: null,
     })
   ).toEqual({
     tone: "success",
@@ -76,11 +79,42 @@ test("launch account state keeps cloud waitlist actions visible after signup han
       foundingMembershipPurchasedAt: null,
       waitlistMessage: "You are on the Family annual cloud plan waitlist.",
       waitlistState: "cloud-plan",
+      cloudPlanWaitlist: null,
     })
   ).toEqual({
     tone: "info",
     title: "Cloud plan waitlist recorded",
     summary: "You are on the Family annual cloud plan waitlist.",
+    details: [
+      "Recurring cloud checkout is still closed during beta.",
+      "Lifetime and Founding Member purchases remain separate one-time launch offers while availability lasts.",
+    ],
+  });
+});
+
+test("launch account state uses persisted cloud waitlist state after refresh", () => {
+  expect(
+    getLaunchAccountStateSummary({
+      tierLabel: "Free",
+      hasLifetimeMembership: false,
+      hasFoundingMembership: false,
+      foundingMembershipPurchasedAt: null,
+      waitlistMessage: null,
+      waitlistState: null,
+      cloudPlanWaitlist: {
+        id: "waitlist-1",
+        tier: "duo",
+        interval: "annual",
+        source: "early-access",
+        status: "waiting",
+        createdAt: "2026-07-09T00:00:00.000Z",
+        updatedAt: "2026-07-09T02:00:00.000Z",
+      },
+    })
+  ).toEqual({
+    tone: "info",
+    title: "Cloud plan waitlist recorded",
+    summary: "You are on the Duo annual cloud plan waitlist.",
     details: [
       "Recurring cloud checkout is still closed during beta.",
       "Lifetime and Founding Member purchases remain separate one-time launch offers while availability lasts.",
@@ -97,6 +131,7 @@ test("launch account state defaults to private beta when no purchase or waitlist
       foundingMembershipPurchasedAt: null,
       waitlistMessage: null,
       waitlistState: null,
+      cloudPlanWaitlist: null,
     })
   ).toEqual({
     tone: "neutral",

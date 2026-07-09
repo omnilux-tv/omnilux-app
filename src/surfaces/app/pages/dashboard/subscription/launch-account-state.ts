@@ -14,6 +14,17 @@ export type LaunchAccountStateInput = {
   foundingMembershipPurchasedAt: string | null;
   waitlistMessage: string | null;
   waitlistState: string | null;
+  cloudPlanWaitlist: {
+    tier: string;
+    interval: string;
+    status: string;
+  } | null;
+};
+
+const cloudTierLabels: Record<string, string> = {
+  personal: "Personal",
+  duo: "Duo",
+  family: "Family",
 };
 
 const formatPurchasedDate = (value: string) => {
@@ -35,6 +46,7 @@ export const getLaunchAccountStateSummary = ({
   foundingMembershipPurchasedAt,
   waitlistMessage,
   waitlistState,
+  cloudPlanWaitlist,
 }: LaunchAccountStateInput): LaunchAccountStateSummary => {
   if (hasLifetimeMembership) {
     const details = [
@@ -71,12 +83,21 @@ export const getLaunchAccountStateSummary = ({
     };
   }
 
-  if (waitlistMessage || waitlistState === "cloud-plan") {
+  const persistedWaitlistMessage = cloudPlanWaitlist
+    ? `You are on the ${cloudTierLabels[cloudPlanWaitlist.tier] ?? cloudPlanWaitlist.tier} ${cloudPlanWaitlist.interval} cloud plan waitlist.`
+    : null;
+
+  if (
+    waitlistMessage ||
+    persistedWaitlistMessage ||
+    waitlistState === "cloud-plan"
+  ) {
     return {
       tone: "info",
       title: "Cloud plan waitlist recorded",
       summary:
         waitlistMessage ??
+        persistedWaitlistMessage ??
         "Cloud plan checkout is not open during beta. Join the waitlist from the cards below.",
       details: [
         "Recurring cloud checkout is still closed during beta.",

@@ -131,6 +131,7 @@ export const useSubscriptionBilling = () => {
       setWaitlistMessage(
         `You are on the ${tierNames[tier]} ${selectedInterval} cloud plan waitlist.`
       );
+      await accessProfileQuery.refetch();
     } catch (error) {
       setBillingError(
         error instanceof Error
