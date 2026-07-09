@@ -21,6 +21,7 @@ export const CurrentPlanCard = ({ vm }: CurrentPlanCardProps) => {
     foundingMembershipPurchasedAt: vm.foundingMembership?.purchased_at ?? null,
     waitlistMessage: vm.waitlistMessage,
     waitlistState: vm.states.waitlistState,
+    cloudPlanWaitlist: vm.accessProfile?.cloudPlanWaitlist ?? null,
   });
 
   if (vm.accessProfileQuery.isLoading) {
