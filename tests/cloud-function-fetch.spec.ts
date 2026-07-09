@@ -19,6 +19,7 @@ import {
 import { getCustomerDashboardRedirect } from "../src/surfaces/app/lib/dashboard-routing";
 import { shouldRetryAccessProfileQuery } from "../src/surfaces/app/lib/access-profile-retry";
 import { establishManagedMediaSession } from "../src/surfaces/app/lib/managed-media-launch";
+import { getSoldOutOneTimeOfferNotice } from "../src/surfaces/app/pages/dashboard/subscription/one-time-offer-errors";
 import {
   getInviteExpiryLabel,
   getInviteStatusLabel,
@@ -184,6 +185,48 @@ test("cloud function fetch sends the WorkOS bearer token when it is ready", asyn
   );
 
   expect(authorization).toBe("Bearer workos-token");
+});
+
+test("one-time offer checkout maps sold-out cloud responses to launch-safe UX copy", async () => {
+  const error = Object.assign(
+    new Error("Edge Function returned a non-2xx status code"),
+    {
+      context: Response.json(
+        {
+          code: "one_time_offer_sold_out",
+          error: "Founding Member spots are sold out",
+          offer: {
+            key: "founding-member",
+            limitCount: 1_000,
+            usedCount: 1_000,
+            remainingCount: 0,
+            available: false,
+          },
+        },
+        { status: 409 }
+      ),
+    }
+  );
+
+  await expect(getSoldOutOneTimeOfferNotice(error)).resolves.toEqual({
+    key: "founding-member",
+    message:
+      "Founding Member spots are sold out. Private beta and cloud-plan waitlists are still open while we prepare the next availability window.",
+  });
+});
+
+test("one-time offer checkout ignores unrelated cloud function failures", async () => {
+  const error = Object.assign(
+    new Error("Edge Function returned a non-2xx status code"),
+    {
+      context: Response.json(
+        { code: "rate_limited", error: "Too many requests" },
+        { status: 429 }
+      ),
+    }
+  );
+
+  await expect(getSoldOutOneTimeOfferNotice(error)).resolves.toBeNull();
 });
 
 test("WorkOS token resolution retries transient callback token misses", async () => {
