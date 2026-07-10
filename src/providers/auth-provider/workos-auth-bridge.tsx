@@ -2,10 +2,20 @@ import { useAuth as useWorkosAuth } from '@workos-inc/authkit-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { buildAppHref } from '@/lib/site-surface';
 import { setCloudAccessTokenProvider } from '@/lib/supabase';
-import { AuthContext, type AuthContextValue, type CloudSession, type CloudUser } from '../auth-context';
+import {
+  AuthContext,
+  type AuthContextValue,
+  type CloudSession,
+  type CloudUser,
+} from '../auth-context';
 import { isWorkosSessionPending } from '../workos-session-state';
 import { resolveWorkosAccessToken } from '../workos-token';
-import { getReturnTo } from './auth-provider-config';
+import {
+  getReturnTo,
+  workosApiHostname,
+  workosClientId,
+} from './auth-provider-config';
+import { navigateToWorkosAuthorization } from './workos-auth-navigation';
 
 const getDisplayName = (user: {
   firstName?: string | null;
@@ -36,8 +46,8 @@ export const WorkosAuthBridge = ({ children, enabled }: { children: ReactNode; e
     isLoading,
     user: workosUser,
     getAccessToken: getWorkosAccessToken,
-    signIn: workosSignIn,
-    signUp: workosSignUp,
+    getSignInUrl: getWorkosSignInUrl,
+    getSignUpUrl: getWorkosSignUpUrl,
     signOut: workosSignOut,
   } = useWorkosAuth();
   const [session, setSession] = useState<CloudSession | null>(null);
@@ -91,13 +101,48 @@ export const WorkosAuthBridge = ({ children, enabled }: { children: ReactNode; e
     };
   }, [enabled, getAccessToken, workosUser]);
 
-  const signIn = useCallback<AuthContextValue['signIn']>(async (options) => {
-    await workosSignIn({ state: { returnTo: options?.returnTo ?? getReturnTo() }, loginHint: options?.loginHint });
-  }, [workosSignIn]);
+  const signIn = useCallback<AuthContextValue['signIn']>(
+    async (options) => {
+      const request = {
+        state: { returnTo: options?.returnTo ?? getReturnTo() },
+        loginHint: options?.loginHint,
+      };
+      await navigateToWorkosAuthorization({
+        ready: !isLoading,
+        getAuthorizationUrl: getWorkosSignInUrl,
+        request,
+        config: {
+          apiHostname: workosApiHostname,
+          clientId: workosClientId,
+          redirectUri: buildAppHref('/auth/callback'),
+        },
+        replaceLocation: (url) => window.location.replace(url),
+      });
+    },
+    [getWorkosSignInUrl, isLoading],
+  );
 
-  const signUp = useCallback<AuthContextValue['signUp']>(async (options) => {
-    await workosSignUp({ state: { returnTo: options?.returnTo ?? getReturnTo() }, loginHint: options?.loginHint });
-  }, [workosSignUp]);
+  const signUp = useCallback<AuthContextValue['signUp']>(
+    async (options) => {
+      const request = {
+        state: { returnTo: options?.returnTo ?? getReturnTo() },
+        loginHint: options?.loginHint,
+      };
+      await navigateToWorkosAuthorization({
+        ready: !isLoading,
+        getAuthorizationUrl: getWorkosSignUpUrl,
+        request,
+        config: {
+          apiHostname: workosApiHostname,
+          clientId: workosClientId,
+          redirectUri: buildAppHref('/auth/callback'),
+          screenHint: 'sign-up',
+        },
+        replaceLocation: (url) => window.location.replace(url),
+      });
+    },
+    [getWorkosSignUpUrl, isLoading],
+  );
 
   const signOut = useCallback(async () => {
     setCloudAccessTokenProvider(null);
