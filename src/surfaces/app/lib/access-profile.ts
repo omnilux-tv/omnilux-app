@@ -67,6 +67,14 @@ export interface AccessProfileCloudPlanWaitlist {
   updatedAt: string;
 }
 
+export interface AccessProfileFoundingMembership {
+  id: string;
+  status: string;
+  amountTotal: number | null;
+  currency: string | null;
+  purchasedAt: string | null;
+}
+
 export interface AccessProfile {
   id: string;
   email: string | null;
@@ -89,6 +97,7 @@ export interface AccessProfile {
   sessionAssuranceLevel: string | null;
   launchEntitlementContract: LaunchEntitlementContract | null;
   cloudPlanWaitlist: AccessProfileCloudPlanWaitlist | null;
+  foundingMembership: AccessProfileFoundingMembership | null;
   subscription: AccessProfileSubscription | null;
 }
 

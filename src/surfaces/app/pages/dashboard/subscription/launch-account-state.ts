@@ -78,7 +78,7 @@ export const getLaunchAccountStateSummary = ({
         purchasedDate
           ? `Purchased on ${purchasedDate}.`
           : "Purchase timestamp is still syncing from Stripe.",
-        "Day-one cloud remote relay access remains tied to this account as OmniLux opens the launch lane.",
+        "Founding Member is supporter recognition and does not by itself include a cloud plan or relay entitlement.",
       ],
     };
   }
@@ -101,7 +101,7 @@ export const getLaunchAccountStateSummary = ({
         "Cloud plan checkout is not open during beta. Join the waitlist from the cards below.",
       details: [
         "Recurring cloud checkout is still closed during beta.",
-        "Lifetime and Founding Member purchases remain separate one-time launch offers while availability lasts.",
+        "Lifetime and Founding Member checkout is also closed during private beta.",
       ],
     };
   }
@@ -112,7 +112,7 @@ export const getLaunchAccountStateSummary = ({
     summary:
       "No paid cloud access is active yet. Local playback and self-hosted setup stay available through the beta path.",
     details: [
-      "Use the one-time offer cards below for Lifetime or Founding Member checkout while availability lasts.",
+      "Lifetime and Founding Member offer cards are informational while one-time checkout remains closed.",
       "Use the cloud plan cards to join a recurring-plan waitlist before subscriptions open.",
     ],
   };

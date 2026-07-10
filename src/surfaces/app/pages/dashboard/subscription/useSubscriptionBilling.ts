@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   foundingMemberOffer,
@@ -8,22 +7,18 @@ import {
   type CloudOneTimeOfferKey,
   type PaidCloudTier,
 } from "@/lib/cloud-plans";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/providers/AuthProvider";
 import {
   getAccessProfileSubscriptionState,
   useAccessProfile,
 } from "@/surfaces/app/lib/access-profile";
+import { getAccessProfileFoundingMembership } from "@/surfaces/app/lib/access-profile-founding-membership";
 import { invokeCloudFunction } from "@/surfaces/app/lib/cloud-functions";
+import {
+  isOneTimeCloudCheckoutExplicitlyEnabled,
+  ONE_TIME_CLOUD_CHECKOUT_CLOSED_MESSAGE,
+} from "./one-time-checkout-gate";
 import { getSoldOutOneTimeOfferNotice } from "./one-time-offer-errors";
-
-interface FoundingMembershipData {
-  id: string;
-  status: string;
-  amount_total: number | null;
-  currency: string | null;
-  purchased_at: string | null;
-}
 
 const readSearchParam = (name: string) => {
   if (typeof window === "undefined") return null;
@@ -36,6 +31,10 @@ export const tierNames: Record<string, string> = {
   duo: "Duo",
   family: "Family",
 };
+
+const oneTimeCheckoutEnabled = isOneTimeCloudCheckoutExplicitlyEnabled(
+  import.meta.env.VITE_ONE_TIME_CLOUD_CHECKOUT_ENABLED
+);
 
 export const useSubscriptionBilling = () => {
   const { user } = useAuth();
@@ -54,21 +53,9 @@ export const useSubscriptionBilling = () => {
     useState<CloudOneTimeOfferKey | null>(null);
   const autoCheckoutHandledRef = useRef(false);
 
-  const foundingMembershipQuery = useQuery({
-    queryKey: ["founding-membership", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("founding_memberships")
-        .select("id, status, amount_total, currency, purchased_at")
-        .eq("user_id", user!.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data as FoundingMembershipData | null;
-    },
-    enabled: !!user,
-  });
-
   const accessProfile = accessProfileQuery.data;
+  const foundingMembership = getAccessProfileFoundingMembership(accessProfile);
+  const foundingMembershipQuery = accessProfileQuery;
   const subscriptionState = getAccessProfileSubscriptionState(accessProfile);
   const effectiveEntitlement =
     accessProfile?.launchEntitlementContract?.effectiveEntitlement ?? null;
@@ -77,7 +64,7 @@ export const useSubscriptionBilling = () => {
     effectiveEntitlement?.source === "lifetime_purchase" &&
     effectiveEntitlement.paidCloudPlan
   );
-  const hasFoundingMembership = foundingMembershipQuery.data?.status === "paid";
+  const hasFoundingMembership = foundingMembership?.status === "paid";
   const checkoutState = useMemo(() => readSearchParam("checkout"), []);
   const waitlistState = useMemo(() => readSearchParam("waitlist"), []);
   const portalState = useMemo(() => readSearchParam("portal"), []);
@@ -183,8 +170,12 @@ export const useSubscriptionBilling = () => {
     );
   };
 
-  const startFoundingMemberCheckout = () =>
-    redirectToCloudUrl(
+  const startFoundingMemberCheckout = () => {
+    if (!oneTimeCheckoutEnabled) {
+      setBillingError(ONE_TIME_CLOUD_CHECKOUT_CLOSED_MESSAGE);
+      return;
+    }
+    return redirectToCloudUrl(
       () =>
         invokeCloudFunction<{ url?: unknown }>(
           foundingMemberOffer.checkoutFunctionName
@@ -192,9 +183,14 @@ export const useSubscriptionBilling = () => {
       setFoundingCheckoutPending,
       "Unable to start founding member checkout."
     );
+  };
 
-  const startLifetimeMembershipCheckout = () =>
-    redirectToCloudUrl(
+  const startLifetimeMembershipCheckout = () => {
+    if (!oneTimeCheckoutEnabled) {
+      setBillingError(ONE_TIME_CLOUD_CHECKOUT_CLOSED_MESSAGE);
+      return;
+    }
+    return redirectToCloudUrl(
       () =>
         invokeCloudFunction<{ url?: unknown }>(
           lifetimeMembershipOffer.checkoutFunctionName
@@ -202,6 +198,7 @@ export const useSubscriptionBilling = () => {
       setLifetimeCheckoutPending,
       "Unable to start lifetime checkout."
     );
+  };
 
   useEffect(() => {
     if (
@@ -242,7 +239,7 @@ export const useSubscriptionBilling = () => {
     user,
     accessProfile,
     accessProfileQuery,
-    foundingMembership: foundingMembershipQuery.data,
+    foundingMembership,
     foundingMembershipQuery,
     billingError,
     waitlistTier,
@@ -252,6 +249,7 @@ export const useSubscriptionBilling = () => {
     setBillingInterval,
     foundingCheckoutPending,
     lifetimeCheckoutPending,
+    oneTimeCheckoutEnabled,
     soldOutOneTimeOffer,
     subscriptionState,
     effectiveEntitlement,

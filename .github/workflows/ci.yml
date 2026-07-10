@@ -18,20 +18,22 @@ jobs:
       VITE_OPS_SITE_URL: https://ops.omnilux.tv
       VITE_SUPABASE_URL: https://api.omnilux.tv
       VITE_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      VITE_ONE_TIME_CLOUD_CHECKOUT_ENABLED: "false"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Checkout shared packages
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           repository: omnilux-tv/omnilux-packages
+          ref: e4d6cb1de04acd4a40855de52ac7ec9dcc6e2d7d
           path: shared/omnilux-packages
           ssh-key: ${{ secrets.OMNILUX_PACKAGES_DEPLOY_KEY }}
 
       - name: Link shared packages
         run: ln -sfn "$GITHUB_WORKSPACE/shared/omnilux-packages" "$GITHUB_WORKSPACE/../omnilux-packages"
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
           package-manager-cache: false

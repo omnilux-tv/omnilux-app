@@ -18,7 +18,7 @@ export const CurrentPlanCard = ({ vm }: CurrentPlanCardProps) => {
     tierLabel,
     hasLifetimeMembership: vm.hasLifetimeMembership,
     hasFoundingMembership: vm.hasFoundingMembership,
-    foundingMembershipPurchasedAt: vm.foundingMembership?.purchased_at ?? null,
+    foundingMembershipPurchasedAt: vm.foundingMembership?.purchasedAt ?? null,
     waitlistMessage: vm.waitlistMessage,
     waitlistState: vm.states.waitlistState,
     cloudPlanWaitlist: vm.accessProfile?.cloudPlanWaitlist ?? null,
@@ -46,9 +46,9 @@ export const CurrentPlanCard = ({ vm }: CurrentPlanCardProps) => {
 
       {vm.accessProfileQuery.error ? (
         <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm text-muted">
-          Live subscription data could not be loaded right now. The billing
-          actions below stay available, but the plan details on this page might
-          be temporarily stale.
+          Live account status could not be loaded right now. Billing actions
+          remain unavailable until the plan and supporter details can be
+          verified.
         </div>
       ) : null}
       {subscriptionState.currentPeriodEnd ? (
@@ -125,9 +125,9 @@ export const CurrentPlanCard = ({ vm }: CurrentPlanCardProps) => {
 
       {!billingPortalAvailable ? (
         <p className="mt-4 text-sm text-muted">
-          Stripe checkout is live below for paid cloud plans. Billing portal
-          access appears automatically after a Stripe customer is linked to this
-          account.
+          Paid checkout is closed during private beta. Billing portal access
+          appears for existing customers after a Stripe customer is linked to
+          this account.
         </p>
       ) : null}
     </div>

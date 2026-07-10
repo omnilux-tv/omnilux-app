@@ -6,6 +6,7 @@ import {
   lifetimePlan,
 } from "@/lib/cloud-plans";
 import { buildMarketingHref } from "@/lib/site-surface";
+import { ONE_TIME_CLOUD_CHECKOUT_CLOSED_MESSAGE } from "./one-time-checkout-gate";
 import type { SubscriptionBillingViewModel } from "./useSubscriptionBilling";
 
 type OneTimeOfferCardsProps = {
@@ -33,6 +34,9 @@ export const OneTimeOfferCards = ({ vm }: OneTimeOfferCardsProps) => {
         {lifetimeSoldOut ? (
           <SoldOutNotice offerLabel="Lifetime membership" />
         ) : null}
+        {!vm.oneTimeCheckoutEnabled && !vm.hasLifetimeMembership ? (
+          <ClosedCheckoutNotice />
+        ) : null}
         {vm.hasLifetimeMembership ? (
           <p className="mt-4 text-sm text-muted">
             Lifetime membership is active for this account.
@@ -40,11 +44,20 @@ export const OneTimeOfferCards = ({ vm }: OneTimeOfferCardsProps) => {
         ) : (
           <OfferButton
             pending={vm.lifetimeCheckoutPending}
-            disabled={!vm.user || vm.lifetimeCheckoutPending || lifetimeSoldOut}
-            label={
+            disabled={
+              !vm.oneTimeCheckoutEnabled ||
+              !vm.user ||
+              vm.lifetimeCheckoutPending ||
+              vm.accessProfileQuery.isLoading ||
+              Boolean(vm.accessProfileQuery.error) ||
               lifetimeSoldOut
-                ? "Lifetime sold out"
-                : lifetimeMembershipOffer.copy.ctaLabel
+            }
+            label={
+              !vm.oneTimeCheckoutEnabled
+                ? "Checkout closed during private beta"
+                : lifetimeSoldOut
+                  ? "Lifetime sold out"
+                  : lifetimeMembershipOffer.copy.ctaLabel
             }
             onClick={vm.actions.startLifetimeMembershipCheckout}
           />
@@ -65,31 +78,38 @@ export const OneTimeOfferCards = ({ vm }: OneTimeOfferCardsProps) => {
         {foundingSoldOut ? (
           <SoldOutNotice offerLabel="Founding Member" />
         ) : null}
+        {!vm.oneTimeCheckoutEnabled && !vm.hasFoundingMembership ? (
+          <ClosedCheckoutNotice />
+        ) : null}
         {vm.foundingMembershipQuery.error ? (
           <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm text-muted">
-            Founding-member status could not be loaded right now. Checkout is
-            still available, but this card may be temporarily stale.
+            Founding-member status could not be loaded right now. Checkout
+            remains unavailable until account status can be verified.
           </div>
         ) : null}
         {vm.hasFoundingMembership ? (
           <p className="mt-4 text-sm text-muted">
-            {vm.foundingMembership?.purchased_at
-              ? `Purchased on ${new Date(vm.foundingMembership.purchased_at).toLocaleDateString()}`
+            {vm.foundingMembership?.purchasedAt
+              ? `Purchased on ${new Date(vm.foundingMembership.purchasedAt).toLocaleDateString()}`
               : "Founding-member access is active."}
           </p>
         ) : (
           <OfferButton
             pending={vm.foundingCheckoutPending}
             disabled={
+              !vm.oneTimeCheckoutEnabled ||
               !vm.user ||
               vm.foundingCheckoutPending ||
               vm.foundingMembershipQuery.isLoading ||
+              Boolean(vm.foundingMembershipQuery.error) ||
               foundingSoldOut
             }
             label={
-              foundingSoldOut
-                ? "Founding Member sold out"
-                : foundingMemberOffer.copy.ctaLabel
+              !vm.oneTimeCheckoutEnabled
+                ? "Checkout closed during private beta"
+                : foundingSoldOut
+                  ? "Founding Member sold out"
+                  : foundingMemberOffer.copy.ctaLabel
             }
             onClick={vm.actions.startFoundingMemberCheckout}
           />
@@ -149,6 +169,24 @@ const SoldOutNotice = ({ offerLabel }: { offerLabel: string }) => (
       Private beta and cloud-plan waitlists are still open. Use the early-access
       page to choose the next available path.
     </p>
+    <a
+      href={buildMarketingHref("/early-access")}
+      className="mt-3 inline-flex text-sm font-semibold text-accent hover:underline"
+    >
+      See early access options
+    </a>
+  </div>
+);
+
+const ClosedCheckoutNotice = () => (
+  <div
+    className="mt-4 rounded-lg border border-border bg-surface p-4 text-sm leading-6 text-muted"
+    role="status"
+  >
+    <p className="font-semibold text-foreground">
+      One-time purchases are closed during private beta.
+    </p>
+    <p className="mt-2">{ONE_TIME_CLOUD_CHECKOUT_CLOSED_MESSAGE}</p>
     <a
       href={buildMarketingHref("/early-access")}
       className="mt-3 inline-flex text-sm font-semibold text-accent hover:underline"

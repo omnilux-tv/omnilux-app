@@ -1,5 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { getLaunchAccountStateSummary } from "../src/surfaces/app/pages/dashboard/subscription/launch-account-state";
+import { isOneTimeCloudCheckoutExplicitlyEnabled } from "../src/surfaces/app/pages/dashboard/subscription/one-time-checkout-gate";
+
+test("one-time checkout requires an explicit true flag", () => {
+  expect(isOneTimeCloudCheckoutExplicitlyEnabled(undefined)).toBe(false);
+  expect(isOneTimeCloudCheckoutExplicitlyEnabled("")).toBe(false);
+  expect(isOneTimeCloudCheckoutExplicitlyEnabled("false")).toBe(false);
+  expect(isOneTimeCloudCheckoutExplicitlyEnabled(" true ")).toBe(true);
+});
 
 test("launch account state calls out an active lifetime purchase as the paid access source", () => {
   expect(
@@ -65,7 +73,7 @@ test("launch account state calls out a confirmed founding member purchase", () =
     summary: "This account's Founding Member supporter spot is confirmed.",
     details: [
       "Purchased on Jul 9, 2026.",
-      "Day-one cloud remote relay access remains tied to this account as OmniLux opens the launch lane.",
+      "Founding Member is supporter recognition and does not by itself include a cloud plan or relay entitlement.",
     ],
   });
 });
@@ -87,7 +95,7 @@ test("launch account state keeps cloud waitlist actions visible after signup han
     summary: "You are on the Family annual cloud plan waitlist.",
     details: [
       "Recurring cloud checkout is still closed during beta.",
-      "Lifetime and Founding Member purchases remain separate one-time launch offers while availability lasts.",
+      "Lifetime and Founding Member checkout is also closed during private beta.",
     ],
   });
 });
@@ -117,7 +125,7 @@ test("launch account state uses persisted cloud waitlist state after refresh", (
     summary: "You are on the Duo annual cloud plan waitlist.",
     details: [
       "Recurring cloud checkout is still closed during beta.",
-      "Lifetime and Founding Member purchases remain separate one-time launch offers while availability lasts.",
+      "Lifetime and Founding Member checkout is also closed during private beta.",
     ],
   });
 });
@@ -139,7 +147,7 @@ test("launch account state defaults to private beta when no purchase or waitlist
     summary:
       "No paid cloud access is active yet. Local playback and self-hosted setup stay available through the beta path.",
     details: [
-      "Use the one-time offer cards below for Lifetime or Founding Member checkout while availability lasts.",
+      "Lifetime and Founding Member offer cards are informational while one-time checkout remains closed.",
       "Use the cloud plan cards to join a recurring-plan waitlist before subscriptions open.",
     ],
   });

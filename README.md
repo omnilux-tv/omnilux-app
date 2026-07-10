@@ -72,6 +72,7 @@ Optional browser config:
 
 - `VITE_WORKOS_DEV_MODE` — set to `true` only for local or sandbox AuthKit usage without a custom authentication API hostname
 - `VITE_ENABLE_LEGACY_SUPABASE_AUTH` — dev-only escape hatch for the legacy Supabase Auth bridge; ignored in production and should remain `false` unless intentionally testing the old local fallback
+- `VITE_ONE_TIME_CLOUD_CHECKOUT_ENABLED` — defaults to `false`; set to `true` only when the matching server-side checkout gate has been explicitly approved and enabled
 - `VITE_MARKETING_SITE_URL`
 - `VITE_APP_SITE_URL`
 - `VITE_OPS_SITE_URL`

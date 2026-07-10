@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 env:
@@ -17,23 +17,50 @@ permissions:
   contents: read
   packages: write
 
+concurrency:
+  group: publish-app-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Checkout shared packages
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           repository: omnilux-tv/omnilux-packages
+          ref: e4d6cb1de04acd4a40855de52ac7ec9dcc6e2d7d
           path: shared/omnilux-packages
           ssh-key: ${{ secrets.OMNILUX_PACKAGES_DEPLOY_KEY }}
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Build shared types
+        working-directory: shared/omnilux-packages
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @omnilux/types build
+
+      - name: Install and validate the app
+        run: |
+          ln -sfn "$GITHUB_WORKSPACE/shared/omnilux-packages" "$GITHUB_WORKSPACE/../omnilux-packages"
+          pnpm install --frozen-lockfile
+          pnpm audit --prod
+          pnpm lint
+          pnpm test:auth
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -41,7 +68,7 @@ jobs:
 
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ${{ env.APP_IMAGE }}
           tags: |
@@ -54,15 +81,18 @@ jobs:
         id: build_timestamp
         run: echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
-      - name: Build image for verification
-        uses: docker/build-push-action@v6
+      - name: Build and publish immutable candidate
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: Dockerfile
           build-contexts: |
             omnilux-packages=./shared/omnilux-packages
-          load: true
+          push: true
           platforms: linux/amd64
+          provenance: mode=max
+          sbom: true
           build-args: |
             VITE_MARKETING_SITE_URL=${{ vars.VITE_MARKETING_SITE_URL || 'https://omnilux.tv' }}
             VITE_APP_SITE_URL=${{ vars.VITE_APP_SITE_URL || 'https://app.omnilux.tv' }}
@@ -72,14 +102,26 @@ jobs:
             VITE_WORKOS_CLIENT_ID=${{ vars.VITE_WORKOS_CLIENT_ID }}
             VITE_WORKOS_API_HOSTNAME=${{ vars.VITE_WORKOS_API_HOSTNAME }}
             VITE_WORKOS_DEV_MODE=${{ vars.VITE_WORKOS_DEV_MODE || 'false' }}
+            VITE_ONE_TIME_CLOUD_CHECKOUT_ENABLED=false
             VITE_OAUTH_PROVIDERS=${{ vars.VITE_OAUTH_PROVIDERS }}
+            VITE_TURNSTILE_BROWSER_VALUE=${{ vars.VITE_TURNSTILE_SITE_KEY }}
             VITE_SENTRY_DSN=${{ vars.VITE_SENTRY_DSN }}
             VITE_WEB_VITALS_ENDPOINT=${{ vars.VITE_WEB_VITALS_ENDPOINT }}
             OMNILUX_BUILD_REPOSITORY=${{ github.repository }}
             OMNILUX_BUILD_REF=${{ github.ref_name }}
             OMNILUX_BUILD_SHA=${{ github.sha }}
             OMNILUX_BUILD_CREATED=${{ steps.build_timestamp.outputs.created }}
-          tags: omnilux-app-verify:latest
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.APP_IMAGE }}:candidate-${{ github.sha }}
+
+      - name: Pull exact candidate digest for verification
+        env:
+          CANDIDATE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -eu
+          test -n "$CANDIDATE_DIGEST"
+          docker pull "${APP_IMAGE}@${CANDIDATE_DIGEST}"
+          docker tag "${APP_IMAGE}@${CANDIDATE_DIGEST}" omnilux-app-verify:latest
 
       - name: Verify app artifact exists
         run: |
@@ -89,6 +131,10 @@ jobs:
             test -d /srv/assets
             test -f /srv/.well-known/omnilux-build.json
             grep -F "\"sha\": \"${GITHUB_SHA}\"" /srv/.well-known/omnilux-build.json
+            grep -R -F "One-time purchases are closed during private beta." /srv/assets >/dev/null
+            ! grep -R -i -F "day-one cloud remote relay access" /srv >/dev/null
+            ! grep -R -F "Stripe checkout is live below" /srv >/dev/null
+            ! grep -R -F "Founding-member checkout completed" /srv >/dev/null
           '
 
       - name: Verify static asset fallback fails closed
@@ -123,30 +169,13 @@ jobs:
             grep -R "https://api.omnilux.tv" /srv >/dev/null
           '
 
-      - name: Build and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile
-          build-contexts: |
-            omnilux-packages=./shared/omnilux-packages
-          push: true
-          platforms: linux/amd64
-          build-args: |
-            VITE_MARKETING_SITE_URL=${{ vars.VITE_MARKETING_SITE_URL || 'https://omnilux.tv' }}
-            VITE_APP_SITE_URL=${{ vars.VITE_APP_SITE_URL || 'https://app.omnilux.tv' }}
-            VITE_OPS_SITE_URL=${{ vars.VITE_OPS_SITE_URL || 'https://ops.omnilux.tv' }}
-            VITE_SUPABASE_URL=${{ vars.VITE_SUPABASE_URL || 'https://api.omnilux.tv' }}
-            VITE_SUPABASE_BROWSER_VALUE=${{ vars.VITE_SUPABASE_ANON_KEY }}
-            VITE_WORKOS_CLIENT_ID=${{ vars.VITE_WORKOS_CLIENT_ID }}
-            VITE_WORKOS_API_HOSTNAME=${{ vars.VITE_WORKOS_API_HOSTNAME }}
-            VITE_WORKOS_DEV_MODE=${{ vars.VITE_WORKOS_DEV_MODE || 'false' }}
-            VITE_OAUTH_PROVIDERS=${{ vars.VITE_OAUTH_PROVIDERS }}
-            VITE_SENTRY_DSN=${{ vars.VITE_SENTRY_DSN }}
-            VITE_WEB_VITALS_ENDPOINT=${{ vars.VITE_WEB_VITALS_ENDPOINT }}
-            OMNILUX_BUILD_REPOSITORY=${{ github.repository }}
-            OMNILUX_BUILD_REF=${{ github.ref_name }}
-            OMNILUX_BUILD_SHA=${{ github.sha }}
-            OMNILUX_BUILD_CREATED=${{ steps.build_timestamp.outputs.created }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+      - name: Promote the verified digest to release tags
+        env:
+          SOURCE_IMAGE: ${{ env.APP_IMAGE }}@${{ steps.build.outputs.digest }}
+          TARGET_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -eu
+          printf '%s\n' "$TARGET_TAGS" | while IFS= read -r tag; do
+            test -n "$tag" || continue
+            docker buildx imagetools create --tag "$tag" "$SOURCE_IMAGE"
+          done
