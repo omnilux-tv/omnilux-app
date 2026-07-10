@@ -1,5 +1,6 @@
 import { APP_SITE_ORIGIN, MARKETING_SITE_ORIGIN, OPS_SITE_ORIGIN, getCurrentSiteSurface } from '@/lib/site-surface';
 import { getThemeInitScript } from '@/lib/theme';
+import { getAuthHandoffPreconnectLinks } from '@/lib/auth-handoff';
 
 const MARKETING_ORIGIN = MARKETING_SITE_ORIGIN;
 const APP_ORIGIN = APP_SITE_ORIGIN;
@@ -82,6 +83,7 @@ export const buildRootHead = () => ({
     { name: 'twitter:image', content: DEFAULT_OG_IMAGE },
   ],
   links: [
+    ...getAuthHandoffPreconnectLinks(),
     { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
     { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
   ],
