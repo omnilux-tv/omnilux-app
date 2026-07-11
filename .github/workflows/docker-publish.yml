@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           repository: omnilux-tv/omnilux-packages
-          ref: e4d6cb1de04acd4a40855de52ac7ec9dcc6e2d7d
+          ref: b7aef0372f488b1b05b434525fbc14b3db15e99e
           path: shared/omnilux-packages
           ssh-key: ${{ secrets.OMNILUX_PACKAGES_DEPLOY_KEY }}
 
@@ -109,6 +109,7 @@ jobs:
             OMNILUX_BUILD_REPOSITORY=${{ github.repository }}
             OMNILUX_BUILD_REF=${{ github.ref_name }}
             OMNILUX_BUILD_SHA=${{ github.sha }}
+            OMNILUX_PACKAGES_SHA=b7aef0372f488b1b05b434525fbc14b3db15e99e
             OMNILUX_BUILD_CREATED=${{ steps.build_timestamp.outputs.created }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ env.APP_IMAGE }}:candidate-${{ github.sha }}
@@ -130,10 +131,19 @@ jobs:
             test -d /srv/assets
             test -f /srv/.well-known/omnilux-build.json
             grep -F "\"sha\": \"${GITHUB_SHA}\"" /srv/.well-known/omnilux-build.json
+            grep -F "\"packagesSha\": \"b7aef0372f488b1b05b434525fbc14b3db15e99e\"" /srv/.well-known/omnilux-build.json
             grep -R -F "One-time purchases are closed during private beta." /srv/assets >/dev/null
-            ! grep -R -i -F "day-one cloud remote relay access" /srv >/dev/null
-            ! grep -R -F "Stripe checkout is live below" /srv >/dev/null
-            ! grep -R -F "Founding-member checkout completed" /srv >/dev/null
+            grep -R -F "same lifetime Family-level OmniPass entitlement as Lifetime" /srv/assets >/dev/null
+            for forbidden in \
+              "day-one cloud remote relay access" \
+              "Stripe checkout is live below" \
+              "Founding-member checkout completed" \
+              "supporter-path-only"; do
+              if grep -R -i -F "$forbidden" /srv >/dev/null; then
+                echo "app artifact contains forbidden product copy: $forbidden" >&2
+                exit 1
+              fi
+            done
           '
 
       - name: Verify static asset fallback fails closed

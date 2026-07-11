@@ -3,3 +3,11 @@ export const ONE_TIME_CLOUD_CHECKOUT_CLOSED_MESSAGE =
 
 export const isOneTimeCloudCheckoutExplicitlyEnabled = (value: unknown) =>
   typeof value === "string" && value.trim().toLowerCase() === "true";
+
+export const isOneTimeCloudCheckoutEnabled = (
+  value: unknown,
+  offers: readonly { checkoutStatus: string }[]
+) =>
+  isOneTimeCloudCheckoutExplicitlyEnabled(value) &&
+  offers.length > 0 &&
+  offers.every((offer) => offer.checkoutStatus === "open");

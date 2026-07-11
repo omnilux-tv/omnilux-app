@@ -4,6 +4,7 @@ import {
   cloudOfferPriceFormatter,
   foundingMemberOffer as sharedFoundingMemberOffer,
   getCloudBillingPriceCents,
+  isCloudOneTimeOfferCheckoutOpen,
   isCloudOneTimeOfferIntent,
   lifetimeMembershipOffer,
   paidCloudTierOrder,
@@ -39,25 +40,7 @@ export const lifetimePlan = {
   tier: PaidCloudTier;
   priceCents: number;
 };
-export const foundingMemberOffer = {
-  ...sharedFoundingMemberOffer,
-  availability: {
-    limitCount: sharedFoundingMemberOffer.availability.limitCount,
-    limitKind: sharedFoundingMemberOffer.availability.limitKind,
-    limitLabel: sharedFoundingMemberOffer.availability.limitLabel,
-  },
-  copy: {
-    ...sharedFoundingMemberOffer.copy,
-    description:
-      "Limited supporter path for the first 1,000 backers who want launch-era recognition and private product briefings.",
-    bullets: [
-      "Limited to 1,000 available founding-member spots",
-      "Launch-era recognition and private product briefings",
-      "One-time supporter purchase, not an investor path",
-      "Early-backer status managed separately from recurring OmniPass plans",
-    ],
-  },
-} as const;
+export const foundingMemberOffer = sharedFoundingMemberOffer;
 export const foundingMemberPlan = {
   ...foundingMemberOffer.copy,
   priceCents: foundingMemberOffer.priceCents,
@@ -66,7 +49,11 @@ export const oneTimeCloudOffers = [
   lifetimeMembershipOffer,
   foundingMemberOffer,
 ] as const;
-export { isCloudOneTimeOfferIntent, lifetimeMembershipOffer };
+export {
+  isCloudOneTimeOfferCheckoutOpen,
+  isCloudOneTimeOfferIntent,
+  lifetimeMembershipOffer,
+};
 
 export const paidCloudPlans: readonly PaidCloudPlan[] = paidCloudTierOrder.map(
   (tier) => ({

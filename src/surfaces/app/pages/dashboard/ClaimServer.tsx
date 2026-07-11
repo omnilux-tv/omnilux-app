@@ -14,6 +14,7 @@ import {
   applyClaimCodeInput,
   normalizeClaimCodeInput,
 } from "@/surfaces/app/lib/claim-code";
+import { getClaimServerErrorMessage } from "@/surfaces/app/lib/claim-server-error";
 import { invokeCloudFunction } from "@/surfaces/app/lib/cloud-functions";
 
 const claimCodeErrorId = "claim-code-error";
@@ -114,11 +115,7 @@ export const ClaimServer = ({ initialCode }: ClaimServerProps) => {
         body: { code: claimCode },
       });
     } catch (invokeError) {
-      setError(
-        invokeError instanceof Error
-          ? invokeError.message
-          : "Invalid or expired claim code."
-      );
+      setError(getClaimServerErrorMessage(invokeError));
       setLoading(false);
       return;
     }
@@ -143,8 +140,8 @@ export const ClaimServer = ({ initialCode }: ClaimServerProps) => {
           Attach a self-hosted server
         </h1>
         <p id={claimCodeHelpId} className="mb-8 text-center text-sm text-muted">
-          Enter the 6-character code shown during OmniLux setup to attach that
-          self-hosted server to your OmniLux Cloud account.
+          After local browser playback works, enter the 6-character code shown
+          by that self-hosted server to add optional account-linked features.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">

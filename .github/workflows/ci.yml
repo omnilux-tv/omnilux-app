@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           repository: omnilux-tv/omnilux-packages
-          ref: e4d6cb1de04acd4a40855de52ac7ec9dcc6e2d7d
+          ref: b7aef0372f488b1b05b434525fbc14b3db15e99e
           path: shared/omnilux-packages
           ssh-key: ${{ secrets.OMNILUX_PACKAGES_DEPLOY_KEY }}
 

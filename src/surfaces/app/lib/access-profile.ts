@@ -3,6 +3,10 @@ import { useAuth } from "@/providers/AuthProvider";
 import type { CloudBillingInterval } from "@/lib/cloud-plans";
 import { shouldRetryAccessProfileQuery } from "@/surfaces/app/lib/access-profile-retry";
 import { invokeCloudFunction } from "@/surfaces/app/lib/cloud-functions";
+import {
+  getOneTimeFamilyEntitlementState,
+  type FoundingMemberIncludedEntitlement,
+} from "@/surfaces/app/lib/one-time-family-entitlement";
 
 export interface AccessProfileSubscription {
   tier: string;
@@ -73,6 +77,41 @@ export interface AccessProfileFoundingMembership {
   amountTotal: number | null;
   currency: string | null;
   purchasedAt: string | null;
+  includedEntitlement: FoundingMemberIncludedEntitlement;
+}
+
+export type PrivateBetaState =
+  | "not-requested"
+  | "requested"
+  | "pending-review"
+  | "approved-no-artifact"
+  | "install-ready"
+  | "approved-unclaimed"
+  | "linked"
+  | "unavailable";
+
+export interface AccessProfilePrivateBetaRequest {
+  id: string;
+  status: string;
+  source: string;
+  requestedAt: string;
+  updatedAt: string;
+}
+
+export type PrivateBetaNextAction =
+  | "review-and-confirm"
+  | "await-review"
+  | "await-approved-artifact"
+  | "install-approved-artifact"
+  | "claim-installed-server"
+  | "open-linked-server"
+  | "contact-beta-support";
+
+export interface AccessProfilePrivateBeta {
+  state: PrivateBetaState;
+  request: AccessProfilePrivateBetaRequest | null;
+  artifactApproved: boolean;
+  nextAction: PrivateBetaNextAction;
 }
 
 export interface AccessProfile {
@@ -98,6 +137,7 @@ export interface AccessProfile {
   launchEntitlementContract: LaunchEntitlementContract | null;
   cloudPlanWaitlist: AccessProfileCloudPlanWaitlist | null;
   foundingMembership: AccessProfileFoundingMembership | null;
+  privateBeta: AccessProfilePrivateBeta;
   subscription: AccessProfileSubscription | null;
 }
 
@@ -114,25 +154,34 @@ export const getAccessProfileSubscriptionState = (
   const effectiveEntitlement =
     accessProfile?.launchEntitlementContract?.effectiveEntitlement ?? null;
   const fallbackSubscription = accessProfile?.subscription ?? null;
-  const tier = effectiveEntitlement?.paidCloudPlan
-    ? effectiveEntitlement.tier
-    : (contractSubscription?.tier ?? fallbackSubscription?.tier ?? "free");
+  const oneTimeFamilyEntitlement = getOneTimeFamilyEntitlementState({
+    effectiveEntitlement,
+    foundingMembership: accessProfile?.foundingMembership ?? null,
+  });
+  const tier = oneTimeFamilyEntitlement.hasFoundingFamilyEntitlement
+    ? "family"
+    : effectiveEntitlement?.paidCloudPlan
+      ? effectiveEntitlement.tier
+      : (contractSubscription?.tier ?? fallbackSubscription?.tier ?? "free");
 
   return {
     tier,
-    status: effectiveEntitlement?.paidCloudPlan
-      ? effectiveEntitlement.planState
-      : (contractSubscription?.billingState ??
-        fallbackSubscription?.status ??
+    status: oneTimeFamilyEntitlement.hasFoundingFamilyEntitlement
+      ? "lifetime"
+      : effectiveEntitlement?.paidCloudPlan
+        ? effectiveEntitlement.planState
+        : (contractSubscription?.billingState ??
+          fallbackSubscription?.status ??
+          null),
+    currentPeriodEnd: oneTimeFamilyEntitlement.hasFoundingFamilyEntitlement
+      ? null
+      : (effectiveEntitlement?.endsAt ??
+        contractSubscription?.currentPeriodEnd ??
+        fallbackSubscription?.currentPeriodEnd ??
         null),
-    currentPeriodEnd:
-      effectiveEntitlement?.endsAt ??
-      contractSubscription?.currentPeriodEnd ??
-      fallbackSubscription?.currentPeriodEnd ??
-      null,
-    billingInterval: normalizeBillingInterval(
-      contractSubscription?.billingInterval
-    ),
+    billingInterval: oneTimeFamilyEntitlement.hasFoundingFamilyEntitlement
+      ? null
+      : normalizeBillingInterval(contractSubscription?.billingInterval),
     billingPortalAvailable: Boolean(contractSubscription?.stripeCustomerId),
   };
 };

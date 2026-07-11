@@ -18,6 +18,7 @@ export const CurrentPlanCard = ({ vm }: CurrentPlanCardProps) => {
     tierLabel,
     hasLifetimeMembership: vm.hasLifetimeMembership,
     hasFoundingMembership: vm.hasFoundingMembership,
+    hasFoundingFamilyEntitlement: vm.hasFoundingFamilyEntitlement,
     foundingMembershipPurchasedAt: vm.foundingMembership?.purchasedAt ?? null,
     waitlistMessage: vm.waitlistMessage,
     waitlistState: vm.states.waitlistState,

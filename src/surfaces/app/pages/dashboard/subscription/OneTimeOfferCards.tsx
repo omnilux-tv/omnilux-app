@@ -34,12 +34,12 @@ export const OneTimeOfferCards = ({ vm }: OneTimeOfferCardsProps) => {
         {lifetimeSoldOut ? (
           <SoldOutNotice offerLabel="Lifetime membership" />
         ) : null}
-        {!vm.oneTimeCheckoutEnabled && !vm.hasLifetimeMembership ? (
+        {!vm.oneTimeCheckoutEnabled && !vm.hasLifetimeFamilyEntitlement ? (
           <ClosedCheckoutNotice />
         ) : null}
-        {vm.hasLifetimeMembership ? (
+        {vm.hasLifetimeFamilyEntitlement ? (
           <p className="mt-4 text-sm text-muted">
-            Lifetime membership is active for this account.
+            Family-level lifetime access is already active for this account.
           </p>
         ) : (
           <OfferButton
@@ -70,9 +70,10 @@ export const OneTimeOfferCards = ({ vm }: OneTimeOfferCardsProps) => {
           description={`${formatOneTimeCloudPrice(foundingMemberOffer.priceCents)}. ${foundingMemberOffer.copy.description}`}
         />
         <p className="mt-4 text-sm leading-6 text-muted">
-          Founding Member is for early supporters who want launch-era
-          recognition, private briefings, and a closer seat to the roadmap
-          without entering the investor path.
+          Founding Member is a one-time customer product and supporter purchase,
+          not an investment. It adds founding recognition and closer product
+          feedback to the same lifetime Family-level OmniPass entitlement as
+          Lifetime.
         </p>
         <BulletList bullets={foundingMemberOffer.copy.bullets} />
         {foundingSoldOut ? (
@@ -89,9 +90,11 @@ export const OneTimeOfferCards = ({ vm }: OneTimeOfferCardsProps) => {
         ) : null}
         {vm.hasFoundingMembership ? (
           <p className="mt-4 text-sm text-muted">
-            {vm.foundingMembership?.purchasedAt
-              ? `Purchased on ${new Date(vm.foundingMembership.purchasedAt).toLocaleDateString()}`
-              : "Founding-member access is active."}
+            {vm.hasFoundingFamilyEntitlement
+              ? "Founding Member and Family-level lifetime access are active."
+              : vm.foundingMembership?.purchasedAt
+                ? `Purchased on ${new Date(vm.foundingMembership.purchasedAt).toLocaleDateString()}`
+                : "Founding Member is confirmed; Family entitlement fulfillment is still syncing."}
           </p>
         ) : (
           <OfferButton

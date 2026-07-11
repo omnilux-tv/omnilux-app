@@ -44,13 +44,14 @@ export const StatusMessages = ({ vm }: StatusMessagesProps) => (
     ) : null}
     {vm.states.foundingState === "success" ? (
       <div className={messageClass.success}>
-        Returned from Founding Member checkout. Supporter status is active only
-        when the account summary confirms it.
+        Returned from Founding Member checkout. The customer product and its
+        Family-level lifetime entitlement are active only when the account
+        summary confirms them.
       </div>
     ) : null}
     {vm.states.foundingState === "canceled" ? (
       <div className={messageClass.warning}>
-        Returned without confirmed Founding Member supporter status.
+        Returned without confirmed Founding Member product access.
       </div>
     ) : null}
     {vm.states.lifetimeState === "success" ? (

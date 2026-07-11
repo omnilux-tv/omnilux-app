@@ -11,6 +11,7 @@ export type LaunchAccountStateInput = {
   tierLabel: string;
   hasLifetimeMembership: boolean;
   hasFoundingMembership: boolean;
+  hasFoundingFamilyEntitlement: boolean;
   foundingMembershipPurchasedAt: string | null;
   waitlistMessage: string | null;
   waitlistState: string | null;
@@ -43,18 +44,42 @@ export const getLaunchAccountStateSummary = ({
   tierLabel,
   hasLifetimeMembership,
   hasFoundingMembership,
+  hasFoundingFamilyEntitlement,
   foundingMembershipPurchasedAt,
   waitlistMessage,
   waitlistState,
   cloudPlanWaitlist,
 }: LaunchAccountStateInput): LaunchAccountStateSummary => {
+  if (hasFoundingFamilyEntitlement) {
+    const purchasedDate = foundingMembershipPurchasedAt
+      ? formatPurchasedDate(foundingMembershipPurchasedAt)
+      : null;
+
+    return {
+      tone: "success",
+      title: "Founding Member + Family active",
+      summary:
+        "Family-level OmniPass is active from this account's one-time Founding Member purchase.",
+      details: [
+        "No recurring cloud subscription is required for this lifetime Family access source.",
+        purchasedDate
+          ? `Founding Member purchased on ${purchasedDate}.`
+          : "The purchase timestamp is still syncing from Stripe.",
+        "Founding recognition and closer product feedback are included with the Family entitlement.",
+        "Relay is included only through Family and remains subject to renewable leases, fair-use and capacity limits, account standing, and service availability—never unlimited.",
+      ],
+    };
+  }
+
   if (hasLifetimeMembership) {
     const details = [
       "No recurring cloud subscription is required for this Lifetime access source.",
       ...(hasFoundingMembership
-        ? ["Founding Member supporter spot is also confirmed for this account."]
+        ? [
+            "Founding Member is also confirmed with recognition and feedback benefits; its Family entitlement does not stack into unlimited relay.",
+          ]
         : []),
-      "Remote features still depend on account standing, service availability, and an online OmniLux server.",
+      "Relay is included only through Family and remains subject to renewable leases, fair-use and capacity limits, account standing, and service availability—never unlimited.",
     ];
 
     return {
@@ -72,13 +97,15 @@ export const getLaunchAccountStateSummary = ({
 
     return {
       tone: "success",
-      title: "Founding Member confirmed",
-      summary: "This account's Founding Member supporter spot is confirmed.",
+      title: "Founding Member confirmed — Family access syncing",
+      summary:
+        "This one-time customer product includes lifetime Family-level OmniPass, but the account access profile has not confirmed that entitlement yet.",
       details: [
         purchasedDate
           ? `Purchased on ${purchasedDate}.`
           : "Purchase timestamp is still syncing from Stripe.",
-        "Founding Member is supporter recognition and does not by itself include a cloud plan or relay entitlement.",
+        "Founding recognition and closer product feedback are included alongside the Family entitlement.",
+        "Do not rely on Family or relay access until this card reports Founding Member + Family active.",
       ],
     };
   }

@@ -53,6 +53,7 @@ FROM caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4
 ARG OMNILUX_BUILD_REPOSITORY=unknown
 ARG OMNILUX_BUILD_REF=unknown
 ARG OMNILUX_BUILD_SHA=unknown
+ARG OMNILUX_PACKAGES_SHA=unknown
 ARG OMNILUX_BUILD_CREATED=unknown
 
 WORKDIR /srv
@@ -60,10 +61,11 @@ WORKDIR /srv
 COPY --from=builder /app/dist ./
 
 RUN mkdir -p /srv/.well-known && \
-    printf '{\n  "repository": "%s",\n  "ref": "%s",\n  "sha": "%s",\n  "created": "%s"\n}\n' \
+    printf '{\n  "repository": "%s",\n  "ref": "%s",\n  "sha": "%s",\n  "packagesSha": "%s",\n  "created": "%s"\n}\n' \
       "${OMNILUX_BUILD_REPOSITORY}" \
       "${OMNILUX_BUILD_REF}" \
       "${OMNILUX_BUILD_SHA}" \
+      "${OMNILUX_PACKAGES_SHA}" \
       "${OMNILUX_BUILD_CREATED}" \
       > /srv/.well-known/omnilux-build.json
 

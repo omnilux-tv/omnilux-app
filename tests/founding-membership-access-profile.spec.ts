@@ -8,6 +8,11 @@ test("founding membership billing state comes from the actor-scoped access profi
     amountTotal: 9900,
     currency: "usd",
     purchasedAt: "2026-07-09T02:00:00.000Z",
+    includedEntitlement: {
+      tier: "family" as const,
+      duration: "lifetime" as const,
+      active: true,
+    },
   };
 
   expect(getAccessProfileFoundingMembership({ foundingMembership })).toEqual(

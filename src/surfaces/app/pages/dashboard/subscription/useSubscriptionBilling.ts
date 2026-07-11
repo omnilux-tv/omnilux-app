@@ -14,8 +14,9 @@ import {
 } from "@/surfaces/app/lib/access-profile";
 import { getAccessProfileFoundingMembership } from "@/surfaces/app/lib/access-profile-founding-membership";
 import { invokeCloudFunction } from "@/surfaces/app/lib/cloud-functions";
+import { getOneTimeFamilyEntitlementState } from "@/surfaces/app/lib/one-time-family-entitlement";
 import {
-  isOneTimeCloudCheckoutExplicitlyEnabled,
+  isOneTimeCloudCheckoutEnabled,
   ONE_TIME_CLOUD_CHECKOUT_CLOSED_MESSAGE,
 } from "./one-time-checkout-gate";
 import { createCheckoutIdempotencyStore } from "./checkout-idempotency";
@@ -33,8 +34,9 @@ export const tierNames: Record<string, string> = {
   family: "Family",
 };
 
-const oneTimeCheckoutEnabled = isOneTimeCloudCheckoutExplicitlyEnabled(
-  import.meta.env.VITE_ONE_TIME_CLOUD_CHECKOUT_ENABLED
+const oneTimeCheckoutEnabled = isOneTimeCloudCheckoutEnabled(
+  import.meta.env.VITE_ONE_TIME_CLOUD_CHECKOUT_ENABLED,
+  [foundingMemberOffer, lifetimeMembershipOffer]
 );
 
 export const useSubscriptionBilling = () => {
@@ -62,11 +64,15 @@ export const useSubscriptionBilling = () => {
   const effectiveEntitlement =
     accessProfile?.launchEntitlementContract?.effectiveEntitlement ?? null;
   const currentTier = subscriptionState.tier;
-  const hasLifetimeMembership = Boolean(
-    effectiveEntitlement?.source === "lifetime_purchase" &&
-    effectiveEntitlement.paidCloudPlan
-  );
-  const hasFoundingMembership = foundingMembership?.status === "paid";
+  const {
+    hasLifetimeMembership,
+    hasFoundingMembership,
+    hasFoundingFamilyEntitlement,
+    hasLifetimeFamilyEntitlement,
+  } = getOneTimeFamilyEntitlementState({
+    effectiveEntitlement,
+    foundingMembership,
+  });
   const checkoutState = useMemo(() => readSearchParam("checkout"), []);
   const waitlistState = useMemo(() => readSearchParam("waitlist"), []);
   const portalState = useMemo(() => readSearchParam("portal"), []);
@@ -272,7 +278,9 @@ export const useSubscriptionBilling = () => {
     effectiveEntitlement,
     currentTier,
     hasLifetimeMembership,
+    hasLifetimeFamilyEntitlement,
     hasFoundingMembership,
+    hasFoundingFamilyEntitlement,
     states: {
       checkoutState,
       waitlistState,

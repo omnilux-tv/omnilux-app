@@ -11,6 +11,7 @@ import {
   applyClaimCodeInput,
   normalizeClaimCodeInput,
 } from "../src/surfaces/app/lib/claim-code";
+import { getClaimServerErrorMessage } from "../src/surfaces/app/lib/claim-server-error";
 import {
   getAuthEntryContext,
   getRedirectPathFromSearch,
@@ -18,6 +19,13 @@ import {
 } from "../src/surfaces/app/lib/auth-flow";
 import { getCustomerDashboardRedirect } from "../src/surfaces/app/lib/dashboard-routing";
 import { shouldRetryAccessProfileQuery } from "../src/surfaces/app/lib/access-profile-retry";
+import {
+  buildPrivateBetaRequestBody,
+  getPrivateBetaStateLabel,
+  hasPrivateBetaReviewIntent,
+  privateBetaCanBeRequested,
+  PRIVATE_BETA_CONSENT_VERSION,
+} from "../src/surfaces/app/lib/private-beta";
 import { establishManagedMediaSession } from "../src/surfaces/app/lib/managed-media-launch";
 import { getSoldOutOneTimeOfferNotice } from "../src/surfaces/app/pages/dashboard/subscription/one-time-offer-errors";
 import {
@@ -305,16 +313,16 @@ test("auth redirect preserves cloud plan waitlist intent after sign-up", () => {
   );
 });
 
-test("auth redirect preserves private beta request intent after sign-up", () => {
+test("auth redirect preserves private beta review intent without submitting a request", () => {
   expect(
     getRedirectPathFromSearch(
-      "?redirect=%2Fdashboard%3Fintent%3Dprivate-beta-request"
+      "?redirect=%2Fdashboard%3Fintent%3Dprivate-beta-review"
     )
-  ).toBe("/dashboard?intent=private-beta-request");
+  ).toBe("/dashboard?intent=private-beta-review");
 
   expect(
     getWorkosRedirectCallbackHref(
-      { returnTo: "/dashboard?intent=private-beta-request" },
+      { returnTo: "/dashboard?intent=private-beta-review" },
       {
         hostname: "app.omnilux.tv",
         origin: "https://app.omnilux.tv",
@@ -322,7 +330,57 @@ test("auth redirect preserves private beta request intent after sign-up", () => 
         port: "",
       }
     )
-  ).toBe("https://app.omnilux.tv/dashboard?intent=private-beta-request");
+  ).toBe("https://app.omnilux.tv/dashboard?intent=private-beta-review");
+  expect(hasPrivateBetaReviewIntent("?intent=private-beta-review")).toBe(true);
+  expect(hasPrivateBetaReviewIntent("?intent=private-beta-request")).toBe(
+    false
+  );
+});
+
+test("private beta state helpers keep consent explicit and status durable", () => {
+  expect(PRIVATE_BETA_CONSENT_VERSION).toBe("household-beta-v1");
+  expect(
+    buildPrivateBetaRequestBody("/dashboard?intent=private-beta-review")
+  ).toEqual({
+    source: "account-household-beta",
+    landingPath: "/dashboard?intent=private-beta-review",
+    consent: true,
+    consentVersion: "household-beta-v1",
+  });
+  expect(privateBetaCanBeRequested(undefined)).toBe(true);
+  expect(
+    privateBetaCanBeRequested({
+      state: "pending-review",
+      request: null,
+      artifactApproved: false,
+      nextAction: "Wait for review.",
+    })
+  ).toBe(false);
+  expect(
+    getPrivateBetaStateLabel({
+      state: "approved-no-artifact",
+      request: null,
+      artifactApproved: false,
+      nextAction: "Wait for an approved digest.",
+    })
+  ).toBe("Approved — artifact not ready");
+});
+
+test("claim errors explain the cause and the safe recovery action", () => {
+  expect(
+    getClaimServerErrorMessage(new Error("Claim code has expired"))
+  ).toContain("Generate a new code");
+  expect(
+    getClaimServerErrorMessage(
+      new Error("Server already claimed by another account")
+    )
+  ).toContain("owner account");
+  expect(getClaimServerErrorMessage(new Error("Invalid claim code"))).toContain(
+    "all six characters"
+  );
+  expect(getClaimServerErrorMessage(new Error("Failed to fetch"))).toContain(
+    "local server is unaffected"
+  );
 });
 
 test("server invite labels expose usage, expiry, and inactive state", () => {
