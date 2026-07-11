@@ -6,6 +6,7 @@ WORKDIR /app
 
 COPY --from=omnilux-packages package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json /omnilux-packages/
 COPY --from=omnilux-packages packages/types /omnilux-packages/packages/types
+COPY --from=omnilux-packages scripts /omnilux-packages/scripts
 RUN cd /omnilux-packages && pnpm install --frozen-lockfile && pnpm --filter @omnilux/types build
 
 COPY package.json pnpm-lock.yaml ./
