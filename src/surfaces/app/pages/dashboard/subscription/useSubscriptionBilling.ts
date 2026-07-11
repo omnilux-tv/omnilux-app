@@ -18,6 +18,7 @@ import {
   isOneTimeCloudCheckoutExplicitlyEnabled,
   ONE_TIME_CLOUD_CHECKOUT_CLOSED_MESSAGE,
 } from "./one-time-checkout-gate";
+import { createCheckoutIdempotencyStore } from "./checkout-idempotency";
 import { getSoldOutOneTimeOfferNotice } from "./one-time-offer-errors";
 
 const readSearchParam = (name: string) => {
@@ -52,6 +53,7 @@ export const useSubscriptionBilling = () => {
   const [soldOutOneTimeOffer, setSoldOutOneTimeOffer] =
     useState<CloudOneTimeOfferKey | null>(null);
   const autoCheckoutHandledRef = useRef(false);
+  const checkoutIdempotencyRef = useRef(createCheckoutIdempotencyStore());
 
   const accessProfile = accessProfileQuery.data;
   const foundingMembership = getAccessProfileFoundingMembership(accessProfile);
@@ -74,7 +76,8 @@ export const useSubscriptionBilling = () => {
   const redirectToCloudUrl = async (
     invoke: () => Promise<{ url?: unknown }>,
     pending: (value: boolean) => void,
-    fallback: string
+    fallback: string,
+    checkoutScope?: CloudOneTimeOfferKey
   ) => {
     setBillingError(null);
     pending(true);
@@ -83,12 +86,18 @@ export const useSubscriptionBilling = () => {
       const data = await invoke();
       const url = typeof data?.url === "string" ? data.url : null;
       if (!url) {
+        if (checkoutScope)
+          checkoutIdempotencyRef.current.complete(checkoutScope);
         pending(false);
         setBillingError("Stripe checkout URL was not returned.");
         return;
       }
+      if (checkoutScope) checkoutIdempotencyRef.current.complete(checkoutScope);
       window.location.assign(url);
     } catch (error) {
+      if (checkoutScope) {
+        checkoutIdempotencyRef.current.handleFailure(checkoutScope, error);
+      }
       pending(false);
       const soldOutNotice = await getSoldOutOneTimeOfferNotice(error);
       if (soldOutNotice) {
@@ -178,10 +187,14 @@ export const useSubscriptionBilling = () => {
     return redirectToCloudUrl(
       () =>
         invokeCloudFunction<{ url?: unknown }>(
-          foundingMemberOffer.checkoutFunctionName
+          foundingMemberOffer.checkoutFunctionName,
+          checkoutIdempotencyRef.current.getOrCreateInvokeOptions(
+            foundingMemberOffer.key
+          )
         ),
       setFoundingCheckoutPending,
-      "Unable to start founding member checkout."
+      "Unable to start founding member checkout.",
+      foundingMemberOffer.key
     );
   };
 
@@ -193,10 +206,14 @@ export const useSubscriptionBilling = () => {
     return redirectToCloudUrl(
       () =>
         invokeCloudFunction<{ url?: unknown }>(
-          lifetimeMembershipOffer.checkoutFunctionName
+          lifetimeMembershipOffer.checkoutFunctionName,
+          checkoutIdempotencyRef.current.getOrCreateInvokeOptions(
+            lifetimeMembershipOffer.key
+          )
         ),
       setLifetimeCheckoutPending,
-      "Unable to start lifetime checkout."
+      "Unable to start lifetime checkout.",
+      lifetimeMembershipOffer.key
     );
   };
 

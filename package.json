@@ -17,7 +17,7 @@
     "build:artifact": "vite build && tsc --noEmit",
     "preview": "vite preview",
     "lint": "tsc --noEmit --pretty false",
-    "test:auth": "APP_SITE_URL=http://127.0.0.1 pnpm exec playwright test tests/cloud-function-fetch.spec.ts tests/subscription-account-state.spec.ts tests/founding-membership-access-profile.spec.ts --reporter=line",
+    "test:auth": "APP_SITE_URL=http://127.0.0.1 pnpm exec playwright test tests/cloud-function-fetch.spec.ts tests/subscription-account-state.spec.ts tests/founding-membership-access-profile.spec.ts tests/checkout-idempotency.spec.ts --reporter=line",
     "test:smoke": "playwright test tests/account-smoke.spec.ts",
     "prepare": "husky"
   },
