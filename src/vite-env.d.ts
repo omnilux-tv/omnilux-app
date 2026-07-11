@@ -12,7 +12,6 @@ interface ImportMetaEnv {
   readonly VITE_ENABLE_LEGACY_SUPABASE_AUTH?: string;
   readonly VITE_ONE_TIME_CLOUD_CHECKOUT_ENABLED?: string;
   readonly VITE_OAUTH_PROVIDERS?: string;
-  readonly VITE_TURNSTILE_SITE_KEY?: string;
   readonly VITE_PLAUSIBLE_DOMAIN?: string;
   readonly VITE_UMAMI_SCRIPT_URL?: string;
   readonly VITE_UMAMI_WEBSITE_ID?: string;
