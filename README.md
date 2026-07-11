@@ -18,7 +18,7 @@ This repo owns the hosted OmniLux customer cloud app:
 - self-hosted server claim and invite management
 - managed runtime visibility for `media.omnilux.tv`
 - signed-in managed-media discovery and provider workspaces, including delegated provider unit visibility and read-only contract operational term counts for invited provider members
-- plugin submission and other authenticated cloud surfaces
+- the fail-closed plugin-submission status surface while public marketplace intake remains closed
 
 Approved boundary:
 

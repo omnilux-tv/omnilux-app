@@ -1,4 +1,4 @@
-import { CreditCard, Puzzle, RadioTower, Server, ShieldCheck, Smartphone, User } from 'lucide-react';
+import { CreditCard, RadioTower, Server, ShieldCheck, Smartphone, User } from 'lucide-react';
 
 export const dashboardLinks = [
   {
@@ -30,15 +30,6 @@ export const dashboardLinks = [
     icon: User,
     label: 'Account',
     description: 'Identity, security, and profile details for your cloud account.',
-  },
-] as const;
-
-export const secondaryLinks = [
-  {
-    to: '/dashboard/submit-plugin',
-    icon: Puzzle,
-    label: 'Plugin publishing',
-    description: 'Submit marketplace plugins and manage account-linked publishing metadata.',
   },
 ] as const;
 

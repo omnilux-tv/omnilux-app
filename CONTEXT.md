@@ -4,7 +4,7 @@ This context defines the language for the hosted customer app at `app.omnilux.tv
 
 `omnilux-app/` succeeds when a customer can use `app.omnilux.tv` as their authenticated OmniLux account home: manage cloud identity and billing, claim and monitor self-hosted servers, launch relay-mediated access, discover entitled managed media, submit plugins, and perform provider-scoped work only when invited, while all policy and durable state remain owned by `omnilux-cloud/`.
 
-In short, `omnilux-app/` is the authenticated customer account home and orchestration UI. It turns cloud-owned account, billing, server registry, relay, managed-media, provider membership, and plugin-submission contracts into usable customer workflows, but never becomes the durable policy source of truth or the runtime for any media, relay, provider, or operator behavior.
+In short, `omnilux-app/` is the authenticated customer account home and orchestration UI. It turns cloud-owned account, billing, server registry, relay, managed-media, provider membership, and plugin-governance contracts into usable customer workflows, but never becomes the durable policy source of truth or the runtime for any media, relay, provider, or operator behavior.
 
 ## Language
 
@@ -13,7 +13,7 @@ The hosted signed-in customer surface for accounts, billing, linked servers, and
 _Avoid_: Marketing site, operator console, provider portal
 
 **Account Home**:
-The signed-in customer surface that gathers billing, linked servers, relay access, managed-media discovery, plugin submission, and invited provider work into one hosted UI.
+The signed-in customer surface that gathers billing, linked servers, relay access, managed-media discovery, plugin-governance status, and invited provider work into one hosted UI.
 _Avoid_: Dashboard, runtime UI, ops console
 
 **Customer Experience State**:
@@ -68,8 +68,8 @@ _Avoid_: Customer dashboard authority, operator workspace
 Customer-account-adjacent provider visibility and limited scoped actions for invited provider members inside the customer app.
 _Avoid_: Provider-first workspace, operator workflow
 
-**Plugin Submission UI**:
-The authenticated customer-app intake surface for plugin submission or review.
+**Plugin Submission Status UI**:
+The authenticated fail-closed status surface explaining that public plugin intake remains unavailable until copyright, takedown, repeat-infringer, licensing, and package-review controls are operating.
 _Avoid_: Runtime plugin loader, SDK contract, marketplace policy
 
 **Customer App Exclusion Boundary**:
@@ -95,7 +95,7 @@ _Avoid_: Session token, entitlement lease
 - **Managed Playback Launch** starts from **Managed Media Discovery** with an explicit playback target.
 - A **Provider Workspace** can expose provider workflows inside the **Customer Cloud App** without granting operator authority.
 - **Invited Provider Access** can exist in the **Account Home**, but provider-first workflows belong in `omnilux-provider/`.
-- **Plugin Submission UI** gathers plugin review intake without owning plugin runtime loading, SDK contracts, plugin package behavior, or final marketplace policy.
+- **Plugin Submission Status UI** exposes the closed intake state without accepting packages or owning plugin runtime loading, SDK contracts, plugin package behavior, or final marketplace policy.
 - The **Customer App Exclusion Boundary** keeps marketing pages, public docs, durable cloud policy and state, Supabase schema and functions, edge routing, relay transport, self-hosted runtime behavior, managed-media runtime enforcement, operator workflows, provider-first workflows, native clients, and plugin implementation outside this repo.
 - A **Playback Grant** is requested by the app and enforced by managed-media services.
 
@@ -116,5 +116,5 @@ _Avoid_: Session token, entitlement lease
 - Managed-media launch UI can be mistaken for managed-runtime ownership. Resolved: this repo owns **Managed Playback Launch**, not rights policy, grant verification, DRM license proxying, runtime assets, or usage ledger authority.
 - "Managed media access" can mean consumption or provider management. Resolved: **Managed Media Discovery** is consumption; **Provider Workspace** is scoped provider work.
 - Provider features in the customer app could become the provider portal by accident. Resolved: this repo owns **Invited Provider Access** only; primary provider workflows belong to `omnilux-provider/`.
-- Plugin submission can be mistaken for plugin runtime ownership. Resolved: this repo owns **Plugin Submission UI** only.
+- Plugin governance can be mistaken for plugin runtime ownership. Resolved: this repo owns only the fail-closed **Plugin Submission Status UI**.
 - Hosted UI integration points could be mistaken for ownership of the underlying system. Resolved: the **Customer App Exclusion Boundary** defines what this repo must not own.

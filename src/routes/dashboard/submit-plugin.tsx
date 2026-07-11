@@ -5,8 +5,8 @@ import { SubmitPlugin } from '@/surfaces/app/pages/dashboard/SubmitPlugin';
 export const Route = createFileRoute('/dashboard/submit-plugin')({
   head: () =>
     buildPageHead({
-      title: 'Submit Plugin | OmniLux Cloud',
-      description: 'Submit a plugin listing for the OmniLux marketplace.',
+      title: 'Plugin Submissions Closed | OmniLux Cloud',
+      description: 'Public plugin submissions are closed while OmniLux completes marketplace governance controls.',
       pathname: '/dashboard/submit-plugin',
       surface: 'app',
       noIndex: true,
