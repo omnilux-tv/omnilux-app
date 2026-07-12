@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import { createCloudFunctionFetch } from "../src/lib/cloud-function-fetch";
 import {
   getAuthProviderMode,
@@ -595,13 +596,13 @@ test("customer dashboard routes operator profiles to the ops console", () => {
   ).toBe("https://ops.omnilux.tv/dashboard");
 });
 
-test("managed media launch exchanges the cloud token for a runtime session before navigation", async () => {
+test("managed media API session exchanges the cloud token without exposing a browser destination", async () => {
   let requestedUrl = "";
   let requestedAuthorization: string | null = null;
   let requestedCredentials: RequestCredentials | undefined;
   let requestedBody: unknown = null;
 
-  const destination = await establishManagedMediaSession({
+  await establishManagedMediaSession({
     mediaOrigin: "https://media.omnilux.tv/",
     getAccessToken: async () => "workos-access-token",
     fetch: async (input, init) => {
@@ -616,7 +617,6 @@ test("managed media launch exchanges the cloud token for a runtime session befor
     },
   });
 
-  expect(destination).toBe("https://media.omnilux.tv/");
   expect(requestedUrl).toBe("https://media.omnilux.tv/api/auth/cloud-login");
   expect(requestedAuthorization).toBe("Bearer workos-access-token");
   expect(requestedCredentials).toBe("include");
@@ -643,7 +643,7 @@ test("managed media launch rejects untrusted origins before reading the cloud to
       },
     })
   ).rejects.toThrow(
-    "OmniLux Media can only be opened through media.omnilux.tv."
+    "OmniLux Media requests must use the protected managed service origin."
   );
 
   expect(readToken).toBe(false);
@@ -671,6 +671,48 @@ test("managed media launch maps runtime session failures to media wording", asyn
     })
   ).rejects.toThrow(
     "OmniLux Media could not start a session for this account."
+  );
+});
+
+test("managed media customer UI keeps browsing and playback inside the app", () => {
+  const runtimeAccessSource = readFileSync(
+    new URL(
+      "../src/surfaces/app/pages/dashboard/managed-media/useRuntimeAccess.ts",
+      import.meta.url
+    ),
+    "utf8"
+  );
+  const discoverySource = readFileSync(
+    new URL(
+      "../src/surfaces/app/pages/dashboard/managed-media/useDiscovery.ts",
+      import.meta.url
+    ),
+    "utf8"
+  );
+  const discoveryViewSource = readFileSync(
+    new URL(
+      "../src/surfaces/app/pages/dashboard/managed-media/DiscoverySection.tsx",
+      import.meta.url
+    ),
+    "utf8"
+  );
+  const serverOverviewSource = readFileSync(
+    new URL(
+      "../src/surfaces/app/pages/dashboard/server-detail/ServerOverviewCard.tsx",
+      import.meta.url
+    ),
+    "utf8"
+  );
+
+  expect(runtimeAccessSource).not.toContain("window.location");
+  expect(discoverySource).not.toContain("window.location");
+  expect(discoveryViewSource).toContain("<video");
+  expect(discoveryViewSource).toContain('crossOrigin="use-credentials"');
+  expect(discoveryViewSource).toContain("Play here");
+  expect(serverOverviewSource).not.toContain('label="Public origin"');
+  expect(serverOverviewSource).not.toContain("managed public origin");
+  expect(serverOverviewSource).toMatch(
+    /there\s+is\s+no\s+media\s+service\s+website/
   );
 });
 

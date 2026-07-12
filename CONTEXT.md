@@ -60,6 +60,10 @@ _Avoid_: Public catalog, provider catalog management
 The app-owned workflow that requests a playback grant for an explicit managed-media target, asks the managed runtime for grant-bound launch instructions, and reports launch usage through the approved helper.
 _Avoid_: Rights policy, grant verification, DRM license proxying, runtime asset ledger
 
+**Managed Service Origin**:
+The API-only runtime origin used behind in-app discovery and playback. It is not a customer website, login destination, or catalog surface.
+_Avoid_: Managed media website, external customer handoff
+
 **Provider Workspace**:
 A provider-scoped area visible only to invited provider members for managed-media partner workflows.
 _Avoid_: Customer dashboard authority, operator workspace
@@ -93,6 +97,7 @@ _Avoid_: Session token, entitlement lease
 - **Remote Access Launch** starts from a relay-capable **Linked Server** but depends on cloud-owned policy and relay-owned transport.
 - **Managed Media Discovery** is visible through the **Customer Cloud App** only when cloud policy allows it.
 - **Managed Playback Launch** starts from **Managed Media Discovery** with an explicit playback target.
+- The **Managed Service Origin** is called by the **Customer Cloud App** but is never opened as a separate customer surface.
 - A **Provider Workspace** can expose provider workflows inside the **Customer Cloud App** without granting operator authority.
 - **Invited Provider Access** can exist in the **Account Home**, but provider-first workflows belong in `omnilux-provider/`.
 - **Plugin Submission Status UI** exposes the closed intake state without accepting packages or owning plugin runtime loading, SDK contracts, plugin package behavior, or final marketplace policy.
@@ -114,6 +119,7 @@ _Avoid_: Session token, entitlement lease
 - Fallback data could accidentally become product authority. Resolved: **Safe Fixture Fallback** cannot unlock actions, bypass entitlement, or provide launch targets.
 - Relay UI can be mistaken for relay ownership. Resolved: this repo owns **Remote Access Launch**, not relay entitlement policy, grant signing, tunnel health truth, or frame transport.
 - Managed-media launch UI can be mistaken for managed-runtime ownership. Resolved: this repo owns **Managed Playback Launch**, not rights policy, grant verification, DRM license proxying, runtime assets, or usage ledger authority.
+- An internet-routable managed origin can be mistaken for a customer website. Resolved: the **Managed Service Origin** is API-only and all customer discovery and controls remain in the **Customer Cloud App**.
 - "Managed media access" can mean consumption or provider management. Resolved: **Managed Media Discovery** is consumption; **Provider Workspace** is scoped provider work.
 - Provider features in the customer app could become the provider portal by accident. Resolved: this repo owns **Invited Provider Access** only; primary provider workflows belong to `omnilux-provider/`.
 - Plugin governance can be mistaken for plugin runtime ownership. Resolved: this repo owns only the fail-closed **Plugin Submission Status UI**.

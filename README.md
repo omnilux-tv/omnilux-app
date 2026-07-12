@@ -17,6 +17,8 @@ This repo owns the hosted OmniLux customer cloud app:
 - billing and subscription management
 - self-hosted server claim and invite management
 - managed runtime visibility for `media.omnilux.tv`
+- in-app discovery and playback for media provided by OmniLux; the managed
+  service origin is API-only and is never opened as a customer website
 - signed-in managed-media discovery and provider workspaces, including delegated provider unit visibility and read-only contract operational term counts for invited provider members
 - the fail-closed plugin-submission status surface while public marketplace intake remains closed
 
@@ -107,6 +109,9 @@ The canonical edge-consumed app artifact is the published OCI image `ghcr.io/omn
 - `managed-media` visibility is entitlement driven and should be shown only to accounts allowed by cloud policy
 - `get-customer-overview` is the hosted-app contract for customer onboarding state, managed media runtime status, and relay policy
 - managed-media playback launch should use `src/surfaces/app/lib/managed-media-launch.ts` so the app requests a cloud-issued playback grant and then asks `media.omnilux.tv` for grant-bound launch instructions
+- customer navigation, discovery, and playback controls stay in
+  `app.omnilux.tv`; only protected API/session/grant requests go to the
+  managed-media service origin
 - cloud-backed discovery launch cards should request playback grants with the
   release-backed target shape (`releaseVersionId` plus `assetId`) so
   `omnilux-cloud` resolves catalog, rights, and asset policy from cloud state;
