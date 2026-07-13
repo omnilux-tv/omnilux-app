@@ -11,7 +11,7 @@ import {
   type ManagedMediaPlaybackGrantIssueRequest,
   type ManagedMediaType,
 } from "@omnilux/types";
-import { invokeCloudFunction } from "@/surfaces/app/lib/cloud-functions";
+import { invokeControlFunction } from "@/surfaces/app/lib/cloud-functions";
 import {
   consumeManagedMediaPlaybackGrant,
   launchManagedMediaPlayback,
@@ -56,10 +56,10 @@ export const useDiscovery = ({
         query: query.trim() || undefined,
         limit: 100,
       };
-      return invokeCloudFunction<ManagedMediaDiscoveryResponse>(
-        "list-managed-media-discovery",
-        { body }
-      );
+      return invokeControlFunction<
+        ManagedMediaDiscoveryResponse,
+        ManagedMediaDiscoveryRequest
+      >("managed-media-customer", "discovery.search", body);
     },
     enabled,
   });
@@ -95,10 +95,10 @@ export const useDiscovery = ({
         releaseVersionId: selectedDiscoveryItem.playback?.releaseVersionId,
         country: selectedDiscoveryItem.playback?.country,
       };
-      return invokeCloudFunction<ManagedMediaCatalogItemDetailResponse>(
-        "get-managed-media-catalog-item",
-        { body }
-      );
+      return invokeControlFunction<
+        ManagedMediaCatalogItemDetailResponse,
+        ManagedMediaCatalogItemDetailRequest
+      >("managed-media-customer", "catalog.get", body);
     },
     enabled: Boolean(selectedDiscoveryItem && usingCloudDiscovery),
   });

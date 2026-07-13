@@ -117,12 +117,12 @@ The canonical edge-consumed app artifact is the published OCI image `ghcr.io/omn
   `omnilux-cloud` resolves catalog, rights, and asset policy from cloud state;
   full client-submitted policy fields are only for fixture fallback cards
 - grant-backed managed-media launches should mark the cloud grant consumed after `media.omnilux.tv` accepts the launch and record best-effort runtime usage events through `src/surfaces/app/lib/managed-media-launch.ts`; usage reporting must not bypass `media.omnilux.tv`
-- signed-in managed-media discovery should use `list-managed-media-discovery`
+- signed-in managed-media discovery should use `managed-media-customer` operation `discovery.search`
   from `omnilux-cloud` first; fixture cards are only a safe fallback for empty
   early environments or temporary cloud catalog failures
 - discovery cards in `src/surfaces/app/pages/dashboard/ManagedMedia.tsx` may render a launch action only when the shared discovery item includes an explicit playback target; preview-only and locked items must remain non-launchable
 - managed media is for OmniLux-operated partner/studio media and should not be treated as a public catalog for every signed-in account by default
 - broad access for all authenticated accounts is a controlled preview/demo policy, not the intended production posture
 - provider or studio management belongs behind provider-scoped/operator-gated access, not ordinary customer dashboard authority
-- provider-facing reporting, settlement statement visibility, catalog draft, release draft, rights draft, asset-delivery intake, and request UI in `src/surfaces/app/pages/dashboard/ManagedMedia.tsx` must remain conditional on active provider workspaces from `list-my-managed-media-provider-workspaces`; provider requests can link item/release/rights context, reporting and approved/exported settlement statements are aggregate/read-only, release drafts cannot publish or become current releases, and ingestion processing, publish, approval, takedown, analytics, payout, and settlement authority stay in operator/cloud workflows
+- provider-facing reporting, settlement statement visibility, catalog draft, release draft, rights draft, asset-delivery intake, and request UI in `src/surfaces/app/pages/dashboard/ManagedMedia.tsx` must remain conditional on active provider workspaces from `managed-media-provider-workspace` operation `workspace.list`; provider requests can link item/release/rights context, reporting and approved/exported settlement statements are aggregate/read-only, release drafts cannot publish or become current releases, and ingestion processing, publish, approval, takedown, analytics, payout, and settlement authority stay in operator/cloud workflows
 - server listings in this app should only model `self-hosted` and `managed-media`; operator access belongs to the separate ops console, not the server registry
