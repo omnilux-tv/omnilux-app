@@ -1,8 +1,8 @@
-import { ManagedAccessModelCard } from './server-detail/ManagedAccessModelCard';
-import { ServerInvitesCard } from './server-detail/ServerInvitesCard';
-import { ServerOverviewCard } from './server-detail/ServerOverviewCard';
-import { ServerUsersCard } from './server-detail/ServerUsersCard';
-import { useServerDetail } from './server-detail/useServerDetail';
+import { ManagedAccessModelCard } from "./server-detail/ManagedAccessModelCard";
+import { ServerInvitesCard } from "./server-detail/ServerInvitesCard";
+import { ServerOverviewCard } from "./server-detail/ServerOverviewCard";
+import { ServerUsersCard } from "./server-detail/ServerUsersCard";
+import { useServerDetail } from "./server-detail/useServerDetail";
 
 export const ServerDetail = () => {
   const serverDetail = useServerDetail();
@@ -19,14 +19,14 @@ export const ServerDetail = () => {
     <div className="animate-fade-in px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl space-y-8">
         <ServerOverviewCard vm={serverDetail} />
-        {serverDetail.isSelfHosted ? (
+        {serverDetail.isSelfHosted && serverDetail.canManageAccess ? (
           <>
             <ServerUsersCard vm={serverDetail} />
             <ServerInvitesCard vm={serverDetail} />
           </>
-        ) : (
+        ) : !serverDetail.isSelfHosted ? (
           <ManagedAccessModelCard />
-        )}
+        ) : null}
       </div>
     </div>
   );

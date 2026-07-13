@@ -172,6 +172,8 @@ export const ServerInvitesCard = ({ vm }: ServerInvitesCardProps) => {
     });
   };
 
+  if (!vm.canManageAccess) return null;
+
   return (
     <section
       className="rounded-xl surface-soft p-6"

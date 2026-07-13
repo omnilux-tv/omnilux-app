@@ -41,16 +41,18 @@ export const ServerOverviewCard = ({ vm }: ServerOverviewCardProps) => {
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
             title={
               vm.canOpenRelaySession
-                ? "Open this server through OmniLux relay"
-                : !vm.relayRemoteSessionsEnabled
-                  ? "Relay remote sessions are disabled by the current platform rollout setting"
-                  : "Relay remote access requires an eligible cloud plan, an online tunnel, and an upgraded OmniLux server"
+                ? "Open this server remotely, then sign in with a local server account"
+                : vm.isSelfHosted && !vm.isOwner
+                  ? "Only the server owner can open relay sessions during the focused beta"
+                  : !vm.relayRemoteSessionsEnabled
+                    ? "Relay remote sessions are disabled by the current platform rollout setting"
+                    : "Relay remote access requires an eligible cloud plan, an online tunnel, and an upgraded OmniLux server"
             }
           >
             <ExternalLink className="h-4 w-4" />
             {vm.actions.openRelaySession.isPending
               ? "Opening relay..."
-              : "Open through relay"}
+              : "Open remote login"}
           </button>
         ) : null}
       </div>
@@ -151,10 +153,10 @@ const ServerModel = ({ vm }: ServerOverviewCardProps) => (
     </p>
     {vm.deploymentProfile === "self-hosted" ? (
       <p className="mt-2 text-sm text-muted">
-        OmniLux Cloud can open a remote browser session when this server is
-        compatible, the tunnel is online, and the current account has access.
-        Local network, VPN, and user-owned reverse-proxy access remain outside
-        cloud billing.{" "}
+        OmniLux Cloud authorizes the remote connection when this server is
+        compatible and online. The self-hosted runtime then requires a local
+        server account before it exposes private media. Local network, VPN, and
+        user-owned reverse-proxy access remain outside cloud billing.{" "}
         {vm.accessProfile?.relayAccessPolicyDescription ??
           "Self-hosted remote access follows the cloud plan policy."}
       </p>

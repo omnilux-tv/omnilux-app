@@ -106,6 +106,12 @@ The canonical edge-consumed app artifact is the published OCI image `ghcr.io/omn
 
 - self-hosted servers remain directly reachable by their owners without traversing OmniLux edge
 - cloud-mediated remote access should rely on relay state
+- focused-beta self-hosted relay sessions are owner-only; shared users must not
+  be shown an enabled relay launch action until role-aware local account bridging
+  is explicitly enabled end to end
+- self-hosted member identities and active invite codes are account-management
+  data: only the cloud owner or a shared cloud admin may receive or render them;
+  user and guest server detail responses stay empty for those collections
 - `managed-media` visibility is entitlement driven and should be shown only to accounts allowed by cloud policy
 - `get-customer-overview` is the hosted-app contract for customer onboarding state, managed media runtime status, and relay policy
 - managed-media playback launch should use `src/surfaces/app/lib/managed-media-launch.ts` so the app requests a cloud-issued playback grant and then asks `media.omnilux.tv` for grant-bound launch instructions

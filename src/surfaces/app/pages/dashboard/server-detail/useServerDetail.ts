@@ -20,6 +20,10 @@ import {
   invokeCloudAction,
   invokeCloudFunction,
 } from "@/surfaces/app/lib/cloud-functions";
+import {
+  resolveServerDetailManagementAccess,
+  type ServerDetailActorRole,
+} from "./server-detail-access";
 
 export interface ServerDetailData {
   id: string;
@@ -54,8 +58,11 @@ export interface InviteRow {
   created_at: string | null;
 }
 
-interface ServerDetailResponse {
+export interface ServerDetailResponse {
   server: ServerDetailData;
+  isOwner: boolean;
+  actorRole: ServerDetailActorRole;
+  canManageAccess: boolean;
   access: ServerAccessRow[];
   invites: InviteRow[];
 }
@@ -105,16 +112,25 @@ export const useServerDetail = () => {
   });
 
   const server = detailQuery.data?.server;
+  const managementAccess = resolveServerDetailManagementAccess({
+    isOwner: detailQuery.data?.isOwner,
+    actorRole: detailQuery.data?.actorRole,
+    canManageAccess: detailQuery.data?.canManageAccess,
+  });
   const deploymentProfile = normalizeServerDeploymentProfile(
     server?.deployment_profile
   );
   const isSelfHosted = deploymentProfile === "self-hosted";
-  const access = isSelfHostedDeploymentProfile(server?.deployment_profile)
-    ? detailQuery.data?.access
-    : undefined;
-  const invites = isSelfHostedDeploymentProfile(server?.deployment_profile)
-    ? detailQuery.data?.invites
-    : undefined;
+  const access =
+    isSelfHostedDeploymentProfile(server?.deployment_profile) &&
+    managementAccess.canManageAccess
+      ? detailQuery.data?.access
+      : undefined;
+  const invites =
+    isSelfHostedDeploymentProfile(server?.deployment_profile) &&
+    managementAccess.canManageAccess
+      ? detailQuery.data?.invites
+      : undefined;
   const relayCondition = server
     ? deriveRelayCondition({
         relayEnabled: server.relay_enabled,
@@ -135,6 +151,7 @@ export const useServerDetail = () => {
     accessProfile?.relayRemoteSessionsEnabled === true;
   const canOpenRelaySession = Boolean(
     isSelfHosted &&
+    managementAccess.isOwner &&
     relayCondition === "ready" &&
     relayEntitled &&
     relayRemoteSessionsEnabled &&
@@ -202,6 +219,9 @@ export const useServerDetail = () => {
     deploymentProfile,
     deploymentLabel: getServerDeploymentProfileLabel(deploymentProfile),
     isSelfHosted,
+    actorRole: managementAccess.actorRole,
+    isOwner: managementAccess.isOwner,
+    canManageAccess: managementAccess.canManageAccess,
     isOnline,
     relayCondition,
     relayTone,

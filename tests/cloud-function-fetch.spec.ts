@@ -35,6 +35,7 @@ import {
   getInviteUsageLabel,
   isInviteInactive,
 } from "../src/surfaces/app/pages/dashboard/server-detail/server-invites";
+import { resolveServerDetailManagementAccess } from "../src/surfaces/app/pages/dashboard/server-detail/server-detail-access";
 
 test("missing WorkOS config stays unconfigured unless legacy Supabase auth is explicitly enabled in dev", () => {
   expect(
@@ -411,6 +412,40 @@ test("server invite labels expose usage, expiry, and inactive state", () => {
   expect(isInviteInactive(expiredInvite, now)).toBe(true);
   expect(getInviteStatusLabel(usedUpInvite, now)).toBe("Used up");
   expect(isInviteInactive(usedUpInvite, now)).toBe(true);
+});
+
+test("server detail account management fails closed outside owner and admin roles", () => {
+  expect(
+    resolveServerDetailManagementAccess({
+      isOwner: true,
+      actorRole: "owner",
+      canManageAccess: true,
+    })
+  ).toEqual({ isOwner: true, actorRole: "owner", canManageAccess: true });
+  expect(
+    resolveServerDetailManagementAccess({
+      isOwner: false,
+      actorRole: "admin",
+      canManageAccess: true,
+    })
+  ).toEqual({ isOwner: false, actorRole: "admin", canManageAccess: true });
+
+  for (const actorRole of ["user", "guest", null, "unexpected"]) {
+    expect(
+      resolveServerDetailManagementAccess({
+        isOwner: false,
+        actorRole,
+        canManageAccess: true,
+      }).canManageAccess
+    ).toBe(false);
+  }
+  expect(
+    resolveServerDetailManagementAccess({
+      isOwner: true,
+      actorRole: "admin",
+      canManageAccess: true,
+    }).isOwner
+  ).toBe(false);
 });
 
 test("claim code entry accepts full-code paste from any field", () => {
